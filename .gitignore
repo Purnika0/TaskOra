@@ -1,0 +1,62 @@
+# ── Python / Django ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Environment variables — NEVER commit these
+.env
+.env.*
+.env.local
+.env.development
+.env.production
+.env.staging
+*.env
+
+# Django
+db.sqlite3
+*.sqlite3
+media/
+staticfiles/
+static_root/
+local_settings.py
+
+# ── Node / React / Vite ───────────────────────────────────────
+node_modules/
+frontend/node_modules/
+dist/
+dist-ssr/
+frontend/dist/
+*.local
+.cache/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# ── Editor / OS ───────────────────────────────────────────────
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.sw?
+
+# ── Secrets / Keys ────────────────────────────────────────────
+*.pem
+*.key
+*.cert
+secret_key.txt
+secrets.json
+
+# ── Coverage / Testing ────────────────────────────────────────
+htmlcov/
+.coverage
+.pytest_cache/
