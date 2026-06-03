@@ -1,18 +1,28 @@
-from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 from django.utils import timezone
-from .models import Assignment, Task, SubTask
+from django.shortcuts import get_object_or_404
+
+from .models import Assignment, Task
 from .serializers import (
-    AssignmentSerializer, TaskSerializer,
-    PersonalTaskSerializer, TaskUpdateSerializer, SubTaskSerializer
+    AssignmentSerializer,
+    TaskSerializer,
+    TaskSubmitSerializer,
+    TaskReviewSerializer,
 )
 from .priority import calculate_priority_score
 from courses.models import Enrollment
 from users.permissions import IsTeacher, IsStudent
 
 
+# ---------------------------------------------------------------------------
+# Assignment views (Teacher)
+# ---------------------------------------------------------------------------
+
 class AssignmentListCreateView(generics.ListCreateAPIView):
-    serializer_class = AssignmentSerializer
+    """Teacher lists their assignments or creates a new one."""
+    serializer_class   = AssignmentSerializer
     permission_classes = [IsTeacher]
 
     def get_queryset(self):
@@ -20,8 +30,9 @@ class AssignmentListCreateView(generics.ListCreateAPIView):
 
     def perform_create(self, serializer):
         assignment = serializer.save(created_by=self.request.user)
-        enrollments = Enrollment.objects.filter(course=assignment.course)
-        score = calculate_priority_score(assignment)
+        # Auto-create a Task for every enrolled student
+        enrollments   = Enrollment.objects.filter(course=assignment.course)
+        score         = calculate_priority_score(assignment)
         Task.objects.bulk_create([
             Task(student=e.student, assignment=assignment, priority_score=score)
             for e in enrollments
@@ -29,84 +40,146 @@ class AssignmentListCreateView(generics.ListCreateAPIView):
 
 
 class AssignmentDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = AssignmentSerializer
+    """Teacher retrieves, updates, or deletes one of their assignments."""
+    serializer_class   = AssignmentSerializer
     permission_classes = [IsTeacher]
 
     def get_queryset(self):
         return Assignment.objects.filter(created_by=self.request.user)
 
 
+# ---------------------------------------------------------------------------
+# Task views (Student)
+# ---------------------------------------------------------------------------
+
 class StudentTaskListView(generics.ListAPIView):
-    """All tasks — both assigned and personal."""
-    serializer_class = TaskSerializer
+    """Student lists all their tasks."""
+    serializer_class   = TaskSerializer
     permission_classes = [IsStudent]
 
     def get_queryset(self):
-        qs = Task.objects.filter(student=self.request.user).select_related('assignment')
-        task_type = self.request.query_params.get('type')  # ?type=personal or ?type=assigned
-        if task_type == 'personal':
-            qs = qs.filter(assignment__isnull=True)
-        elif task_type == 'assigned':
-            qs = qs.filter(assignment__isnull=False)
+        qs     = Task.objects.filter(student=self.request.user).select_related('assignment')
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
         return qs
 
 
-class PersonalTaskCreateView(generics.CreateAPIView):
-    """Student creates a personal task."""
-    serializer_class = PersonalTaskSerializer
-    permission_classes = [IsStudent]
-
-
-class PersonalTaskDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """Student edits or deletes their own personal tasks only."""
-    serializer_class = PersonalTaskSerializer
-    permission_classes = [IsStudent]
-
-    def get_queryset(self):
-        return Task.objects.filter(student=self.request.user, assignment__isnull=True)
-
-
 class SmartPriorityTaskView(generics.ListAPIView):
-    """Incomplete tasks ordered by priority score."""
-    serializer_class = TaskSerializer
+    """Student gets incomplete tasks ordered by priority score."""
+    serializer_class   = TaskSerializer
     permission_classes = [IsStudent]
 
     def get_queryset(self):
+        # Pending and overdue tasks ordered by urgency
         return Task.objects.filter(
-            student=self.request.user, is_completed=False
+            student=self.request.user,
+            status__in=[Task.Status.PENDING, Task.Status.OVERDUE]
         ).order_by('-priority_score').select_related('assignment')
 
 
-class TaskUpdateView(generics.UpdateAPIView):
-    """Mark any task complete/incomplete."""
-    serializer_class = TaskUpdateSerializer
+class StudentSubmitTaskView(APIView):
+    """
+    Student submits an assignment.
+    PATCH /api/tasks/<pk>/submit/
+    Accepts: submission_file (optional), submission_text (optional)
+    At least one must be provided.
+    """
     permission_classes = [IsStudent]
 
+    def patch(self, request, pk):
+        task = get_object_or_404(Task, pk=pk, student=request.user)
+
+        if task.status == Task.Status.COMPLETED:
+            return Response(
+                {"detail": "This task has already been marked as completed by your teacher."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        if task.status == Task.Status.SUBMITTED:
+            return Response(
+                {"detail": "You have already submitted this task."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = TaskSubmitSerializer(task, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+# ---------------------------------------------------------------------------
+# Task views (Teacher)
+# ---------------------------------------------------------------------------
+
+class TeacherAssignmentTaskListView(generics.ListAPIView):
+    """
+    Teacher views all student tasks for a specific assignment.
+    GET /api/tasks/assignment/<assignment_pk>/submissions/
+    Optionally filter by status: ?status=submitted
+    """
+    serializer_class   = TaskSerializer
+    permission_classes = [IsTeacher]
+
     def get_queryset(self):
-        return Task.objects.filter(student=self.request.user)
+        assignment_pk = self.kwargs['assignment_pk']
+        assignment    = get_object_or_404(
+            Assignment, pk=assignment_pk, created_by=self.request.user
+        )
+        qs = Task.objects.filter(assignment=assignment).select_related('student', 'assignment')
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+        return qs
 
 
-class SubTaskListCreateView(generics.ListCreateAPIView):
-    serializer_class = SubTaskSerializer
-    permission_classes = [IsStudent]
+class TeacherReviewTaskView(APIView):
+    """
+    Teacher marks a submitted task as completed with optional feedback.
+    PATCH /api/tasks/<pk>/review/
+    Accepts: teacher_feedback (optional)
+    """
+    permission_classes = [IsTeacher]
 
-    def get_queryset(self):
-        return SubTask.objects.filter(
-            task_id=self.kwargs['task_pk'],
-            task__student=self.request.user
+    def patch(self, request, pk):
+        # Ensure the task belongs to an assignment created by this teacher
+        task = get_object_or_404(
+            Task, pk=pk, assignment__created_by=request.user
         )
 
-    def perform_create(self, serializer):
-        task = Task.objects.get(pk=self.kwargs['task_pk'], student=self.request.user)
-        serializer.save(task=task)
+        if task.status != Task.Status.SUBMITTED:
+            return Response(
+                {"detail": "Only submitted tasks can be reviewed. Current status: " + task.status},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        serializer = TaskReviewSerializer(task, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class SubTaskDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class = SubTaskSerializer
-    permission_classes = [IsStudent]
+# ---------------------------------------------------------------------------
+# Overdue task auto-marker utility view (can be called by a cron or manually)
+# ---------------------------------------------------------------------------
 
-    def get_queryset(self):
-        return SubTask.objects.filter(
-            task_id=self.kwargs['task_pk'],
-            task__student=self.request.user
+class MarkOverdueTasksView(APIView):
+    """
+    Admin/system utility — marks all pending tasks past their due date as overdue.
+    POST /api/tasks/mark-overdue/
+    """
+    from users.permissions import IsAdmin
+    permission_classes = [IsAdmin]
+
+    def post(self, request):
+        from users.permissions import IsAdmin
+        today   = timezone.now().date()
+        updated = Task.objects.filter(
+            status=Task.Status.PENDING,
+            assignment__due_date__lt=today
+        ).update(status=Task.Status.OVERDUE)
+        return Response(
+            {"detail": f"{updated} task(s) marked as overdue."},
+            status=status.HTTP_200_OK
         )
