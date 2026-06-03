@@ -44,8 +44,11 @@ function isSuggested(rec) {
 }
 
 // ── Stable composite key — prevents duplicate rendering ──────
+// function recKey(rec) {
+//     return `${rec.task_type || 'unknown'}_${rec.type || 'similar_users'}`
+// }
 function recKey(rec) {
-    return `${rec.task_type || 'unknown'}_${rec.type || 'similar_users'}`
+    return `${rec.task_id || rec.assignment_id || rec.task_type}_${rec.type || 'similar_users'}`
 }
 
 // ── Loading skeleton ─────────────────────────────────────────
