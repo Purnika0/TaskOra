@@ -85,19 +85,40 @@ TEMPLATES = [
 WSGI_APPLICATION = 'taskora.wsgi.application'
 
 
+import os
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+#
+# By default, uses PostgreSQL (matches the team's shared setup).
+# To use SQLite locally instead (e.g. PostgreSQL not installed/working),
+# set an environment variable before running manage.py:
+#
+#   Windows (PowerShell):  $env:USE_SQLITE="true"
+#   Windows (cmd):         set USE_SQLITE=true
+#   Mac/Linux:              export USE_SQLITE=true
+#
+# This only affects your local machine — do not commit this change
+# or set it permanently, so the rest of the team keeps using PostgreSQL.
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'taskora_db',
-        'USER': 'taskora_user',
-        'PASSWORD': 'admin123',
-        'HOST': 'localhost',
-        'PORT': '5432',
+if os.environ.get('USE_SQLITE', '').lower() == 'true':
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'taskora_db',
+            'USER': 'taskora_user',
+            'PASSWORD': 'admin123',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
 
 AUTH_USER_MODEL = 'users.User'
 
