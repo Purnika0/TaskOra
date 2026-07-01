@@ -1,12 +1,4 @@
-    // src/components/shared/BSCalMini.jsx
-    //
-    // Shared mini Nepal BS calendar widget — used by StudentDashboard
-    // and TeacherDashboard.  Read-only (no task add/delete — that is
-    // CalendarPage only).  Same cal-* CSS classes, same red-only holiday
-    // colour, same BS+AD dual number display.
-    // ─────────────────────────────────────────────────────────────────────────────
-
-    import React, { useState, useEffect, useMemo } from 'react'
+ import React, { useState, useEffect, useMemo } from 'react'
     import { useToday } from '../../hooks/useHolidays.js'
     import {
     BS_MONTH_NAMES, buildMonthDays, daysInBSMonth, adToBS,

@@ -1,98 +1,115 @@
 // src/utils/helpers.js
-// Pure utility functions.
-// Handles field name differences between backend and UI display.
+// UPDATED per backend integration guide:
+//   • isOverdue() now checks status === 'overdue' (backend sends this)
+//   • statusBadge() updated for 4-state system: pending|submitted|completed|overdue
+//   • getTaskTitle() updated — personal tasks removed, assignment nested object is primary
+//   • deadlinePill() updated to use status field
 
-import { format, parseISO, differenceInDays } from 'date-fns'
+import { format, parseISO } from 'date-fns'
 
-// ── Priority: backend uses int 1-5, UI shows labels ─────────
+// ── Priority helpers ────────────────────────────────────────────────────────
 export function priorityToLevel(n) {
     if (n >= 4) return 'high'
     if (n >= 2) return 'medium'
     return 'low'
 }
-
 export function levelToPriority(level) {
     return { high: 5, medium: 3, low: 1 }[level] ?? 3
 }
-
 export function priorityColor(n) {
     const level = typeof n === 'number' ? priorityToLevel(n) : n
     return { high: '#e05252', medium: '#d4a93c', low: '#3cb87a' }[level] ?? '#b0a898'
 }
-
 export function priorityLabel(n) {
     return priorityToLevel(typeof n === 'number' ? n : levelToPriority(n))
 }
 
-// ── Task display title (personal vs assigned) ────────────────
+// ── Task title ──────────────────────────────────────────────────────────────
+// Personal tasks removed from backend — display_title or assignment.title
 export function getTaskTitle(task) {
-    return task.display_title || task.title || task.assignment?.title || 'Untitled'
+    return task.display_title || task.assignment?.title || task.title || 'Untitled'
 }
 
+// ── Due date ────────────────────────────────────────────────────────────────
 export function getTaskDueDate(task) {
     return task.due_date || task.assignment?.due_date || null
 }
-
 export function getTaskDueDateBS(task) {
     return task.due_date_bs || null
 }
 
-// ── Overdue detection ────────────────────────────────────────
+// ── Status helpers (4-state) ────────────────────────────────────────────────
 export function isOverdue(task) {
-    if (task.is_completed) return false
-    const due = getTaskDueDate(task)
-    if (!due) return false
-    return due < new Date().toISOString().split('T')[0]
+    return task.status === 'overdue'
+}
+export function isCompleted(task) {
+    return task.status === 'completed'
+}
+export function isSubmitted(task) {
+    return task.status === 'submitted'
+}
+export function isPending(task) {
+    return task.status === 'pending' || !task.status
 }
 
-// ── Deadline pill ────────────────────────────────────────────
+// ── 4-state status badge ────────────────────────────────────────────────────
+// Replaces old boolean statusBadge(isCompleted)
+export function statusBadge(task) {
+    switch (task.status) {
+        case 'completed':
+            return { label: 'Completed', color: '#166534', bg: '#e0f7ee', border: '#bbf7d0' }
+        case 'submitted':
+            return { label: 'Submitted', color: '#1e40af', bg: '#eff3fd', border: '#bfdbfe' }
+        case 'overdue':
+            return { label: 'Overdue',   color: '#991b1b', bg: '#fde8e8', border: '#fecaca' }
+        default:
+            return { label: 'Pending',   color: '#92400e', bg: '#fff8e6', border: '#fde68a' }
+    }
+}
+
+// ── Deadline pill ────────────────────────────────────────────────────────────
 export function deadlinePill(task) {
-    if (task.is_completed) return { label: 'Done', cls: 'bg-green-50 text-green-600' }
+    if (task.status === 'completed') return { label: 'Done', color: '#166534', bg: '#e0f7ee' }
+    if (task.status === 'submitted') return { label: 'Awaiting Review', color: '#1e40af', bg: '#eff3fd' }
+    if (task.status === 'overdue')   return { label: 'Overdue', color: '#991b1b', bg: '#fde8e8' }
     const due = getTaskDueDate(task)
-    if (!due) return { label: 'No date', cls: 'bg-gray-100 text-gray-400' }
+    if (!due) return { label: 'No date', color: '#6b7280', bg: '#f3f4f6' }
     const today = new Date(); today.setHours(0, 0, 0, 0)
     const d = Math.ceil((new Date(due + 'T00:00:00') - today) / 86400000)
-    if (d < 0)  return { label: `${Math.abs(d)}d overdue`, cls: 'bg-red-50 text-red-600' }
-    if (d === 0) return { label: 'Due today', cls: 'bg-red-50 text-red-600' }
-    if (d <= 3)  return { label: `${d}d left`, cls: 'bg-orange-50 text-orange-600' }
-    if (d <= 7)  return { label: `${d}d left`, cls: 'bg-yellow-50 text-yellow-600' }
-    return { label: `${d}d left`, cls: 'bg-green-50 text-green-600' }
+    if (d < 0)   return { label: `${Math.abs(d)}d overdue`, color: '#991b1b', bg: '#fde8e8' }
+    if (d === 0) return { label: 'Due today',  color: '#991b1b', bg: '#fde8e8' }
+    if (d <= 3)  return { label: `${d}d left`,  color: '#92400e', bg: '#fff8e6' }
+    if (d <= 7)  return { label: `${d}d left`,  color: '#92400e', bg: '#fffbeb' }
+    return             { label: `${d}d left`,  color: '#166534', bg: '#e0f7ee' }
 }
 
+// ── Days until a date string ─────────────────────────────────────────────────
 export function daysUntil(dateStr) {
     if (!dateStr) return null
     const today = new Date(); today.setHours(0, 0, 0, 0)
     return Math.ceil((new Date(dateStr + 'T00:00:00') - today) / 86400000)
 }
 
-// ── Status badge ─────────────────────────────────────────────
-export function statusBadge(isCompleted) {
-    return isCompleted
-    ? { label: 'Completed', cls: 'bg-green-50 text-green-600 border border-green-200' }
-    : { label: 'Pending',   cls: 'bg-gray-100  text-gray-500  border border-gray-200' }
-}
-
-// ── Format date string ───────────────────────────────────────
+// ── Format date ──────────────────────────────────────────────────────────────
 export function fmtDate(s) {
     if (!s) return '—'
     try { return format(parseISO(s), 'd MMM yyyy') }
     catch { return s }
-    }
+}
 
-// ── BS month names ───────────────────────────────────────────
+// ── BS month names ────────────────────────────────────────────────────────────
 export const BS_MONTHS = [
     'Baisakh', 'Jestha', 'Ashadh', 'Shrawan',
     'Bhadra', 'Ashwin', 'Kartik', 'Mangsir',
     'Poush', 'Magh', 'Falgun', 'Chaitra',
-    ]
+]
 
-// ── API error message extractor ──────────────────────────────
+// ── API error extractor ───────────────────────────────────────────────────────
 export function apiError(err) {
     const d = err?.response?.data
     if (!d) return err?.message || 'An error occurred'
     if (typeof d === 'string') return d
     if (d.detail) return d.detail
-    // DRF validation errors are objects: { field: [msg, ...] }
     const messages = Object.entries(d)
         .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
     return messages.join(' | ')

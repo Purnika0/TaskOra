@@ -1,37 +1,104 @@
 /*
- * tokens.css — TaskOra Design Tokens v4
- * Updated typography: Inter (body) + Plus Jakarta Sans (display)
+ * tokens.css — TaskOra Design Tokens v8 (Updated Color Palette)
+ *
+ * Brand Theme (strict two-color identity):
+ * Primary    : #5452e4
+ * Background : #F8FAFC
+ * Surfaces   : White (#FFFFFF) only, for cards/forms/modals/tables
+ *
+ * Clean, modern, professional design for a Student Task Management System.
  */
 
 :root {
-  /* ── Palette ── */
-    --color-navy:          #1a1f35;
-    --color-navy-light:    #252c47;
-    --color-navy-mid:      #2e3655;
-    --color-cream:         #f5f1eb;
-    --color-cream-dark:    #ede9e0;
-    --color-cream-border:  #e2dbd0;
-    --color-cream-subtle:  #faf8f5;
-    --color-white:         #ffffff;
-    --color-blue:          #3b6fd4;
-    --color-blue-light:    #5b8dee;
-    --color-purple:        #6d4fc2;
-    --color-red:           #e05252;
-    --color-orange:        #e07d3c;
-    --color-green:         #3cb87a;
-    --color-yellow:        #d4a93c;
 
-    /* ── Semantic priority ── */
-    --priority-high:   #e05252;
-    --priority-medium: #d4a93c;
-    --priority-low:    #3cb87a;
+    /* ─────────────────────────────────────────────
+       BRAND COLORS
+    ───────────────────────────────────────────── */
 
-    /* ── Typography — updated to clean professional fonts ── */
+    /* Sidebar / Navigation — uses the single primary brand color, no navy */
+    --color-navy:           #5452e4;
+    --color-navy-light:     #6D6BEA; /* Smooth step up for subtle hover states */
+    --color-navy-dark:      #3E3CBD; /* Darker tone for active/pressed states */
+
+    /* Primary Accent */
+    --color-primary:        #5452e4;
+    --color-primary-hover:  #3E3CBD;
+    --color-primary-light:  #EEEDFD; /* Tinted overlay background */
+
+    /* Legacy aliases */
+    --color-sidebar:        var(--color-primary);
+    --color-sidebar-hover:  rgba(255,255,255,0.10);
+    --color-sidebar-active: rgba(255,255,255,0.16);
+    --color-sidebar-text:   rgba(255,255,255,0.75);
+    --color-sidebar-text-active: #FFFFFF;
+
+    --color-secondary:       var(--color-primary);
+    --color-secondary-light: var(--color-primary-light);
+
+    --color-blue:            var(--color-primary);
+    --color-blue-light:      var(--color-primary-light);
+
+    /* No separate purple brand color — maps onto the single primary brand color */
+    --color-purple:          var(--color-primary);
+    --color-purple-light:    var(--color-primary-light);
+
+    --color-orange:          #D97706;
+
+    /* ─────────────────────────────────────────────
+       SURFACES
+    ───────────────────────────────────────────── */
+
+    --color-bg:              #F8FAFC;
+    --color-surface:         #FFFFFF;
+    --color-surface-raised:  #FFFFFF;
+    --color-surface-subtle:  #F1F5F9;
+
+    --color-white:           #FFFFFF;
+
+    --color-cream:           #F8FAFC;
+    --color-cream-dark:      #E2E8F0;
+    --color-cream-border:    #CBD5E1;
+    --color-cream-subtle:    #F1F5F9;
+
+    --color-navy-mid:        var(--color-navy);
+
+    --color-border:          #E2E8F0;
+    --color-border-focus:    var(--color-primary);
+
+    /* ─────────────────────────────────────────────
+       TEXT
+    ───────────────────────────────────────────── */
+
+    --color-text:            #0F172A;
+    --color-text-secondary:  #475569;
+    --color-text-muted:      #64748B;
+    --color-text-placeholder:#94A3B8;
+
+    /* ─────────────────────────────────────────────
+       STATUS COLORS
+    ───────────────────────────────────────────── */
+
+    --color-green:           #16A34A;
+    --color-green-light:     #DCFCE7;
+
+    --color-amber:           #D97706;
+    --color-amber-light:     #FEF3C7;
+
+    --color-red:             #DC2626;
+    --color-red-light:       #FEE2E2;
+
+    --priority-high:         var(--color-red);
+    --priority-medium:       var(--color-amber);
+    --priority-low:          var(--color-green);
+
+    /* ─────────────────────────────────────────────
+       TYPOGRAPHY
+    ───────────────────────────────────────────── */
+
     --font-display: 'Plus Jakarta Sans', 'Segoe UI', system-ui, sans-serif;
-    --font-body:    'Inter', 'Segoe UI', system-ui, sans-serif;
-    --font-mono:    'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 
-    /* ── Font sizes ── */
     --text-xs:   11px;
     --text-sm:   13px;
     --text-base: 14px;
@@ -41,46 +108,60 @@
     --text-2xl:  24px;
     --text-3xl:  30px;
 
-    /* ── Line heights ── */
-    --leading-tight:  1.3;
-    --leading-snug:   1.45;
-    --leading-normal: 1.6;
+    --leading-tight:   1.3;
+    --leading-snug:    1.45;
+    --leading-normal:  1.6;
     --leading-relaxed: 1.75;
 
-    /* ── Shadows ── */
-    --shadow-xs: 0 1px 2px rgba(26,31,53,0.05);
-    --shadow-sm: 0 1px 4px rgba(26,31,53,0.07);
-    --shadow-md: 0 2px 12px rgba(26,31,53,0.10);
-    --shadow-lg: 0 4px 24px rgba(26,31,53,0.14);
-    --shadow-xl: 0 8px 40px rgba(26,31,53,0.18);
-    --shadow-heavy: 0 16px 48px rgba(0,0,0,0.28);
+    /* ─────────────────────────────────────────────
+       SHADOWS
+    ───────────────────────────────────────────── */
 
-    /* ── Radius ── */
+    --shadow-xs:    0 1px 2px rgba(15,23,42,0.04);
+    --shadow-sm:    0 2px 6px rgba(15,23,42,0.06);
+    --shadow-md:    0 6px 16px rgba(15,23,42,0.08);
+    --shadow-lg:    0 12px 28px rgba(15,23,42,0.12);
+    --shadow-xl:    0 20px 40px rgba(15,23,42,0.15);
+    --shadow-heavy: 0 24px 60px rgba(15,23,42,0.22);
+
+    /* ─────────────────────────────────────────────
+       BORDER RADIUS
+    ───────────────────────────────────────────── */
+
     --radius-sm:   6px;
     --radius-md:   10px;
     --radius-lg:   14px;
     --radius-xl:   20px;
     --radius-full: 9999px;
 
-    /* ── Spacing scale ── */
-    --space-1:  4px;
-    --space-2:  8px;
-    --space-3:  12px;
-    --space-4:  16px;
-    --space-5:  20px;
-    --space-6:  24px;
-    --space-8:  32px;
-    --space-10: 40px;
-    --space-12: 48px;
+    /* ─────────────────────────────────────────────
+       SPACING
+    ───────────────────────────────────────────── */
 
-    /* ── Transitions ── */
+    --space-1:   4px;
+    --space-2:   8px;
+    --space-3:   12px;
+    --space-4:   16px;
+    --space-5:   20px;
+    --space-6:   24px;
+    --space-8:   32px;
+    --space-10:  40px;
+    --space-12:  48px;
+
+    /* ─────────────────────────────────────────────
+       TRANSITIONS
+    ───────────────────────────────────────────── */
+
     --transition-fast:   all 0.15s ease;
     --transition-base:   all 0.20s ease;
     --transition-smooth: all 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 
-    /* ── Layout ── */
-    --sidebar-width:           192px;
-    --sidebar-collapsed-width: 52px;
-    --topbar-height:           52px;
-    --content-padding:         24px;
+    /* ─────────────────────────────────────────────
+       LAYOUT
+    ───────────────────────────────────────────── */
+
+    --sidebar-width:            200px;
+    --sidebar-collapsed-width:   54px;
+    --topbar-height:             54px;
+    --content-padding:           24px;
 }

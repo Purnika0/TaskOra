@@ -3,7 +3,7 @@
 import React from 'react'
 
 // ── Spinner ──────────────────────────────────────────────────
-export function Spinner({ size=20, color='#1a1f35' }) {
+export function Spinner({ size=20, color='#0F172A' }) {
     return (
         <svg
         aria-label="Loading" width={size} height={size}
@@ -20,12 +20,12 @@ export function Spinner({ size=20, color='#1a1f35' }) {
 export function PageLoader() {
     return (
         <div style={{
-        minHeight:'100vh', background:'#f5f1eb',
+        minHeight:'100vh', background:'#F8FAFC',
         display:'flex', alignItems:'center', justifyContent:'center',
         flexDirection:'column', gap:12, fontFamily:'var(--font-body)',
         }}>
         <Spinner size={32}/>
-        <p style={{ fontSize:13, color:'#b0a898' }}>Loading TaskOra…</p>
+        <p style={{ fontSize:13, color:'#94A3B8' }}>Loading TaskOra…</p>
         </div>
     )
 }
@@ -36,7 +36,7 @@ export function LoadingBlock({ rows=3 }) {
         <div style={{ display:'flex', flexDirection:'column', gap:8 }} aria-label="Loading content">
         {Array.from({length:rows}).map((_,i) => (
             <div key={i} style={{
-            height:11, borderRadius:99, background:'#e8e3db',
+            height:11, borderRadius:99, background:'#E2E8F0',
             width:`${70+(i%3)*10}%`,
             animation:'to-pulseLoad 1.5s ease-in-out infinite',
             animationDelay:`${i*80}ms`,

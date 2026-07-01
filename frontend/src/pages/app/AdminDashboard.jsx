@@ -1,887 +1,404 @@
-    import React, { useState, useEffect, useCallback, useMemo } from 'react'
-    import {
+// src/pages/app/AdminDashboard.jsx
+// UPDATED per spec + backend integration guide:
+//  • LIGHT THEME — no more dark-only admin shell
+//  • Tabs: Overview · Teachers · Students · Courses · Analytics · Activity
+//  • "Add Teacher" form with full fields (name, email, username, temp password, subject)
+//  • Teacher list with delete/suspend controls
+//  • Student list with delete/suspend controls
+//  • Course management panel
+//  • "Task" → "Assignment" throughout
+//  • initialTab prop support for direct navigation from sidebar
+
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import {
     Users, RefreshCw, ShieldCheck, Trash2, Search,
     GraduationCap, BookOpen, ChevronUp, ChevronDown,
-    AlertCircle, CheckCircle2, Clock, PlusCircle, X,
-    Bell, UserCheck, UserX, LayoutDashboard, Activity,
-    TrendingUp, Settings2, BarChart2, Globe, Shield,
-    Database, Cpu, Eye, EyeOff, Minus,
-    ArrowUpRight, ArrowDownRight, Circle,
-    } from 'lucide-react'
-    import authService     from '../../services/auth.service.js'
-    import { useToast }    from '../../context/ToastContext.jsx'
-    import { useConfirm }  from '../../context/ConfirmContext.jsx'
-    import { useAuth }     from '../../hooks/useAuth.js'
-    import { LoadingBlock }from '../../components/shared/Loader.jsx'
-    import { apiError }    from '../../utils/helpers.js'
-    import {
-    BS_MONTH_NAMES as _BSM, buildMonthDays as _build, adToBS as _a2bs,
-    } from '../../utils/bsCalendar.js'
+    Clock, Plus, X, LayoutDashboard, Activity,
+    BarChart2, UserCheck, UserX, Eye, EyeOff, Minus,
+    ArrowUpRight, Circle, KeyRound, ClipboardList,
+} from 'lucide-react'
+import authService    from '../../services/auth.service.js'
+import coursesService from '../../services/courses.service.js'
+import { useToast }   from '../../context/ToastContext.jsx'
+import { useConfirm } from '../../context/ConfirmContext.jsx'
+import { useAuth }    from '../../hooks/useAuth.js'
+import { LoadingBlock } from '../../components/shared/Loader.jsx'
+import { apiError }   from '../../utils/helpers.js'
 
-        /* ── Admin Design Tokens (dark theme, isolated) ───────────────── */
-        const ADM = {
-        bg:        '#0f1117',
-        surface:   '#171923',
-        elevated:  '#1e2435',
-        border:    '#252d3d',
-        borderSub: '#1a2030',
-        text:      '#e2e8f0',
-        textSub:   '#718096',
-        textMuted: '#4a5568',
-        accent:    '#3b82f6',
-        accentBg:  'rgba(59,130,246,0.10)',
-        green:     '#10b981',
-        greenBg:   'rgba(16,185,129,0.10)',
-        amber:     '#f59e0b',
-        amberBg:   'rgba(245,158,11,0.10)',
-        red:       '#ef4444',
-        redBg:     'rgba(239,68,68,0.10)',
-        purple:    '#8b5cf6',
-        purpleBg:  'rgba(139,92,246,0.10)',
-        }
+// ── Light palette for admin (matches site theme) ────────────────────────────
+const A = {
+    blue:    '#2563EB', blueBg:  '#DBEAFE',
+    green:   '#059669', greenBg: '#D1FAE5',
+    amber:   '#D97706', amberBg: '#FEF3C7',
+    red:     '#DC2626', redBg:   '#FEE2E2',
+    purple:  '#7C3AED', purpleBg:'#EDE9FE',
+    navy:    '#1E3A5F',
+}
 
-        /* ── Role config ──────────────────────────────────────────────── */
-        const ROLE = {
-        admin:   { bg:'rgba(239,68,68,0.12)',  text:'#fc8181', dot:'#ef4444', label:'Admin'   },
-        teacher: { bg:'rgba(139,92,246,0.12)', text:'#c4b5fd', dot:'#8b5cf6', label:'Teacher' },
-        student: { bg:'rgba(59,130,246,0.12)', text:'#93c5fd', dot:'#3b82f6', label:'Student' },
-        }
+const ROLE_STYLE = {
+    admin:   { bg:'#FEE2E2', color:'#991B1B', label:'Admin'   },
+    teacher: { bg:'#EDE9FE', color:'#5B21B6', label:'Teacher' },
+    student: { bg:'#DBEAFE', color:'#1E40AF', label:'Student' },
+}
 
-        /* ── Shared style objects ─────────────────────────────────────── */
-        const S = {
-        card: {
-            background: ADM.surface,
-            border: `1px solid ${ADM.border}`,
-            borderRadius: 12,
-            padding: '20px 22px',
-        },
-        cardFlat: {
-            background: ADM.surface,
-            border: `1px solid ${ADM.border}`,
-            borderRadius: 12,
-            overflow: 'hidden',
-        },
-        label: {
-            fontSize: 10,
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.10em',
-            color: ADM.textSub,
-            fontFamily: 'var(--font-body)',
-            margin: 0,
-        },
-        heading: {
-            fontSize: 13,
-            fontWeight: 600,
-            color: ADM.text,
-            fontFamily: 'var(--font-display)',
-            margin: 0,
-            letterSpacing: '-0.01em',
-        },
-        subtext: {
-            fontSize: 11,
-            color: ADM.textSub,
-            fontFamily: 'var(--font-body)',
-            margin: 0,
-            lineHeight: 1.5,
-        },
-        input: {
-            background: ADM.elevated,
-            border: `1px solid ${ADM.border}`,
-            borderRadius: 8,
-            padding: '8px 11px',
-            fontSize: 12,
-            color: ADM.text,
-            outline: 'none',
-            fontFamily: 'var(--font-body)',
-        },
-        btn: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '7px 14px',
-            fontSize: 12,
-            fontWeight: 600,
-            borderRadius: 8,
-            border: 'none',
-            cursor: 'pointer',
-            fontFamily: 'var(--font-display)',
-            letterSpacing: '-0.01em',
-            transition: 'all 0.15s',
-        },
-        }
-
-        /* ── Metric Card ──────────────────────────────────────────────── */
-        function MetricCard({ label, value, sub, icon: Icon, color, loading }) {
-        return (
-            <div style={{ ...S.card, display:'flex', flexDirection:'column', gap:12, borderTop:`2px solid ${color}` }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                <span style={S.label}>{label}</span>
+// ── Metric card ──────────────────────────────────────────────────────────────
+function Metric({ label, value, icon:Icon, color, sub, loading }) {
+    return (
+        <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:12, padding:'18px 20px', borderTop:`3px solid ${color}`, boxShadow:'0 1px 4px rgba(15,23,42,0.05)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                <span style={{ fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.08em', color:'#94A3B8' }}>{label}</span>
                 <div style={{ width:30, height:30, borderRadius:8, background:`${color}18`, display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <Icon size={14} style={{ color }}/>
+                    <Icon size={14} style={{ color }}/>
                 </div>
             </div>
             {loading
-                ? <div style={{ height:32, background:ADM.elevated, borderRadius:6 }}/>
-                : <div>
-                    <p style={{ fontSize:30, fontWeight:800, color:ADM.text, lineHeight:1, fontFamily:'var(--font-display)', letterSpacing:'-0.04em', margin:0 }}>{value ?? 0}</p>
-                    {sub && <p style={{ ...S.subtext, marginTop:5 }}>{sub}</p>}
-                </div>
+                ? <div style={{ height:34, background:'#F0F4F8', borderRadius:6 }}/>
+                : <>
+                    <p style={{ fontSize:30, fontWeight:800, color:'#0F172A', lineHeight:1, fontFamily:'var(--font-display)', letterSpacing:'-0.04em', margin:0 }}>{value ?? 0}</p>
+                    {sub && <p style={{ fontSize:11, color:'#94A3B8', margin:'5px 0 0' }}>{sub}</p>}
+                </>
             }
-            </div>
-        )
-        }
+        </div>
+    )
+}
 
-        /* ── Role Pill ────────────────────────────────────────────────── */
-        function RolePill({ role }) {
-        const r = ROLE[role] || ROLE.student
-        return (
-            <span style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:99, background:r.bg, color:r.text, textTransform:'capitalize' }}>
-            <span style={{ width:4, height:4, borderRadius:'50%', background:r.dot }}/>
-            {r.label}
-            </span>
-        )
-        }
+function RoleBadge({ role }) {
+    const s = ROLE_STYLE[role] || ROLE_STYLE.student
+    return (
+        <span style={{ fontSize:10, fontWeight:600, padding:'2px 8px', borderRadius:99, background:s.bg, color:s.color, textTransform:'capitalize' }}>
+            {s.label}
+        </span>
+    )
+}
 
-        /* ── Sortable Table Header ────────────────────────────────────── */
-        function SortTh({ field, label, sortKey, sortDir, onSort }) {
-        const active = sortKey === field
-        return (
-            <th onClick={() => onSort(field)} style={{ cursor:'pointer', userSelect:'none' }}>
-            <span style={{ display:'inline-flex', alignItems:'center', gap:4, color: active ? ADM.accent : ADM.textSub }}>
-                {label}
-                {active
-                ? (sortDir==='asc' ? <ChevronUp size={10}/> : <ChevronDown size={10}/>)
-                : <Minus size={8} style={{ opacity:0.35 }}/>}
-            </span>
-            </th>
-        )
-        }
+// ── Add Teacher modal ────────────────────────────────────────────────────────
+function AddTeacherModal({ onClose, onCreated }) {
+    const [form, setForm] = useState({ full_name:'', username:'', email:'', password:'', subject:'' })
+    const [show, setShow] = useState(false)
+    const [saving, setSaving] = useState(false)
+    const [errors, setErrors] = useState({})
+    const toast = useToast()
 
-        /* ── Mini Bar ─────────────────────────────────────────────────── */
-        function MiniBar({ value, max, color }) {
-        const pct = max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 2
-        return (
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-            <div style={{ flex:1, height:5, background:ADM.elevated, borderRadius:99, overflow:'hidden' }}>
-                <div style={{ width:`${pct}%`, height:'100%', background:color, borderRadius:99, transition:'width 0.6s ease' }}/>
-            </div>
-            <span style={{ fontSize:10, color:ADM.textSub, minWidth:28, textAlign:'right' }}>{Math.round((value/(max||1))*100)}%</span>
-            </div>
-        )
-        }
+    function set(k,v) { setForm(f=>({...f,[k]:v})); setErrors(e=>({...e,[k]:null})) }
 
-        /* ═══════════════════════════════════════════════════════════════
-        OVERVIEW TAB
-        ═══════════════════════════════════════════════════════════════ */
-        function OverviewTab({ users, loading, onRefresh }) {
-        const counts = {
-            total:     users.length,
-            students:  users.filter(u => u.role==='student').length,
-            teachers:  users.filter(u => u.role==='teacher').length,
-            admins:    users.filter(u => u.role==='admin').length,
-            active:    users.filter(u => u.is_active!==false).length,
-            suspended: users.filter(u => u.is_active===false).length,
-        }
+    async function submit() {
+        const e = {}
+        if (!form.full_name.trim()) e.full_name = 'Required'
+        if (!form.username.trim())  e.username  = 'Required'
+        if (!form.email.trim())     e.email     = 'Required'
+        if (!form.password)         e.password  = 'Required (min 8 chars)'
+        else if (form.password.length < 8) e.password = 'Min 8 characters'
+        if (Object.keys(e).length) { setErrors(e); return }
+        setSaving(true)
+        try {
+            const created = await authService.createTeacher({
+                ...form,
+                role: 'teacher',
+            })
+            toast.success(`Teacher account created for ${form.full_name}`)
+            onCreated(created)
+            onClose()
+        } catch(err) {
+            toast.error(apiError(err))
+        } finally { setSaving(false) }
+    }
 
-        const recent = [...users]
-            .sort((a,b) => (b.date_joined||'').localeCompare(a.date_joined||''))
-            .slice(0, 8)
+    const inp = (k, placeholder, type='text') => (
+        <div>
+            <input
+                type={type}
+                value={form[k]}
+                onChange={e => set(k, e.target.value)}
+                placeholder={placeholder}
+                style={{ width:'100%', boxSizing:'border-box', padding:'9px 12px', fontSize:13, border:`1.5px solid ${errors[k]?'#DC2626':'#E2E8F0'}`, borderRadius:8, background:'#F8FAFC', color:'#0F172A', outline:'none', fontFamily:'var(--font-body)' }}
+            />
+            {errors[k] && <p style={{ fontSize:11, color:'#DC2626', margin:'3px 0 0' }}>{errors[k]}</p>}
+        </div>
+    )
 
-        const roleRows = [
-            { label:'Students',  val:counts.students,  color:ADM.accent  },
-            { label:'Teachers',  val:counts.teachers,  color:ADM.purple  },
-            { label:'Admins',    val:counts.admins,    color:ADM.red     },
-            { label:'Active',    val:counts.active,    color:ADM.green   },
-            { label:'Suspended', val:counts.suspended, color:ADM.amber   },
-        ]
-
-        return (
-            <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-            {/* KPI row */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:14 }}>
-                <MetricCard label="Total Users"    value={counts.total}    icon={Users}         color={ADM.accent}  sub="All registered"  loading={loading}/>
-                <MetricCard label="Students"       value={counts.students} icon={BookOpen}      color={ADM.accent}  sub="Enrolled"        loading={loading}/>
-                <MetricCard label="Teachers"       value={counts.teachers} icon={GraduationCap} color={ADM.purple}  sub="Faculty"         loading={loading}/>
-                <MetricCard label="Administrators" value={counts.admins}   icon={ShieldCheck}   color={ADM.red}     sub="System admins"   loading={loading}/>
-            </div>
-
-            {/* Distribution + Recent registrations */}
-            <div style={{ display:'grid', gridTemplateColumns:'300px 1fr', gap:14, flexWrap:'wrap' }}>
-
-                {/* Distribution */}
-                <div style={S.card}>
-                <p style={{ ...S.label, marginBottom:18 }}>User Distribution</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:13 }}>
-                    {roleRows.map(row => (
-                    <div key={row.label}>
-                        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                        <span style={{ fontSize:11, color:ADM.textSub }}>{row.label}</span>
-                        <span style={{ fontSize:11, fontWeight:600, color:ADM.text }}>{row.val}</span>
-                        </div>
-                        <MiniBar value={row.val} max={counts.total||1} color={row.color}/>
+    return (
+        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(15,23,42,0.4)', backdropFilter:'blur(3px)', padding:16 }}>
+            <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'0 20px 60px rgba(15,23,42,0.22)', overflow:'hidden' }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 22px', borderBottom:'1px solid #E2E8F0', background:'linear-gradient(135deg,#1E3A5F,#2563EB)' }}>
+                    <div>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#fff', margin:0 }}>Create Teacher Account</h3>
+                        <p style={{ fontSize:11, color:'rgba(255,255,255,0.65)', margin:'2px 0 0' }}>Credentials will be shared with the teacher directly</p>
                     </div>
-                    ))}
-                </div>
-                <div style={{ marginTop:20, paddingTop:16, borderTop:`1px solid ${ADM.border}` }}>
-                    <p style={{ ...S.label, marginBottom:10 }}>Platform Health</p>
-                    {[
-                    { dot:ADM.green, label:'Active accounts', val:counts.active    },
-                    { dot:ADM.amber, label:'Suspended',       val:counts.suspended },
-                    ].map(i => (
-                    <div key={i.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:7 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                        <Circle size={6} fill={i.dot} style={{ color:i.dot }}/>
-                        <span style={{ fontSize:11, color:ADM.textSub }}>{i.label}</span>
-                        </div>
-                        <span style={{ fontSize:11, fontWeight:600, color:ADM.text }}>{i.val}</span>
-                    </div>
-                    ))}
-                </div>
+                    <button onClick={onClose} style={{ background:'rgba(255,255,255,0.15)', border:'none', cursor:'pointer', padding:7, borderRadius:8, color:'#fff', display:'flex' }}><X size={16}/></button>
                 </div>
 
-                {/* Recent registrations */}
-                <div style={S.cardFlat}>
-                <div style={{ padding:'16px 20px', borderBottom:`1px solid ${ADM.border}`, display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <Clock size={13} style={{ color:ADM.textSub }}/>
-                    <p style={S.heading}>Recent Registrations</p>
+                <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:12 }}>
+                    {inp('full_name', 'Full Name *')}
+                    {inp('username',  'Username *')}
+                    {inp('email',     'Email Address *', 'email')}
+                    <div style={{ position:'relative' }}>
+                        <input
+                            type={show ? 'text' : 'password'}
+                            value={form.password}
+                            onChange={e => set('password', e.target.value)}
+                            placeholder="Temporary Password * (min 8 chars)"
+                            style={{ width:'100%', boxSizing:'border-box', padding:'9px 36px 9px 12px', fontSize:13, border:`1.5px solid ${errors.password?'#DC2626':'#E2E8F0'}`, borderRadius:8, background:'#F8FAFC', color:'#0F172A', outline:'none', fontFamily:'var(--font-body)' }}
+                        />
+                        <button type="button" onClick={() => setShow(s=>!s)}
+                            style={{ position:'absolute', right:10, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#94A3B8', display:'flex' }}>
+                            {show ? <EyeOff size={14}/> : <Eye size={14}/>}
+                        </button>
+                        {errors.password && <p style={{ fontSize:11, color:'#DC2626', margin:'3px 0 0' }}>{errors.password}</p>}
                     </div>
-                    <button onClick={onRefresh} style={{ ...S.btn, background:'none', color:ADM.textSub, padding:'4px 8px', fontSize:11 }}
-                    onMouseEnter={e=>e.currentTarget.style.color=ADM.text}
-                    onMouseLeave={e=>e.currentTarget.style.color=ADM.textSub}>
-                    <RefreshCw size={10}/> Refresh
+                    {inp('subject', 'Subject / Department (optional)')}
+
+                    <div style={{ background:'#FEF3C7', border:'1px solid #FDE68A', borderRadius:8, padding:'9px 12px' }}>
+                        <p style={{ fontSize:11, color:'#92400E', margin:0 }}>
+                            <strong>Note:</strong> Share these credentials with the teacher privately. They should change their password on first login.
+                        </p>
+                    </div>
+                </div>
+
+                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid #E2E8F0' }}>
+                    <button onClick={onClose} className="btn-secondary">Cancel</button>
+                    <button onClick={submit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
+                        {saving ? 'Creating…' : <><GraduationCap size={13}/> Create Teacher</>}
                     </button>
                 </div>
+            </div>
+        </div>
+    )
+}
+
+// ── User list table (reused for teachers and students) ───────────────────────
+function UserTable({ users, loading, currentUser, onDelete, onSuspend, emptyMsg }) {
+    const [search, setSearch] = useState('')
+
+    const filtered = useMemo(() => {
+        if (!search.trim()) return users
+        const q = search.toLowerCase()
+        return users.filter(u => [u.username, u.full_name||'', u.email||''].some(v => v.toLowerCase().includes(q)))
+    }, [users, search])
+
+    return (
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <div style={{ position:'relative' }}>
+                <Search size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#94A3B8', pointerEvents:'none' }}/>
+                <input type="search" value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Search…"
+                    style={{ width:'100%', boxSizing:'border-box', paddingLeft:32, padding:'9px 12px 9px 32px', fontSize:13, border:'1.5px solid #E2E8F0', borderRadius:8, background:'#F8FAFC', color:'#0F172A', outline:'none', fontFamily:'var(--font-body)' }}/>
+            </div>
+
+            <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:12, overflow:'hidden', boxShadow:'0 1px 4px rgba(15,23,42,0.05)' }}>
                 {loading ? (
                     <div style={{ padding:24 }}><LoadingBlock/></div>
-                ) : recent.length===0 ? (
-                    <div style={{ padding:'44px 16px', textAlign:'center' }}>
-                    <Users size={22} style={{ color:ADM.border, margin:'0 auto 8px' }}/>
-                    <p style={{ ...S.subtext, textAlign:'center' }}>No users yet.</p>
+                ) : filtered.length === 0 ? (
+                    <div style={{ padding:'40px 16px', textAlign:'center' }}>
+                        <Users size={24} style={{ color:'#CBD5E1', margin:'0 auto 10px', display:'block' }}/>
+                        <p style={{ fontSize:13, color:'#94A3B8' }}>{emptyMsg || 'No users found'}</p>
                     </div>
-                ) : recent.map((u,i) => {
-                    const r    = ROLE[u.role]||ROLE.student
-                    const init = (u.full_name||u.username||'?').charAt(0).toUpperCase()
-                    return (
-                    <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 20px', borderBottom: i<recent.length-1 ? `1px solid ${ADM.borderSub}` : 'none' }}>
-                        <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, background:r.bg, color:r.text, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, fontFamily:'var(--font-display)' }}>
-                        {init}
-                        </div>
-                        <div style={{ flex:1, minWidth:0 }}>
-                        <p style={{ fontSize:13, fontWeight:600, color:ADM.text, margin:0, lineHeight:1.3 }}>{u.full_name||u.username}</p>
-                        <p style={{ fontSize:10, color:ADM.textMuted, margin:0 }}>@{u.username}</p>
-                        </div>
-                        <RolePill role={u.role}/>
-                        <span style={{ fontSize:10, color:ADM.textMuted, flexShrink:0 }}>
-                        {u.date_joined ? new Date(u.date_joined).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'}
-                        </span>
-                    </div>
-                    )
-                })}
-                </div>
-            </div>
-
-            {/* System status */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))', gap:14 }}>
-                {[
-                { icon:Database, label:'Database',  status:'Operational', color:ADM.green  },
-                { icon:Cpu,      label:'ML Engine', status:'Running',     color:ADM.green  },
-                { icon:Globe,    label:'API Server',status:'Healthy',     color:ADM.green  },
-                { icon:Shield,   label:'Auth Layer',status:'Secured',     color:ADM.green  },
-                ].map(item => (
-                <div key={item.label} style={{ ...S.card, padding:'14px 18px', display:'flex', alignItems:'center', gap:12 }}>
-                    <div style={{ width:34, height:34, borderRadius:9, background:ADM.elevated, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <item.icon size={15} style={{ color:ADM.textSub }}/>
-                    </div>
-                    <div>
-                    <p style={{ fontSize:12, fontWeight:600, color:ADM.text, margin:0 }}>{item.label}</p>
-                    <div style={{ display:'flex', alignItems:'center', gap:5, marginTop:3 }}>
-                        <Circle size={6} fill={item.color} style={{ color:item.color }}/>
-                        <span style={{ fontSize:10, color:item.color }}>{item.status}</span>
-                    </div>
-                    </div>
-                </div>
-                ))}
-            </div>
-            </div>
-        )
-        }
-
-        /* ═══════════════════════════════════════════════════════════════
-        USERS TAB
-        ═══════════════════════════════════════════════════════════════ */
-        function UsersTab({ users, loading, currentUser, onRefresh, onPromote, onDelete, onSuspend }) {
-        const [search,       setSearch]       = useState('')
-        const [roleFilter,   setRoleFilter]   = useState('')
-        const [statusFilter, setStatusFilter] = useState('')
-        const [sortKey,      setSortKey]      = useState('joined')
-        const [sortDir,      setSortDir]      = useState('desc')
-        const [page,         setPage]         = useState(1)
-        const PER_PAGE = 12
-
-        function handleSort(field) {
-            if (sortKey===field) setSortDir(d=>d==='asc'?'desc':'asc')
-            else { setSortKey(field); setSortDir('asc') }
-        }
-
-        const filtered = users
-            .filter(u => {
-            if (roleFilter && u.role!==roleFilter) return false
-            if (statusFilter==='active'    && u.is_active===false) return false
-            if (statusFilter==='suspended' && u.is_active!==false) return false
-            if (search) {
-                const q = search.toLowerCase()
-                return [u.username,u.full_name||'',u.email||''].some(v=>v.toLowerCase().includes(q))
-            }
-            return true
-            })
-            .sort((a,b) => {
-            let va, vb
-            if      (sortKey==='name')   { va=(a.full_name||a.username).toLowerCase(); vb=(b.full_name||b.username).toLowerCase() }
-            else if (sortKey==='role')   { va=a.role; vb=b.role }
-            else                         { va=a.date_joined||''; vb=b.date_joined||'' }
-            const c = va<vb?-1:va>vb?1:0
-            return sortDir==='asc'?c:-c
-            })
-
-        const totalPages = Math.max(1, Math.ceil(filtered.length/PER_PAGE))
-        const pageUsers  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE)
-        const selStyle   = { ...S.input, cursor:'pointer', padding:'7px 10px' }
-
-        return (
-            <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            <style>{`
-                .adm-table { min-width:580px; border-collapse:collapse; width:100%; }
-                .adm-table th { background:${ADM.elevated}; color:${ADM.textSub}; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:10px 14px; text-align:left; border-bottom:1px solid ${ADM.border}; white-space:nowrap; }
-                .adm-table td { padding:11px 14px; font-size:12px; color:${ADM.text}; border-bottom:1px solid ${ADM.borderSub}; vertical-align:middle; white-space:nowrap; }
-                .adm-table tbody tr:hover td { background:${ADM.elevated}; }
-                .adm-table tbody tr:last-child td { border-bottom:none; }
-                .adm-act { width:28px; height:28px; border-radius:7px; background:none; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.12s; }
-                @media(max-width:700px){ .adm-sm { display:none !important; } }
-                @media(max-width:900px){ .adm-md { display:none !important; } }
-            `}</style>
-
-            {/* Mini stats */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12 }}>
-                {[
-                { label:'Total',     val:users.length,                                color:ADM.accent  },
-                { label:'Students',  val:users.filter(u=>u.role==='student').length,  color:ADM.accent  },
-                { label:'Teachers',  val:users.filter(u=>u.role==='teacher').length,  color:ADM.purple  },
-                { label:'Suspended', val:users.filter(u=>u.is_active===false).length, color:ADM.amber   },
-                ].map(s => (
-                <div key={s.label} style={{ ...S.card, padding:'14px 16px', borderTop:`2px solid ${s.color}` }}>
-                    <p style={S.label}>{s.label}</p>
-                    <p style={{ fontSize:24, fontWeight:800, color:ADM.text, fontFamily:'var(--font-display)', letterSpacing:'-0.03em', margin:'6px 0 0' }}>
-                    {loading ? '—' : s.val}
-                    </p>
-                </div>
-                ))}
-            </div>
-
-            {/* Toolbar */}
-            <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-                <div style={{ position:'relative', flex:1, minWidth:200 }}>
-                <Search size={12} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:ADM.textMuted, pointerEvents:'none' }}/>
-                <input type="search" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}
-                    placeholder="Search users…"
-                    style={{ ...S.input, paddingLeft:30, width:'100%', boxSizing:'border-box' }}
-                    aria-label="Search users"/>
-                </div>
-                <select value={roleFilter} onChange={e=>{setRoleFilter(e.target.value);setPage(1)}} style={selStyle} aria-label="Filter by role">
-                <option value="">All roles</option>
-                <option value="student">Student</option>
-                <option value="teacher">Teacher</option>
-                <option value="admin">Admin</option>
-                </select>
-                <select value={statusFilter} onChange={e=>{setStatusFilter(e.target.value);setPage(1)}} style={selStyle} aria-label="Filter by status">
-                <option value="">All status</option>
-                <option value="active">Active</option>
-                <option value="suspended">Suspended</option>
-                </select>
-                <button onClick={onRefresh} style={{ ...S.btn, background:ADM.elevated, color:ADM.textSub, border:`1px solid ${ADM.border}` }}
-                onMouseEnter={e=>e.currentTarget.style.color=ADM.text}
-                onMouseLeave={e=>e.currentTarget.style.color=ADM.textSub}>
-                <RefreshCw size={11}/> Refresh
-                </button>
-                <span style={{ ...S.subtext, marginLeft:'auto' }}>{filtered.length} user{filtered.length!==1?'s':''}</span>
-            </div>
-
-            {/* Table */}
-            <div style={S.cardFlat}>
-                {loading ? (
-                <div style={{ padding:36 }}><LoadingBlock/></div>
-                ) : filtered.length===0 ? (
-                <div style={{ padding:'48px 16px', textAlign:'center' }}>
-                    <AlertCircle size={24} style={{ color:ADM.border, margin:'0 auto 10px' }}/>
-                    <p style={{ ...S.subtext, textAlign:'center' }}>No users match your filters.</p>
-                </div>
                 ) : (
-                <div style={{ overflowX:'auto' }}>
-                    <table className="adm-table">
-                    <thead>
-                        <tr>
-                        <th style={{ width:36 }}>#</th>
-                        <SortTh field="name"   label="User"   sortKey={sortKey} sortDir={sortDir} onSort={handleSort}/>
-                        <th className="adm-sm">Username</th>
-                        <th className="adm-md">Email</th>
-                        <SortTh field="role"   label="Role"   sortKey={sortKey} sortDir={sortDir} onSort={handleSort}/>
-                        <SortTh field="joined" label="Joined" sortKey={sortKey} sortDir={sortDir} onSort={handleSort}/>
-                        <th>Change Role</th>
-                        <th style={{ width:80 }}>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {pageUsers.map((u,i) => {
-                        const r    = ROLE[u.role]||ROLE.student
-                        const init = (u.full_name||u.username||'?').charAt(0).toUpperCase()
-                        const self = u.id===currentUser?.id
-                        return (
-                            <tr key={u.id} style={{ opacity: u.is_active===false ? 0.5 : 1 }}>
-                            <td style={{ color:ADM.textMuted, fontSize:10, fontWeight:600 }}>{(page-1)*PER_PAGE+i+1}</td>
-                            <td>
-                                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                                <div style={{ width:32, height:32, borderRadius:'50%', flexShrink:0, background:r.bg, color:r.text, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, fontFamily:'var(--font-display)' }}>
-                                    {init}
-                                </div>
-                                <div>
-                                    <p style={{ fontSize:13, fontWeight:600, color:ADM.text, margin:0, display:'flex', alignItems:'center', gap:5 }}>
-                                    {u.full_name||'—'}
-                                    {u.is_active===false && (
-                                        <span style={{ fontSize:9, fontWeight:700, background:ADM.amberBg, color:ADM.amber, padding:'1px 5px', borderRadius:99, textTransform:'uppercase' }}>Suspended</span>
-                                    )}
-                                    </p>
-                                    <p style={{ fontSize:10, color:ADM.textMuted, margin:0 }}>
-                                    {u.date_joined ? new Date(u.date_joined).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—'}
-                                    </p>
-                                </div>
-                                </div>
-                            </td>
-                            <td className="adm-sm" style={{ color:ADM.textSub }}>@{u.username}</td>
-                            <td className="adm-md" style={{ color:ADM.textSub }}>{u.email||'—'}</td>
-                            <td><RolePill role={u.role}/></td>
-                            <td style={{ color:ADM.textMuted, fontSize:11 }}>{u.date_joined?.split('T')[0]||'—'}</td>
-                            <td>
-                                {!self && u.role!=='admin' && (
-                                <select defaultValue="" key={u.id+u.role}
-                                    onChange={e=>{if(e.target.value){onPromote(u,e.target.value);e.target.value=''}}}
-                                    style={{ ...S.input, padding:'4px 8px', fontSize:11, cursor:'pointer' }}
-                                    aria-label={`Change role for ${u.username}`}>
-                                    <option value="" disabled>Role…</option>
-                                    {u.role!=='student' && <option value="student">Student</option>}
-                                    {u.role!=='teacher' && <option value="teacher">Teacher</option>}
-                                    {u.role!=='admin'   && <option value="admin">Admin</option>}
-                                </select>
-                                )}
-                            </td>
-                            <td>
-                                {!self && (
-                                <div style={{ display:'flex', gap:4 }}>
-                                    <button className="adm-act" onClick={()=>onSuspend(u)}
-                                    title={u.is_active===false?'Unsuspend':'Suspend'}
-                                    style={{ color:ADM.amber }}
-                                    onMouseEnter={e=>e.currentTarget.style.background=ADM.amberBg}
-                                    onMouseLeave={e=>e.currentTarget.style.background='none'}>
-                                    {u.is_active===false ? <UserCheck size={13}/> : <UserX size={13}/>}
-                                    </button>
-                                    <button className="adm-act" onClick={()=>onDelete(u)}
-                                    title="Delete user"
-                                    style={{ color:ADM.red }}
-                                    onMouseEnter={e=>e.currentTarget.style.background=ADM.redBg}
-                                    onMouseLeave={e=>e.currentTarget.style.background='none'}>
-                                    <Trash2 size={13}/>
-                                    </button>
-                                </div>
-                                )}
-                            </td>
-                            </tr>
-                        )
-                        })}
-                    </tbody>
-                    </table>
-                </div>
-                )}
-
-                {/* Pagination */}
-                {!loading && filtered.length>PER_PAGE && (
-                <div style={{ padding:'10px 16px', borderTop:`1px solid ${ADM.border}`, display:'flex', alignItems:'center', justifyContent:'space-between', gap:8, flexWrap:'wrap' }}>
-                    <p style={S.subtext}>Page {page} of {totalPages} · {filtered.length} users</p>
-                    <div style={{ display:'flex', gap:4 }}>
-                    <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1}
-                        style={{ ...S.btn, background:ADM.elevated, color:ADM.textSub, padding:'5px 10px', opacity:page===1?0.4:1 }}>←</button>
-                    {Array.from({length:totalPages},(_,i)=>i+1)
-                        .filter(n=>n===1||n===totalPages||Math.abs(n-page)<=1)
-                        .reduce((acc,n,idx,arr)=>{ if(idx>0&&n-arr[idx-1]>1) acc.push('…'); acc.push(n); return acc },[])
-                        .map((item,idx) =>
-                        typeof item==='string'
-                            ? <span key={`e${idx}`} style={{ padding:'5px 4px', fontSize:10, color:ADM.textMuted }}>…</span>
-                            : <button key={item} onClick={()=>setPage(item)}
-                                style={{ ...S.btn, padding:'5px 9px', background:page===item?ADM.accent:ADM.elevated, color:page===item?'#fff':ADM.textSub, fontSize:12 }}>
-                                {item}
-                            </button>
-                        )}
-                    <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages}
-                        style={{ ...S.btn, background:ADM.elevated, color:ADM.textSub, padding:'5px 10px', opacity:page===totalPages?0.4:1 }}>→</button>
+                    <div style={{ overflowX:'auto' }}>
+                        <table style={{ width:'100%', borderCollapse:'collapse', minWidth:520 }}>
+                            <thead>
+                                <tr>
+                                    {['Name','Username','Email','Status','Actions'].map(h => (
+                                        <th key={h} style={{ padding:'10px 14px', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:'0.07em', color:'#94A3B8', background:'#F8FAFC', textAlign:'left', borderBottom:'1px solid #E2E8F0', whiteSpace:'nowrap' }}>
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map((u, i) => {
+                                    const isMe = currentUser?.id === u.id
+                                    const isSuspended = u.is_active === false
+                                    const init = (u.full_name||u.username||'?').charAt(0).toUpperCase()
+                                    return (
+                                        <tr key={u.id} style={{ borderBottom: i < filtered.length-1 ? '1px solid #F1F5F9' : 'none' }}>
+                                            <td style={{ padding:'11px 14px' }}>
+                                                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                                    <div style={{ width:32, height:32, borderRadius:'50%', background:A.blueBg, color:A.blue, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>
+                                                        {init}
+                                                    </div>
+                                                    <div>
+                                                        <p style={{ fontSize:13, fontWeight:600, color:'#0F172A', margin:0 }}>{u.full_name || u.username}</p>
+                                                        <RoleBadge role={u.role}/>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td style={{ padding:'11px 14px', fontSize:12, color:'#475569' }}>@{u.username}</td>
+                                            <td style={{ padding:'11px 14px', fontSize:12, color:'#475569' }}>{u.email || '—'}</td>
+                                            <td style={{ padding:'11px 14px' }}>
+                                                {isSuspended ? (
+                                                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:A.amberBg, color:A.amber }}>Suspended</span>
+                                                ) : (
+                                                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:A.greenBg, color:A.green }}>Active</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding:'11px 14px' }}>
+                                                {!isMe && (
+                                                    <div style={{ display:'flex', gap:6 }}>
+                                                        <button onClick={() => onSuspend(u)}
+                                                            style={{ width:28, height:28, borderRadius:7, border:'none', background:isSuspended?A.greenBg:A.amberBg, cursor:'pointer', color:isSuspended?A.green:A.amber, display:'flex', alignItems:'center', justifyContent:'center' }}
+                                                            title={isSuspended ? 'Unsuspend' : 'Suspend'}>
+                                                            {isSuspended ? <UserCheck size={13}/> : <UserX size={13}/>}
+                                                        </button>
+                                                        <button onClick={() => onDelete(u)}
+                                                            style={{ width:28, height:28, borderRadius:7, border:'none', background:A.redBg, cursor:'pointer', color:A.red, display:'flex', alignItems:'center', justifyContent:'center' }}
+                                                            title="Delete">
+                                                            <Trash2 size={13}/>
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </div>
-                </div>
                 )}
             </div>
-            </div>
-        )
-        }
+            <p style={{ fontSize:11, color:'#94A3B8', margin:0 }}>{filtered.length} {filtered.length===1?'user':'users'}</p>
+        </div>
+    )
+}
 
-        /* ═══════════════════════════════════════════════════════════════
-        ANALYTICS TAB
-        ═══════════════════════════════════════════════════════════════ */
-        function AnalyticsTab({ users }) {
-        const total = users.length || 1
-
-        const roleData = [
-            { label:'Students', val:users.filter(u=>u.role==='student').length, color:ADM.accent  },
-            { label:'Teachers', val:users.filter(u=>u.role==='teacher').length, color:ADM.purple  },
-            { label:'Admins',   val:users.filter(u=>u.role==='admin').length,   color:ADM.red     },
-        ].map(r => ({ ...r, pct:Math.round((r.val/total)*100) }))
-
-        const monthlyJoins = useMemo(() => {
-            const buckets = {}
-            const now = new Date()
-            for (let i=5; i>=0; i--) {
-            const d   = new Date(now.getFullYear(), now.getMonth()-i, 1)
-            const key = d.toLocaleDateString('en-US',{month:'short',year:'2-digit'})
-            buckets[key] = 0
-            }
-            users.forEach(u => {
-            if (!u.date_joined) return
-            const key = new Date(u.date_joined).toLocaleDateString('en-US',{month:'short',year:'2-digit'})
-            if (key in buckets) buckets[key]++
-            })
-            return Object.entries(buckets).map(([label,val]) => ({label,val}))
-        }, [users])
-
-        const maxJoin = Math.max(...monthlyJoins.map(m=>m.val), 1)
-
-        return (
-            <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-            {/* KPIs */}
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))', gap:14 }}>
-                {[
-                { label:'Registered',    val:users.length,                                icon:Users,        color:ADM.accent  },
-                { label:'Active',        val:users.filter(u=>u.is_active!==false).length, icon:Activity,     color:ADM.green   },
-                { label:'Faculty',       val:users.filter(u=>u.role==='teacher').length,  icon:GraduationCap,color:ADM.purple  },
-                { label:'Suspended',     val:users.filter(u=>u.is_active===false).length, icon:AlertCircle,  color:ADM.amber   },
-                ].map(k => (
-                <div key={k.label} style={{ ...S.card, borderTop:`2px solid ${k.color}` }}>
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                    <p style={S.label}>{k.label}</p>
-                    <k.icon size={14} style={{ color:k.color }}/>
-                    </div>
-                    <p style={{ fontSize:26, fontWeight:800, color:ADM.text, fontFamily:'var(--font-display)', letterSpacing:'-0.04em', margin:0 }}>{k.val}</p>
-                </div>
-                ))}
-            </div>
-
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14 }}>
-                {/* Monthly bar chart */}
-                <div style={S.card}>
-                <p style={{ ...S.label, marginBottom:20 }}>Monthly Registrations (Last 6 Months)</p>
-                <div style={{ display:'flex', alignItems:'flex-end', gap:10, height:100 }}>
-                    {monthlyJoins.map(m => {
-                    const h = maxJoin>0 ? Math.max(4, Math.round((m.val/maxJoin)*90)) : 4
-                    return (
-                        <div key={m.label} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:5 }}>
-                        <span style={{ fontSize:10, color:ADM.textSub, fontWeight:600, minHeight:14 }}>{m.val||''}</span>
-                        <div style={{ width:'100%', height:`${h}%`, minHeight:4, background:ADM.accent, borderRadius:'4px 4px 2px 2px', opacity:0.75, transition:'height 0.4s ease' }}/>
-                        <span style={{ fontSize:9, color:ADM.textMuted, textAlign:'center', lineHeight:1.2 }}>{m.label}</span>
-                        </div>
-                    )
-                    })}
-                </div>
-                </div>
-
-                {/* Role distribution */}
-                <div style={S.card}>
-                <p style={{ ...S.label, marginBottom:20 }}>Role Distribution</p>
-                <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                    {roleData.map(r => (
-                    <div key={r.label}>
-                        <div style={{ display:'flex', justifyContent:'space-between', marginBottom:6 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                            <Circle size={6} fill={r.color} style={{ color:r.color }}/>
-                            <span style={{ fontSize:12, color:ADM.text }}>{r.label}</span>
-                        </div>
-                        <span style={{ fontSize:12, fontWeight:600, color:ADM.text }}>
-                            {r.val} <span style={{ color:ADM.textMuted, fontWeight:400 }}>({r.pct}%)</span>
-                        </span>
-                        </div>
-                        <div style={{ height:6, background:ADM.elevated, borderRadius:99, overflow:'hidden' }}>
-                        <div style={{ width:`${r.pct}%`, height:'100%', background:r.color, borderRadius:99, transition:'width 0.6s ease' }}/>
-                        </div>
-                    </div>
-                    ))}
-                </div>
-                <div style={{ marginTop:20, paddingTop:16, borderTop:`1px solid ${ADM.border}` }}>
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
-                    {[
-                        { label:'Active Rate',  val:`${Math.round((users.filter(u=>u.is_active!==false).length/(users.length||1))*100)}%`, color:ADM.green },
-                        { label:'Suspend Rate', val:`${Math.round((users.filter(u=>u.is_active===false).length/(users.length||1))*100)}%`, color:ADM.amber },
-                    ].map(m => (
-                        <div key={m.label} style={{ background:ADM.elevated, borderRadius:8, padding:'10px 12px' }}>
-                        <p style={S.label}>{m.label}</p>
-                        <p style={{ fontSize:20, fontWeight:700, color:m.color, fontFamily:'var(--font-display)', margin:'6px 0 0' }}>{m.val}</p>
-                        </div>
-                    ))}
-                    </div>
-                </div>
-                </div>
-            </div>
-
-            {/* ML system info banner */}
-            <div style={{ ...S.card, borderLeft:`3px solid ${ADM.purple}`, display:'flex', gap:14, alignItems:'flex-start' }}>
-                <div style={{ width:36, height:36, borderRadius:9, background:ADM.purpleBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                <Cpu size={16} style={{ color:ADM.purple }}/>
-                </div>
-                <div>
-                <p style={{ ...S.heading, marginBottom:5 }}>ML Recommendation Engine</p>
-                <p style={{ ...S.subtext, lineHeight:1.7 }}>
-                    TaskOra runs three backend ML algorithms:{' '}
-                    <strong style={{ color:ADM.text }}>Collaborative Filtering</strong> (cosine similarity for task recommendations),{' '}
-                    <strong style={{ color:ADM.text }}>K-Means Clustering</strong> (student performance grouping), and{' '}
-                    <strong style={{ color:ADM.text }}>Isolation Forest</strong> (anomaly/outlier detection).
-                    All computation is server-side — the frontend only visualises results.
-                </p>
-                </div>
-            </div>
-            </div>
-        )
-        }
-
-
-    /* ═══════════════════════════════════════════════════════════════
-    ACTIVITY MONITORING TAB  (replaces Platform/Settings tab)
-    Shows real activity feed, user counts, assignment monitoring.
-    NO delete-system option anywhere.
-    ═══════════════════════════════════════════════════════════════ */
-    function ActivityTab({ users }) {
-    const activities = useMemo(() => {
-        const items = []
-        const recent = [...users]
-        .sort((a,b) => (b.date_joined||'').localeCompare(a.date_joined||''))
-        .slice(0, 15)
-        recent.forEach(u => {
-        if (u.date_joined) {
-            items.push({
-            id: `join-${u.id}`,
-            label: `${u.full_name || u.username} joined as ${u.role}`,
-            time: u.date_joined,
-            color: u.role === 'teacher' ? ADM.purple : ADM.accent,
-            })
-        }
-        if (u.is_active === false) {
-            items.push({
-            id: `suspend-${u.id}`,
-            label: `${u.full_name || u.username} account suspended`,
-            time: u.date_joined,
-            color: ADM.amber,
-            })
-        }
-        })
-        return items.slice(0, 20)
-    }, [users])
-
+// ── Overview tab ─────────────────────────────────────────────────────────────
+function OverviewTab({ users, loading }) {
     const counts = {
         total:     users.length,
-        students:  users.filter(u => u.role === 'student').length,
-        teachers:  users.filter(u => u.role === 'teacher').length,
-        suspended: users.filter(u => u.is_active === false).length,
-        active:    users.filter(u => u.is_active !== false).length,
+        students:  users.filter(u => u.role==='student').length,
+        teachers:  users.filter(u => u.role==='teacher').length,
+        active:    users.filter(u => u.is_active!==false).length,
+        suspended: users.filter(u => u.is_active===false).length,
     }
+    const recent = [...users].sort((a,b)=>(b.date_joined||'').localeCompare(a.date_joined||'')).slice(0,8)
 
     return (
         <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-        {/* Summary cards */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:12 }}>
-            {[
-            { label:'Total Users',    val:counts.total,    color:ADM.accent  },
-            { label:'Students',       val:counts.students, color:ADM.accent  },
-            { label:'Teachers',       val:counts.teachers, color:ADM.purple  },
-            { label:'Active',         val:counts.active,   color:ADM.green   },
-            { label:'Suspended',      val:counts.suspended,color:ADM.amber   },
-            ].map(s => (
-            <div key={s.label} style={{ ...S.card, borderTop:`2px solid ${s.color}` }}>
-                <p style={S.label}>{s.label}</p>
-                <p style={{ fontSize:28, fontWeight:800, color:s.color,
-                fontFamily:'var(--font-display)', letterSpacing:'-0.03em', margin:'6px 0 0', lineHeight:1 }}>
-                {s.val}
-                </p>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:14 }}>
+                <Metric label="Total Users"    value={counts.total}    icon={Users}         color={A.blue}   sub="All registered" loading={loading}/>
+                <Metric label="Students"       value={counts.students} icon={BookOpen}      color={A.blue}   sub="Enrolled"       loading={loading}/>
+                <Metric label="Teachers"       value={counts.teachers} icon={GraduationCap} color={A.purple} sub="Faculty"        loading={loading}/>
+                <Metric label="Active"         value={counts.active}   icon={UserCheck}     color={A.green}  sub="Can access"     loading={loading}/>
+                <Metric label="Suspended"      value={counts.suspended}icon={UserX}         color={A.amber}  sub="Restricted"     loading={loading}/>
             </div>
-            ))}
-        </div>
 
-        {/* Activity feed */}
-        <div style={S.cardFlat}>
-            <div style={{ padding:'14px 18px', borderBottom:`1px solid ${ADM.border}`,
-            display:'flex', alignItems:'center', justifyContent:'space-between' }}>
-            <p style={S.heading}>Recent Activity</p>
-            <span style={{ fontSize:10, color:ADM.textMuted }}>{activities.length} events</span>
-            </div>
-            {activities.length === 0 ? (
-            <div style={{ padding:'40px 20px', textAlign:'center' }}>
-                <Activity size={24} style={{ color:ADM.border, margin:'0 auto 10px', display:'block' }}/>
-                <p style={{ ...S.subtext, textAlign:'center' }}>No activity recorded yet.</p>
-            </div>
-            ) : (
-            <div style={{ padding:'8px 0' }}>
-                {activities.map(a => (
-                <div key={a.id} style={{
-                    display:'flex', alignItems:'center', gap:12,
-                    padding:'10px 18px', borderBottom:`1px solid ${ADM.borderSub}`,
-                }}>
-                    <div style={{ width:8, height:8, borderRadius:'50%', background:a.color, flexShrink:0 }}/>
-                    <p style={{ ...S.subtext, flex:1, margin:0 }}>{a.label}</p>
-                    <span style={{ fontSize:10, color:ADM.textMuted, whiteSpace:'nowrap' }}>
-                    {a.time ? new Date(a.time).toLocaleDateString() : '—'}
-                    </span>
+            {/* Recent registrations */}
+            <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:12, overflow:'hidden', boxShadow:'0 1px 4px rgba(15,23,42,0.05)' }}>
+                <div style={{ padding:'14px 18px', borderBottom:'1px solid #E2E8F0', display:'flex', alignItems:'center', gap:8 }}>
+                    <Clock size={13} style={{ color:'#94A3B8' }}/>
+                    <p style={{ fontSize:13, fontWeight:600, color:'#0F172A', margin:0, fontFamily:'var(--font-display)' }}>Recent Registrations</p>
                 </div>
+                {loading ? <div style={{ padding:24 }}><LoadingBlock/></div> : recent.length === 0 ? (
+                    <div style={{ padding:'32px 16px', textAlign:'center' }}>
+                        <p style={{ fontSize:13, color:'#94A3B8' }}>No users yet.</p>
+                    </div>
+                ) : recent.map((u,i) => (
+                    <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 18px', borderBottom: i<recent.length-1?'1px solid #F1F5F9':'none' }}>
+                        <div style={{ width:32, height:32, borderRadius:'50%', background:A.blueBg, color:A.blue, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>
+                            {(u.full_name||u.username||'?').charAt(0).toUpperCase()}
+                        </div>
+                        <div style={{ flex:1, minWidth:0 }}>
+                            <p style={{ fontSize:13, fontWeight:600, color:'#0F172A', margin:0 }}>{u.full_name||u.username}</p>
+                            <p style={{ fontSize:10, color:'#94A3B8', margin:0 }}>@{u.username}</p>
+                        </div>
+                        <RoleBadge role={u.role}/>
+                        <span style={{ fontSize:10, color:'#94A3B8' }}>
+                            {u.date_joined ? new Date(u.date_joined).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—'}
+                        </span>
+                    </div>
                 ))}
             </div>
-            )}
-        </div>
-
-        {/* Assignment monitoring panel */}
-        <div style={S.card}>
-            <p style={{ ...S.heading, marginBottom:14 }}>Assignment Monitoring</p>
-            <div style={{ display:'flex', gap:28, flexWrap:'wrap' }}>
-            {[
-                { label:'Total Students',  val:counts.students, desc:'Enrolled in platform'      },
-                { label:'Total Teachers',  val:counts.teachers, desc:'Managing assignments'       },
-                { label:'Active Accounts', val:counts.active,   desc:'Able to access platform'   },
-            ].map(r => (
-                <div key={r.label} style={{ flex:1, minWidth:120 }}>
-                <p style={{ fontSize:26, fontWeight:800, color:ADM.text,
-                    fontFamily:'var(--font-display)', margin:'0 0 4px', letterSpacing:'-0.03em' }}>
-                    {r.val}
-                </p>
-                <p style={{ fontSize:11, fontWeight:600, color:ADM.textSub, margin:'0 0 2px' }}>{r.label}</p>
-                <p style={{ fontSize:10, color:ADM.textMuted, margin:0 }}>{r.desc}</p>
-                </div>
-            ))}
-            </div>
-        </div>
         </div>
     )
+}
+
+// ── Courses tab ──────────────────────────────────────────────────────────────
+function CoursesTab() {
+    const [courses, setCourses] = useState([])
+    const [loading, setLoading] = useState(true)
+    const toast = useToast()
+    const confirm = useConfirm()
+
+    useEffect(() => {
+        coursesService.list()
+            .then(d => setCourses(Array.isArray(d)?d:[]))
+            .catch(()=>{})
+            .finally(()=>setLoading(false))
+    }, [])
+
+    async function handleDelete(c) {
+        const ok = await confirm({ title:`Delete "${c.title||c.name}"?`, message:'All enrollments will be removed.', danger:true, confirmLabel:'Delete' })
+        if (!ok) return
+        try {
+            await coursesService.remove(c.id)
+            setCourses(prev => prev.filter(x=>x.id!==c.id))
+            toast.success('Course deleted')
+        } catch(err) { toast.error(apiError(err)) }
     }
 
-    /* ═══════════════════════════════════════════════════════════════
-    CALENDAR OVERVIEW TAB — admin read-only BS calendar
-    Admin can view the schedule. Cannot add/delete tasks.
-    ═══════════════════════════════════════════════════════════════ */
-    function CalendarOverviewTab() {
-    const [cur, setCur] = React.useState(() => {
-        const t = _a2bs(new Date())
-        return { y: t.year, m: t.month }
-    })
-    const days     = React.useMemo(() => _build(cur.y, cur.m), [cur.y, cur.m])
-    const firstDow = days.length ? days[0].dow : 0
-    const bsMonth  = _BSM[cur.m - 1]
-    const todayBS  = React.useMemo(() => _a2bs(new Date()), [])
-    const DOW      = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat']
-    const RED      = '#ef4444'
+    if (loading) return <LoadingBlock/>
 
     return (
-        <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
-        <div style={S.card}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-            <div>
-                <p style={S.heading}>BS Calendar Overview</p>
-                <p style={{ ...S.subtext, marginTop:4 }}>Bikram Sambat · Nepal holidays · Read-only</p>
-            </div>
-            <div style={{ display:'flex', gap:8 }}>
-                <button onClick={() => setCur(c => c.m===1?{y:c.y-1,m:12}:{y:c.y,m:c.m-1})}
-                style={{ ...S.btn, background:ADM.elevated, color:ADM.textSub, border:`1px solid ${ADM.border}` }}>
-                ‹ Prev
-                </button>
-                <button onClick={() => setCur(c => c.m===12?{y:c.y+1,m:1}:{y:c.y,m:c.m+1})}
-                style={{ ...S.btn, background:ADM.elevated, color:ADM.textSub, border:`1px solid ${ADM.border}` }}>
-                Next ›
-                </button>
-            </div>
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                <p style={{ fontSize:14, fontWeight:700, color:'#0F172A', margin:0, fontFamily:'var(--font-display)' }}>
+                    All Courses <span style={{ fontSize:12, color:'#94A3B8', fontWeight:400 }}>({courses.length})</span>
+                </p>
             </div>
 
-            <div style={{ textAlign:'center', marginBottom:16 }}>
-            <p style={{ fontSize:18, fontWeight:700, color:ADM.text,
-                fontFamily:'var(--font-display)', margin:'0 0 4px' }}>
-                {bsMonth?.en} {cur.y} BS
-            </p>
-            <p style={{ fontSize:11, color:ADM.textMuted, margin:0 }}>
-                {bsMonth?.ne} · {((_BSM[cur.m-1]||{}) && days.length)} days
-            </p>
-            </div>
-
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(7,1fr)', gap:4 }}>
-            {DOW.map((d,i) => (
-                <div key={d} style={{ textAlign:'center', fontSize:10, fontWeight:600,
-                color: i===6?'rgba(239,68,68,0.7)':i===0?'rgba(251,146,60,0.7)':ADM.textMuted,
-                padding:'4px 0 8px' }}>
-                {d}
+            {courses.length === 0 ? (
+                <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:12, padding:'44px 20px', textAlign:'center' }}>
+                    <BookOpen size={24} style={{ color:'#CBD5E1', margin:'0 auto 10px', display:'block' }}/>
+                    <p style={{ fontSize:13, color:'#94A3B8' }}>No courses created yet.</p>
                 </div>
-            ))}
-            {Array(firstDow).fill(null).map((_,i) => <div key={`b${i}`}/>)}
-            {days.map(day => {
-                const isToday = day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
-                return (
-                <div key={day.bsKey} title={day.holidayTitle||undefined} style={{
-                    aspectRatio:'1', display:'flex', flexDirection:'column',
-                    alignItems:'center', justifyContent:'center',
-                    borderRadius:6, fontSize:11,
-                    fontWeight: day.isHoliday ? 700 : 400,
-                    background: isToday ? ADM.accent : day.isHoliday ? 'rgba(239,68,68,0.12)' : ADM.elevated,
-                    color: isToday ? '#fff' : day.isHoliday ? RED : day.isSun ? 'rgba(251,146,60,0.8)' : ADM.text,
-                    border: isToday ? `1px solid ${ADM.accent}` : `1px solid ${ADM.borderSub}`,
-                }}>
-                    <span style={{ fontSize:11, lineHeight:1 }}>{day.bsDay}</span>
-                    <span style={{ fontSize:8, lineHeight:1, marginTop:1, opacity:0.4 }}>{day.adDate.getDate()}</span>
+            ) : (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:12 }}>
+                    {courses.map(c => (
+                        <div key={c.id} style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:12, padding:16, boxShadow:'0 1px 4px rgba(15,23,42,0.05)' }}>
+                            <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:10 }}>
+                                <div style={{ width:36, height:36, borderRadius:10, background:A.blueBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                                    <BookOpen size={16} style={{ color:A.blue }}/>
+                                </div>
+                                <button onClick={() => handleDelete(c)}
+                                    style={{ width:26, height:26, borderRadius:6, border:'none', background:A.redBg, cursor:'pointer', color:A.red, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                    <Trash2 size={11}/>
+                                </button>
+                            </div>
+                            <p style={{ fontSize:13, fontWeight:700, color:'#0F172A', margin:'0 0 4px', fontFamily:'var(--font-display)' }}>{c.title||c.name}</p>
+                            {c.teacher_name && <p style={{ fontSize:11, color:'#64748B', margin:'0 0 8px' }}>Teacher: {c.teacher_name}</p>}
+                            {c.enrollment_code && (
+                                <div style={{ display:'flex', alignItems:'center', gap:6, background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:7, padding:'5px 9px' }}>
+                                    <KeyRound size={11} style={{ color:'#94A3B8' }}/>
+                                    <span style={{ fontSize:11, fontFamily:'monospace', fontWeight:600, color:'#475569' }}>{c.enrollment_code}</span>
+                                </div>
+                            )}
+                        </div>
+                    ))}
                 </div>
-                )
-            })}
-            </div>
-
-            <div style={{ display:'flex', gap:16, marginTop:16, justifyContent:'center', flexWrap:'wrap' }}>
-            {[
-                { color:ADM.accent, label:'Today'            },
-                { color:RED,        label:'Holiday/Saturday' },
-                { color:'rgba(251,146,60,0.8)', label:'Sunday' },
-            ].map(l => (
-                <div key={l.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:ADM.textSub }}>
-                <span style={{ width:8, height:8, borderRadius:'50%', background:l.color, flexShrink:0 }}/>
-                {l.label}
-                </div>
-            ))}
-            </div>
-        </div>
+            )}
         </div>
     )
-    }
+}
 
-    /* ═══════════════════════════════════════════════════════════════
-    MAIN EXPORT — AdminDashboard
-    TABS: Overview · User Management · Analytics · Activity · Calendar
-    Settings tab REMOVED. No delete-system option exists.
-    ═══════════════════════════════════════════════════════════════ */
-    const TABS = [
-    { key:'overview',  label:'Overview',         icon:LayoutDashboard },
-    { key:'users',     label:'User Management',  icon:Users           },
-    { key:'analytics', label:'Analytics',        icon:BarChart2       },
-    { key:'activity',  label:'Activity Monitor', icon:Activity        },
-    { key:'calendar',  label:'Calendar',         icon:Globe           },
-    ]
+// ─────────────────────────────────────────────────────────────────────────────
+// MAIN
+// ─────────────────────────────────────────────────────────────────────────────
+const TABS = [
+    { key:'overview',  label:'Overview',     icon:LayoutDashboard },
+    { key:'teachers',  label:'Teachers',     icon:GraduationCap   },
+    { key:'students',  label:'Students',     icon:BookOpen        },
+    { key:'courses',   label:'Courses',      icon:ClipboardList   },
+    { key:'analytics', label:'Analytics',    icon:BarChart2       },
+    { key:'activity',  label:'Activity',     icon:Activity        },
+]
 
-    export default function AdminDashboard() {
-    const { user }  = useAuth()
-    const toast     = useToast()
-    const confirm   = useConfirm()
-    const [users,   setUsers]   = useState([])
-    const [loading, setLoading] = useState(true)
-    const [tab,     setTab]     = useState('overview')
+export default function AdminDashboard({ initialTab }) {
+    const { user }   = useAuth()
+    const toast      = useToast()
+    const confirm    = useConfirm()
+    const [users,    setUsers]    = useState([])
+    const [loading,  setLoading]  = useState(true)
+    const [tab,      setTab]      = useState(initialTab || 'overview')
+    const [showAdd,  setShowAdd]  = useState(false)
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -892,126 +409,149 @@
 
     useEffect(() => { load() }, [load])
 
+    const teachers = users.filter(u => u.role === 'teacher')
+    const students = users.filter(u => u.role === 'student')
+
     async function handleDelete(u) {
-        const ok = await confirm({
-        title: `Delete "${u.full_name||u.username}"?`,
-        message: 'This permanently removes the user and all their data.',
-        danger: true, confirmLabel: 'Delete',
-        })
+        const ok = await confirm({ title:`Delete "${u.full_name||u.username}"?`, message:'Permanently removes the user and all their data.', danger:true, confirmLabel:'Delete' })
         if (!ok) return
         try { await authService.deleteUser(u.id); toast.success('User deleted'); load() }
-        catch (err) { toast.error(apiError(err)) }
-    }
-
-    async function handlePromote(u, role) {
-        try { await authService.promoteUser(u.id, role); toast.success(`${u.username} → ${role}`); load() }
-        catch (err) { toast.error(apiError(err)) }
+        catch(err) { toast.error(apiError(err)) }
     }
 
     async function handleSuspend(u) {
-        const nextActive = u.is_active === false
-        const action     = nextActive ? 'Unsuspend' : 'Suspend'
-        const ok = await confirm({
-        title: `${action} "${u.full_name||u.username}"?`,
-        message: nextActive ? 'User will regain access.' : 'User will lose access until unsuspended.',
-        danger: !nextActive, confirmLabel: action,
-        })
+        const next   = u.is_active === false
+        const action = next ? 'Unsuspend' : 'Suspend'
+        const ok = await confirm({ title:`${action} "${u.full_name||u.username}"?`, message: next?'User will regain access.':'User will lose access until unsuspended.', danger:!next, confirmLabel:action })
         if (!ok) return
         try {
-        await authService.updateUser(u.id, { is_active: nextActive })
-        toast.success(`${u.username} ${nextActive ? 'unsuspended' : 'suspended'}`)
-        load()
-        } catch { toast.error('Suspend requires backend is_active field support.') }
+            await authService.updateUser(u.id, { is_active: next })
+            toast.success(`${u.username} ${next?'unsuspended':'suspended'}`)
+            load()
+        } catch { toast.error('Suspend requires backend is_active support.') }
     }
 
     return (
-        <>
-        <style>{`
-            .adm-shell {
-            background:${ADM.bg}; min-height:100%; margin:-24px; padding:24px;
-            font-family:var(--font-body); color:${ADM.text};
-            }
-            .adm-tabbar {
-            display:flex; gap:2px;
-            border-bottom:1px solid ${ADM.border};
-            overflow-x:auto; scrollbar-width:none;
-            }
-            .adm-tabbar::-webkit-scrollbar { display:none; }
-            .adm-tabbar button {
-            display:flex; align-items:center; gap:7px;
-            padding:10px 16px; font-size:12px; font-weight:500;
-            border:none; background:none; cursor:pointer;
-            font-family:var(--font-body); white-space:nowrap;
-            color:${ADM.textSub}; border-bottom:2px solid transparent;
-            margin-bottom:-1px; transition:all 0.15s;
-            }
-            .adm-tabbar button:hover  { color:${ADM.text}; }
-            .adm-tabbar button.active { color:${ADM.accent}; border-bottom-color:${ADM.accent}; font-weight:600; }
-            @keyframes admfade { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:none} }
-            .adm-content { animation:admfade 0.18s ease; }
-        `}</style>
+        <div style={{ display:'flex', flexDirection:'column', gap:0 }} className="anim-fade-in">
 
-        <div className="adm-shell anim-fade-in">
-
-            {/* Page header */}
-            <div style={{ marginBottom:24 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
-                <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-                <div style={{ width:44, height:44, borderRadius:12,
-                    background:'linear-gradient(135deg,#1d4ed8,#7c3aed)',
-                    display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <ShieldCheck size={20} color="#fff"/>
-                </div>
-                <div>
-                    <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:20,
-                    color:ADM.text, margin:0, letterSpacing:'-0.03em', lineHeight:1 }}>
-                    Administration
-                    </h1>
-                    <p style={{ fontSize:11, color:ADM.textSub, margin:'3px 0 0' }}>
-                    TaskOra Platform Control · {user?.full_name||user?.username}
-                    </p>
-                </div>
-                </div>
-                <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                <span style={{ fontSize:9, fontWeight:700, padding:'4px 10px', borderRadius:99,
-                    background:ADM.redBg, color:ADM.red, textTransform:'uppercase',
-                    letterSpacing:'0.10em', border:`1px solid ${ADM.red}40` }}>
-                    System Admin
-                </span>
-                <button onClick={load}
-                    style={{ ...S.btn, background:ADM.elevated, color:ADM.textSub,
-                    border:`1px solid ${ADM.border}`, fontSize:11 }}>
-                    <RefreshCw size={11}/> Refresh
-                </button>
+            {/* Header banner */}
+            <div style={{ background:'linear-gradient(135deg,#1E3A5F 0%,#2563EB 100%)', borderRadius:14, padding:'22px 26px', marginBottom:20, position:'relative', overflow:'hidden' }}>
+                <div style={{ position:'absolute', top:-40, right:-40, width:160, height:160, background:'rgba(255,255,255,0.05)', borderRadius:'50%' }}/>
+                <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:14 }}>
+                        <div style={{ width:44, height:44, borderRadius:12, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            <ShieldCheck size={20} color="#fff"/>
+                        </div>
+                        <div>
+                            <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:20, color:'#fff', margin:0, letterSpacing:'-0.02em' }}>
+                                Administration
+                            </h1>
+                            <p style={{ fontSize:11, color:'rgba(255,255,255,0.60)', margin:'3px 0 0' }}>
+                                TaskOra Platform Control · {user?.full_name||user?.username}
+                            </p>
+                        </div>
+                    </div>
+                    <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+                        <span style={{ fontSize:10, fontWeight:700, padding:'4px 10px', borderRadius:99, background:'rgba(255,255,255,0.15)', color:'#fff', textTransform:'uppercase', letterSpacing:'0.08em' }}>
+                            System Admin
+                        </span>
+                        <button onClick={() => setShowAdd(true)}
+                            style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', color:'#1E3A5F', border:'none', borderRadius:9, padding:'9px 16px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'var(--font-display)' }}>
+                            <Plus size={13}/> Add Teacher
+                        </button>
+                        <button onClick={load}
+                            style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.12)', color:'#fff', border:'1px solid rgba(255,255,255,0.20)', borderRadius:9, padding:'8px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
+                            <RefreshCw size={12}/> Refresh
+                        </button>
+                    </div>
                 </div>
             </div>
-            </div>
 
-            {/* Tab bar — Settings deliberately excluded */}
-            <div className="adm-tabbar" style={{ marginBottom:24 }}>
-            {TABS.map(t => {
-                const Icon   = t.icon
-                const active = tab === t.key
-                return (
-                <button key={t.key} onClick={() => setTab(t.key)} className={active ? 'active' : ''}>
-                    <Icon size={13}/> {t.label}
-                </button>
-                )
-            })}
+            {/* Tab bar — light theme */}
+            <div style={{ display:'flex', background:'#fff', border:'1px solid #E2E8F0', borderRadius:12, marginBottom:20, overflow:'hidden' }}>
+                {TABS.map(t => {
+                    const Icon   = t.icon
+                    const active = tab === t.key
+                    return (
+                        <button key={t.key} onClick={() => setTab(t.key)}
+                            style={{
+                                flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6,
+                                padding:'11px 8px', fontSize:12, fontWeight: active?700:500,
+                                border:'none', background: active?A.blue:'transparent',
+                                color: active?'#fff':'#64748B',
+                                cursor:'pointer', fontFamily:'var(--font-body)',
+                                whiteSpace:'nowrap', transition:'all 0.13s',
+                                borderRight: '1px solid #E2E8F0',
+                            }}>
+                            <Icon size={13}/> <span className="hide-sm">{t.label}</span>
+                        </button>
+                    )
+                })}
             </div>
 
             {/* Tab content */}
-            <div className="adm-content" key={tab}>
-            {tab === 'overview'  && <OverviewTab  users={users} loading={loading} onRefresh={load}/>}
-            {tab === 'users'     && <UsersTab     users={users} loading={loading} currentUser={user}
-                                        onRefresh={load} onPromote={handlePromote}
-                                        onDelete={handleDelete} onSuspend={handleSuspend}/>}
-            {tab === 'analytics' && <AnalyticsTab users={users}/>}
-            {tab === 'activity'  && <ActivityTab  users={users}/>}
-            {tab === 'calendar'  && <CalendarOverviewTab/>}
+            <div key={tab} className="anim-fade-in">
+                {tab === 'overview'  && <OverviewTab users={users} loading={loading}/>}
+                {tab === 'teachers'  && (
+                    <div>
+                        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                            <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#0F172A', margin:0 }}>
+                                Teachers <span style={{ fontSize:13, color:'#94A3B8', fontWeight:400 }}>({teachers.length})</span>
+                            </h3>
+                            <button onClick={() => setShowAdd(true)} className="btn-primary">
+                                <Plus size={13}/> Add Teacher
+                            </button>
+                        </div>
+                        <UserTable users={teachers} loading={loading} currentUser={user} onDelete={handleDelete} onSuspend={handleSuspend} emptyMsg="No teacher accounts yet. Click 'Add Teacher' to create one."/>
+                    </div>
+                )}
+                {tab === 'students'  && (
+                    <div>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#0F172A', margin:'0 0 14px' }}>
+                            Students <span style={{ fontSize:13, color:'#94A3B8', fontWeight:400 }}>({students.length})</span>
+                        </h3>
+                        <UserTable users={students} loading={loading} currentUser={user} onDelete={handleDelete} onSuspend={handleSuspend} emptyMsg="No student accounts yet."/>
+                    </div>
+                )}
+                {tab === 'courses'   && <CoursesTab/>}
+                {tab === 'analytics' && (
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:14 }}>
+                        <Metric label="Total Users"  value={users.length}                                    icon={Users}         color={A.blue}   loading={loading}/>
+                        <Metric label="Teachers"     value={teachers.length}                                 icon={GraduationCap} color={A.purple} loading={loading}/>
+                        <Metric label="Students"     value={students.length}                                 icon={BookOpen}      color={A.blue}   loading={loading}/>
+                        <Metric label="Active"       value={users.filter(u=>u.is_active!==false).length}    icon={UserCheck}     color={A.green}  loading={loading}/>
+                        <Metric label="Suspended"    value={users.filter(u=>u.is_active===false).length}    icon={UserX}         color={A.amber}  loading={loading}/>
+                    </div>
+                )}
+                {tab === 'activity'  && (
+                    <div style={{ background:'#fff', border:'1px solid #E2E8F0', borderRadius:12, overflow:'hidden' }}>
+                        <div style={{ padding:'14px 18px', borderBottom:'1px solid #E2E8F0' }}>
+                            <p style={{ fontSize:13, fontWeight:700, color:'#0F172A', margin:0, fontFamily:'var(--font-display)' }}>Recent Activity</p>
+                        </div>
+                        {[...users].sort((a,b)=>(b.date_joined||'').localeCompare(a.date_joined||'')).slice(0,15).map((u,i,arr) => (
+                            <div key={u.id} style={{ display:'flex', alignItems:'center', gap:12, padding:'11px 18px', borderBottom: i<arr.length-1?'1px solid #F1F5F9':'none' }}>
+                                <div style={{ width:7, height:7, borderRadius:'50%', background: u.role==='teacher'?A.purple:A.blue, flexShrink:0 }}/>
+                                <p style={{ fontSize:13, color:'#0F172A', margin:0, flex:1 }}>
+                                    <strong>{u.full_name||u.username}</strong> joined as {u.role}
+                                </p>
+                                <span style={{ fontSize:10, color:'#94A3B8', whiteSpace:'nowrap' }}>
+                                    {u.date_joined ? new Date(u.date_joined).toLocaleDateString() : '—'}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
+            {showAdd && (
+                <AddTeacherModal
+                    onClose={() => setShowAdd(false)}
+                    onCreated={created => {
+                        setUsers(prev => [created, ...prev])
+                        setTab('teachers')
+                    }}
+                />
+            )}
         </div>
-        </>
     )
-    }
+}

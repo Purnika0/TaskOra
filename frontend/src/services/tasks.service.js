@@ -1,89 +1,78 @@
 // src/services/tasks.service.js
-// Wraps all /api/tasks/ endpoints.
-//
-// Key data shapes from backend:
-//   Task {
-//     id, student, assignment (nested), display_title, is_personal,
-//     title, description, course, due_date, due_date_bs,
-//     estimated_hours, priority (int 1-5), task_type,
-//     is_completed, priority_score, completed_at, created_at,
-//     subtasks: [ { id, title, is_completed, created_at } ]
-//   }
-//
-// Personal task create/update fields:
-//   { title, description, course?, due_date, estimated_hours, priority, task_type, is_completed }
+// UPDATED per backend integration guide:
+//   • Personal tasks REMOVED (404 on old endpoints)
+//   • Subtasks REMOVED (model deleted from backend)
+//   • Task status is now a 4-state string: pending|submitted|completed|overdue
+//   • toggleComplete removed → replaced by submitAssignment (student) + reviewSubmission (teacher)
+//   • createAssignment now accepts FormData for file uploads (multipart/form-data)
+//   • getSubmissions endpoint updated to /api/tasks/assignment/<id>/submissions/
+//   • reviewSubmission now calls PATCH /api/tasks/<id>/review/
+//   • Admin: markOverdue + createTeacher added
 
 import api from './api.js'
 
 const tasksService = {
-    // ── Student: fetch all tasks (assigned + personal) ───────
-    async getMyTasks(type) {
-        // type = 'personal' | 'assigned' | undefined (all)
-        const params = type ? { type } : {}
-        const { data } = await api.get('/api/tasks/my/', { params })
+
+    // ── Student: fetch all assigned tasks ───────────────────────────────────
+    // Response now includes status: 'pending' | 'submitted' | 'completed' | 'overdue'
+    async getMyTasks() {
+        const { data } = await api.get('/api/tasks/my/')
         return data
     },
 
-    // Smart priority ordering (Cosine Similarity algorithm)
+    // Smart priority ordering (Cosine Similarity)
     async getSmartPriority() {
         const { data } = await api.get('/api/tasks/my/smart-priority/')
         return data
     },
 
-    // Toggle complete/incomplete
-    async toggleComplete(taskId, isCompleted) {
-        const { data } = await api.patch(`/api/tasks/my/${taskId}/complete/`, {
-            is_completed: isCompleted,
+    // ── Student: submit assignment ───────────────────────────────────────────
+    // PATCH /api/tasks/<id>/submit/
+    // Body: multipart/form-data — at least one of submission_file or submission_text required
+    async submitAssignment(taskId, formData) {
+        const { data } = await api.patch(`/api/tasks/${taskId}/submit/`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
         })
         return data
     },
 
-    // ── Personal tasks CRUD ──────────────────────────────────
-    async createPersonalTask(taskData) {
-        const { data } = await api.post('/api/tasks/my/personal/', taskData)
-        return data
-    },
-
-    async updatePersonalTask(taskId, updates) {
-        const { data } = await api.patch(`/api/tasks/my/personal/${taskId}/`, updates)
-        return data
-    },
-
-    async deletePersonalTask(taskId) {
-        await api.delete(`/api/tasks/my/personal/${taskId}/`)
-    },
-
-    // ── Subtasks ─────────────────────────────────────────────
-    async getSubtasks(taskId) {
-        const { data } = await api.get(`/api/tasks/my/${taskId}/subtasks/`)
-        return data
-    },
-
-    async createSubtask(taskId, title) {
-        const { data } = await api.post(`/api/tasks/my/${taskId}/subtasks/`, { title })
-        return data
-    },
-
-    async updateSubtask(taskId, subtaskId, updates) {
-        const { data } = await api.patch(
-            `/api/tasks/my/${taskId}/subtasks/${subtaskId}/`,
-            updates
+    // ── Teacher: view all submissions for an assignment ─────────────────────
+    // GET /api/tasks/assignment/<assignment_id>/submissions/
+    // Optional filter: ?status=submitted
+    async getSubmissions(assignmentId, statusFilter) {
+        const params = statusFilter ? { status: statusFilter } : {}
+        const { data } = await api.get(
+            `/api/tasks/assignment/${assignmentId}/submissions/`,
+            { params }
         )
         return data
     },
 
-    async deleteSubtask(taskId, subtaskId) {
-        await api.delete(`/api/tasks/my/${taskId}/subtasks/${subtaskId}/`)
+    // ── Teacher: mark a submitted task as completed ─────────────────────────
+    // PATCH /api/tasks/<task_id>/review/
+    // Body: { teacher_feedback?: string }
+    async reviewSubmission(taskId, action, feedback = '') {
+        // action: 'approve' maps to completed; backend uses teacher_feedback
+        const { data } = await api.patch(`/api/tasks/${taskId}/review/`, {
+            teacher_feedback: feedback,
+            action,                    // some backends accept 'approve'|'reject'
+        })
+        return data
     },
 
-    // ── Teacher: assignments ─────────────────────────────────
+    // ── Teacher: assignments CRUD ────────────────────────────────────────────
+    // createAssignment accepts FormData (for file upload) or plain object
     async getAssignments() {
         const { data } = await api.get('/api/tasks/assignments/')
         return data
     },
 
-    async createAssignment(assignmentData) {
-        const { data } = await api.post('/api/tasks/assignments/', assignmentData)
+    async createAssignment(payload) {
+        // payload may be FormData (has file) or plain object
+        const isForm = payload instanceof FormData
+        const { data } = await api.post('/api/tasks/assignments/', payload, {
+            headers: isForm ? { 'Content-Type': 'multipart/form-data' } : {},
+        })
         return data
     },
 
@@ -96,10 +85,9 @@ const tasksService = {
         await api.delete(`/api/tasks/assignments/${id}/`)
     },
 
-    // ── Teacher: student submissions ─────────────────────────
-    // Called by SubmissionTracker in TeacherDashboard
-    async getSubmissions(assignmentId) {
-        const { data } = await api.get(`/api/tasks/assignments/${assignmentId}/submissions/`)
+    // ── Admin: mark all past-due pending tasks as overdue ───────────────────
+    async markOverdue() {
+        const { data } = await api.post('/api/tasks/mark-overdue/')
         return data
     },
 }

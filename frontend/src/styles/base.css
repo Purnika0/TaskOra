@@ -1,11 +1,9 @@
 /*
- * base.css — TaskOra Base Styles v4
- * Clean typography system, reset, animations.
+ * base.css — TaskOra Base Styles v5 (Light Theme)
+ * Body now uses --color-bg (#F8FAFC) — soft blue-grey, fully light.
  */
 
-*,
-*::before,
-*::after {
+*, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -18,15 +16,13 @@ html {
     text-rendering: optimizeLegibility;
 }
 
-html, body, #root {
-    height: 100%;
-}
+html, body, #root { height: 100%; }
 
 body {
     font-family: var(--font-body);
     font-size: var(--text-base);
-    background-color: var(--color-cream);
-    color: var(--color-navy);
+    background-color: var(--color-bg);    /* #F8FAFC — light blue-grey */
+    color: var(--color-text);             /* #0F172A — very readable dark */
     line-height: var(--leading-normal);
     min-height: 100vh;
     letter-spacing: -0.01em;
@@ -37,7 +33,7 @@ h1, h2, h3, h4, h5 {
     font-family: var(--font-display);
     line-height: var(--leading-tight);
     letter-spacing: -0.02em;
-    color: var(--color-navy);
+    color: var(--color-text);
 }
 
 h1 { font-size: var(--text-3xl); font-weight: 800; }
@@ -46,7 +42,7 @@ h3 { font-size: var(--text-xl);  font-weight: 700; }
 h4 { font-size: var(--text-lg);  font-weight: 600; }
 h5 { font-size: var(--text-md);  font-weight: 600; }
 
-p  { line-height: var(--leading-relaxed); }
+p     { line-height: var(--leading-relaxed); }
 small { font-size: var(--text-xs); }
 
 a   { color: inherit; text-decoration: none; }
@@ -56,56 +52,54 @@ button, input, select, textarea {
     font-family: var(--font-body);
     font-size: var(--text-base);
 }
-
 button { cursor: pointer; }
 
-/* ── Hide browser-native password reveal / clear icons ── */
-/* IE / legacy Edge */
+/* ── Hide native password icons ── */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear { display: none !important; }
-/* Chrome / Edge (Chromium) eye icon */
-input[type="password"]::-webkit-credentials-auto-fill-button { display: none !important; visibility: hidden; pointer-events: none; }
-/* Safari */
+input[type="password"]::-webkit-credentials-auto-fill-button {
+    display: none !important; visibility: hidden; pointer-events: none;
+}
 input[type="password"]::-webkit-caps-lock-indicator { display: none !important; }
 
-/* ── Custom scrollbar ── */
-::-webkit-scrollbar       { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: var(--color-cream); }
-::-webkit-scrollbar-thumb { background: var(--color-cream-border); border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #9a9282; }
-* { scrollbar-width: thin; scrollbar-color: var(--color-cream-border) transparent; }
+/* ── Custom scrollbar — light ── */
+::-webkit-scrollbar         { width: 5px; height: 5px; }
+::-webkit-scrollbar-track   { background: var(--color-bg); }
+::-webkit-scrollbar-thumb   { background: var(--color-border); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+*  { scrollbar-width: thin; scrollbar-color: var(--color-border) transparent; }
 
 /* ── Focus ── */
-:focus-visible            { outline: 2px solid var(--color-blue); outline-offset: 2px; }
-:focus:not(:focus-visible) { outline: none; }
+:focus-visible             { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+:focus:not(:focus-visible)  { outline: none; }
 
 /* ── Keyframes ── */
-@keyframes to-fadeIn    { from { opacity:0 }               to { opacity:1 } }
-@keyframes to-slideUp   { from { opacity:0; transform:translateY(14px) }  to { opacity:1; transform:translateY(0) } }
-@keyframes to-scaleIn   { from { opacity:0; transform:scale(0.96) }        to { opacity:1; transform:scale(1) } }
-@keyframes to-scaleInBounce { from { opacity:0; transform:scale(0.90) }   to { opacity:1; transform:scale(1) } }
+@keyframes to-fadeIn    { from { opacity:0 }                             to { opacity:1 } }
+@keyframes to-slideUp   { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
+@keyframes to-scaleIn   { from { opacity:0; transform:scale(0.96) }      to { opacity:1; transform:scale(1) } }
+@keyframes to-scaleInBounce { from { opacity:0; transform:scale(0.90) }  to { opacity:1; transform:scale(1) } }
 @keyframes to-pulseLoad { 0%,100%{ opacity:1 } 50%{ opacity:0.4 } }
 @keyframes to-spin      { to { transform:rotate(360deg) } }
 
 /* ── Animation classes ── */
-.anim-fade-in      { animation: to-fadeIn         0.35s ease both; }
-.anim-slide-up     { animation: to-slideUp        0.38s cubic-bezier(0.22,1,0.36,1) both; }
-.anim-scale-in     { animation: to-scaleIn        0.28s ease both; }
-.anim-scale-bounce { animation: to-scaleInBounce  0.32s cubic-bezier(0.34,1.56,0.64,1) both; }
+.anim-fade-in      { animation: to-fadeIn         0.30s ease both; }
+.anim-slide-up     { animation: to-slideUp        0.34s cubic-bezier(0.22,1,0.36,1) both; }
+.anim-scale-in     { animation: to-scaleIn        0.24s ease both; }
+.anim-scale-bounce { animation: to-scaleInBounce  0.30s cubic-bezier(0.34,1.56,0.64,1) both; }
 .anim-pulse        { animation: to-pulseLoad      1.5s ease-in-out infinite; }
 .anim-spin         { animation: to-spin           0.75s linear infinite; }
 
 .stagger > *:nth-child(1) { animation-delay:  0ms; }
-.stagger > *:nth-child(2) { animation-delay: 55ms; }
-.stagger > *:nth-child(3) { animation-delay:110ms; }
-.stagger > *:nth-child(4) { animation-delay:165ms; }
-.stagger > *:nth-child(5) { animation-delay:220ms; }
-.stagger > *:nth-child(6) { animation-delay:275ms; }
+.stagger > *:nth-child(2) { animation-delay: 50ms; }
+.stagger > *:nth-child(3) { animation-delay:100ms; }
+.stagger > *:nth-child(4) { animation-delay:150ms; }
+.stagger > *:nth-child(5) { animation-delay:200ms; }
+.stagger > *:nth-child(6) { animation-delay:250ms; }
 
 /* ── Card primitives ── */
-.card-navy  { background:var(--color-navy); color:#fff; border-radius:var(--radius-lg); }
-.card-cream { background:var(--color-cream); border:1px solid var(--color-cream-border); border-radius:var(--radius-lg); }
-.card-white { background:#fff; border:1px solid var(--color-cream-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
+.card-navy  { background:var(--color-sidebar); color:#fff; border-radius:var(--radius-lg); }
+.card-cream { background:var(--color-bg); border:1px solid var(--color-border); border-radius:var(--radius-lg); }
+.card-white { background:#fff; border:1px solid var(--color-border); border-radius:var(--radius-lg); box-shadow:var(--shadow-sm); }
 
 /* ── Utility ── */
 .visually-hidden {
