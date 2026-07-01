@@ -6,11 +6,12 @@ from holidays.bs_calendar import ad_to_bs
 
 class AssignmentSerializer(serializers.ModelSerializer):
     due_date_bs = serializers.SerializerMethodField()
+    course_name  = serializers.SerializerMethodField()
 
     class Meta:
         model = Assignment
         fields = [
-            'id', 'title', 'description', 'course', 'created_by',
+            'id', 'title', 'description', 'course', 'course_name', 'created_by',
             'due_date', 'due_date_bs', 'task_type',
             'estimated_hours', 'priority', 'created_at'
         ]
@@ -18,6 +19,10 @@ class AssignmentSerializer(serializers.ModelSerializer):
 
     def get_due_date_bs(self, obj):
         return ad_to_bs(obj.due_date)
+    
+    def get_course_name(self, obj):
+        return obj.course.title
+
 
 
 class TaskSerializer(serializers.ModelSerializer):

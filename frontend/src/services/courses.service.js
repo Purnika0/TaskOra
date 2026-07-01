@@ -14,6 +14,12 @@ const coursesService = {
         return data
     },
 
+    // Student: list only enrolled courses
+    async getMyCourses() {
+        const { data } = await api.get('/api/courses/my/')
+        return data
+    },
+    
     // GET single course
     async get(id) {
         const { data } = await api.get(`/api/courses/${id}/`)
@@ -21,8 +27,12 @@ const coursesService = {
     },
 
     // Student: join a course by enrollment code
-    async join(enrollmentCode) {
-        const { data } = await api.post('/api/courses/join/', { enrollment_code: enrollmentCode })
+    // async join(enrollmentCode) {
+    //     const { data } = await api.post('/api/courses/join/', { enrollment_code: enrollmentCode })
+    //     return data
+    // },
+    async join(joinCode) {
+        const { data } = await api.post('/api/courses/join/', { join_code: joinCode })
         return data
     },
 

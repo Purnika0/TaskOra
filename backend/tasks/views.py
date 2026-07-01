@@ -26,7 +26,7 @@ class AssignmentListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsTeacher]
 
     def get_queryset(self):
-        return Assignment.objects.filter(created_by=self.request.user)
+        return Assignment.objects.filter(created_by=self.request.user).select_related('course')
 
     def perform_create(self, serializer):
         assignment = serializer.save(created_by=self.request.user)
@@ -45,7 +45,7 @@ class AssignmentDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsTeacher]
 
     def get_queryset(self):
-        return Assignment.objects.filter(created_by=self.request.user)
+        return Assignment.objects.filter(created_by=self.request.user).select_related('course')
 
 
 # ---------------------------------------------------------------------------
@@ -58,7 +58,7 @@ class StudentTaskListView(generics.ListAPIView):
     permission_classes = [IsStudent]
 
     def get_queryset(self):
-        qs     = Task.objects.filter(student=self.request.user).select_related('assignment')
+        qs     = Task.objects.filter(student=self.request.user).select_related('assignment__course')
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
@@ -75,7 +75,7 @@ class SmartPriorityTaskView(generics.ListAPIView):
         return Task.objects.filter(
             student=self.request.user,
             status__in=[Task.Status.PENDING, Task.Status.OVERDUE]
-        ).order_by('-priority_score').select_related('assignment')
+        ).order_by('-priority_score').select_related('assignment__course')
 
 
 class StudentSubmitTaskView(APIView):
@@ -126,7 +126,7 @@ class TeacherAssignmentTaskListView(generics.ListAPIView):
         assignment    = get_object_or_404(
             Assignment, pk=assignment_pk, created_by=self.request.user
         )
-        qs = Task.objects.filter(assignment=assignment).select_related('student', 'assignment')
+        qs = Task.objects.filter(assignment=assignment).select_related('student', 'assignment__course')
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)

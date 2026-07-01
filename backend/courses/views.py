@@ -23,6 +23,8 @@ class CourseListCreateView(generics.ListCreateAPIView):
             return Course.objects.all()
         if user.role == 'teacher':
             return Course.objects.filter(teacher=user)
+        if user.role == 'student':
+            return Course.objects.filter(enrollments__student=user)
         return Course.objects.none()
 
     def perform_create(self, serializer):
