@@ -252,7 +252,7 @@
         <div className="auth-root">
         <div className="login-card">
             <div className="auth-logo-wrap" aria-hidden="true">
-            <GraduationCap size={22}/>
+            <GraduationCap size={22} color="#ffffff"/>
             </div>
             <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, color:'var(--color-text)', fontSize:22, textAlign:'center', margin:'0 0 6px', letterSpacing:'-0.02em' }}>
             Welcome back
@@ -260,7 +260,7 @@
             <p style={{ fontSize:14, color:'var(--color-text-secondary)', textAlign:'center', marginBottom:22, lineHeight:1.5 }}>
             Sign in to your TaskOra account
             </p>
- 
+
             {/* Login role tabs — Student or Teacher */}
             <div className="role-tabs" role="tablist">
             {[
@@ -274,7 +274,7 @@
                 </button>
             ))}
             </div>
- 
+
             {/* Teacher login info note */}
             {loginRole === 'teacher' && (
             <div style={{ background:'var(--color-primary-light)', border:'1px solid rgba(0,85,255,0.15)', borderRadius:8, padding:'9px 12px', marginBottom:4 }}>
@@ -283,7 +283,7 @@
                 </p>
             </div>
             )}
- 
+
             <form onSubmit={handleLogin} noValidate style={{ display:'flex', flexDirection:'column', gap:10 }}>
             <Field id="lc" type="text" placeholder="Username or Email" autoComplete="username"
                 value={loginCred} onChange={e => setLoginCred(e.target.value)} required
@@ -305,7 +305,7 @@
                 {submitting ? <Spinner size={16} color="white"/> : <><ArrowRight size={14}/> Sign In</>}
             </button>
             </form>
- 
+
             {/* Only students can sign up */}
             <p style={{ textAlign:'center', fontSize:13, color:'var(--color-text-muted)', marginTop:18 }}>
             New student?{' '}
@@ -373,7 +373,7 @@
                 value={regConf} onChange={e => setRegConf(e.target.value)} required
                 iconL={<Lock size={14}/>} showEye eyeOpen={showRegConf} onEye={() => setShowRegConf(s => !s)}
                 error={regErrors.conf}/>
-                
+
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginTop:4, marginBottom:2 }}>
                     <input
                         type="checkbox"
