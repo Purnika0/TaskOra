@@ -17,10 +17,10 @@ function PubNav() {
                 <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:16, color:'#0F172A' }}>TaskOra</span>
             </Link>
             <div style={{ display:'flex', gap:8 }}>
-                <Link to="/auth" style={{ padding:'8px 16px', fontSize:13, fontWeight:600, color:'#475569', textDecoration:'none', borderRadius:8, background:'transparent' }}>
+                <Link to="/auth?view=login" style={{ padding:'8px 16px', fontSize:13, fontWeight:600, color:'#475569', textDecoration:'none', borderRadius:8, background:'transparent' }}>
                     Login
                 </Link>
-                <Link to="/auth" style={{ padding:'8px 16px', fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', borderRadius:8, background:'var(--color-primary)' }}>
+                <Link to="/auth?view=signup" style={{ padding:'8px 16px', fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', borderRadius:8, background:'var(--color-primary)' }}>
                     Get Started
                 </Link>
             </div>
@@ -53,10 +53,10 @@ export default function AboutPage() {
                         TaskOra is a final-year IT project designed to solve real academic management problems for students and teachers.
                     </p>
                     <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
-                        <Link to="/auth" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#fff', color:'#0055FF', fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none' }}>
+                        <Link to="/auth?view=signup" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#fff', color:'#0055FF', fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none' }}>
                             Get Started <ArrowRight size={15}/>
                         </Link>
-                        <Link to="/auth" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.12)', color:'#fff', fontFamily:'var(--font-display)', fontWeight:600, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none', border:'1px solid rgba(255,255,255,0.20)' }}>
+                        <Link to="/auth?view=login" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.12)', color:'#fff', fontFamily:'var(--font-display)', fontWeight:600, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none', border:'1px solid rgba(255,255,255,0.20)' }}>
                             Login
                         </Link>
                     </div>
@@ -124,16 +124,16 @@ export default function AboutPage() {
             </section>
 
             {/* CTA */}
-            <section style={{ background:'var(--color-primary)', padding:'56px 24px', textAlign:'center' }}>
-                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:26, color:'#fff', letterSpacing:'-0.02em', margin:'0 0 12px' }}>
+            <section style={{ background:'var(--color-cream)', padding:'56px 24px', textAlign:'center' }}>
+                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:26, color:'#0F172A', letterSpacing:'-0.02em', margin:'0 0 12px' }}>
                     Ready to get started?
                 </h2>
-                <p style={{ fontSize:14, color:'rgba(255,255,255,0.60)', margin:'0 0 28px' }}>Join TaskOra and organize your academic life.</p>
+                <p style={{ fontSize:14, color:'#475569', margin:'0 0 28px' }}>Join TaskOra and organize your academic life.</p>
                 <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap' }}>
-                    <Link to="/auth" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#fff', color:'#0055FF', fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none' }}>
+                    <Link to="/auth?view=signup" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'var(--color-primary)', color:'#fff', fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none' }}>
                         Get Started <ArrowRight size={15}/>
                     </Link>
-                    <Link to="/auth" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.12)', color:'#fff', fontFamily:'var(--font-display)', fontWeight:600, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none', border:'1px solid rgba(255,255,255,0.20)' }}>
+                    <Link to="/auth?view=login" style={{ display:'inline-flex', alignItems:'center', gap:8, background:'#fff', color:'#0F172A', fontFamily:'var(--font-display)', fontWeight:600, fontSize:14, padding:'12px 24px', borderRadius:10, textDecoration:'none', border:'1px solid #E2E8F0' }}>
                         Login
                     </Link>
                 </div>

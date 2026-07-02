@@ -222,12 +222,18 @@ export default function LandingPage() {
                         </div>
                         <button onClick={() => setMenuOpen(false)} style={{ background:'none', border:'none', color:'#fff', cursor:'pointer', padding:6 }}><X size={22}/></button>
                     </div>
-                    {[['#features','Features'],['#benefits','Benefits']].map(([h,l]) => (
-                        <a key={h} href={h} onClick={() => setMenuOpen(false)}
-                            style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
-                            {l}
-                        </a>
-                    ))}
+                    <Link to="/" onClick={() => setMenuOpen(false)}
+                        style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
+                        Home
+                    </Link>
+                    <a href="#features" onClick={() => setMenuOpen(false)}
+                        style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
+                        Features
+                    </a>
+                    <Link to="/about" onClick={() => setMenuOpen(false)}
+                        style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
+                        About
+                    </Link>
                     <Link to="/contact" onClick={() => setMenuOpen(false)}
                         style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
                         Contact
@@ -251,8 +257,9 @@ export default function LandingPage() {
                 </Link>
 
                 <div className="lp-nav-links" style={{ display:'flex', alignItems:'center', gap:2 }}>
+                    <Link to="/" className="lp-nav-link">Home</Link>
                     <a href="#features" className="lp-nav-link">Features</a>
-                    <a href="#benefits" className="lp-nav-link">Benefits</a>
+                    <Link to="/about" className="lp-nav-link">About</Link>
                     <Link to="/contact" className="lp-nav-link">Contact</Link>
                 </div>
 

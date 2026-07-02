@@ -29,9 +29,15 @@ APP SHELL
 }
 .content {
     flex: 1;
-    padding: var(--content-padding);
-    overflow-y: auto;
     background: var(--color-bg);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    min-height: 0;
+}
+.content-inner {
+    flex: 1 0 auto;
+    padding: var(--content-padding);
 }
 
 /* ── Topbar — white, light border ── */

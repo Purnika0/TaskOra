@@ -1,7 +1,10 @@
-    // src/pages/auth/AuthPage.jsx
+// src/pages/auth/AuthPage.jsx
     // CHANGE: Teacher signup removed. Only Students can self-register.
     // Teacher login tab remains — teachers log in with admin-provided credentials.
     // The signup view now only shows the Student form (no role selector).
+    // CHANGE: AuthPage now also honors a ?view=signup / ?view=login URL param,
+    // so links from other pages (About, Landing, etc.) can open directly to
+    // the right form instead of always landing on Login.
 
     import React, { useState, useRef, useEffect } from 'react'
     import { useSearchParams, Link } from 'react-router-dom'
@@ -84,8 +87,15 @@
     const { login }      = useAuth()
     const [searchParams] = useSearchParams()
     const urlToken       = searchParams.get('token') || ''
+    const urlView        = searchParams.get('view') || ''
 
-    const [view,       setView]       = useState(() => initialView || (urlToken ? 'reset' : 'login'))
+    const [view,       setView]       = useState(() => {
+        if (initialView) return initialView
+        if (urlToken) return 'reset'
+        if (urlView === 'signup') return 'signup'
+        if (urlView === 'login') return 'login'
+        return 'login'
+    })
     // Login role tab: student or teacher (teachers log in but cannot sign up)
     const [loginRole,  setLoginRole]  = useState('student')
     const [submitting, setSubmitting] = useState(false)
