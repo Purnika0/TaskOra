@@ -10,28 +10,23 @@ export const BS_MONTH_NAMES = [
 export const AD_MONTH_NAMES = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 
 // ── Verified GON month-length table ───────────────────────────────────────────
-// Index:  0=Baisakh  1=Jestha  2=Ashadh(Asar)  3=Shrawan  4=Bhadra  5=Ashwin
-//         6=Kartik   7=Mangsir 8=Poush          9=Magh    10=Falgun 11=Chaitra
-//
-// KEY FIX: Ashadh (index 2) = 32 days in most years (not 31).
-// Shrawan (index 3) in 2082 = 31 (not 32) — this was the previous error.
 export const BS_DAYS = {
-  // Year:  Bai  Jes  Ash  Shr  Bha  Asw  Kar  Man  Pau  Mag  Fal  Cha  (total)
-  2078:    [ 31,  31,  32,  32,  31,  30,  30,  29,  30,  29,  30,  30 ], // 365
+  2077:    [ 31,  32,  31,  32,  31,  30,  30,  30,  29,  30,  29,  31 ], // 366
+  2078:    [ 31,  31,  31,  32,  31,  31,  30,  29,  30,  29,  30,  30 ], // 365
   2079:    [ 31,  31,  32,  31,  31,  31,  30,  29,  30,  29,  30,  30 ], // 365
   2080:    [ 31,  32,  31,  32,  31,  30,  30,  30,  29,  29,  30,  30 ], // 365
-  2081:    [ 31,  31,  32,  32,  31,  30,  30,  30,  29,  30,  29,  31 ], // 366
-  2082:    [ 31,  31,  32,  31,  31,  30,  30,  30,  29,  30,  30,  30 ], // 365  Ashadh=32, Shrawan=31
-  2083:    [ 31,  31,  32,  32,  31,  31,  29,  30,  30,  29,  30,  30 ], // 365
-  2084:    [ 31,  31,  32,  31,  31,  31,  30,  29,  30,  29,  30,  30 ], // 365
-  2085:    [ 31,  32,  31,  32,  31,  30,  30,  29,  30,  29,  30,  30 ], // 365
-  2086:    [ 31,  31,  32,  32,  31,  30,  30,  29,  30,  29,  30,  30 ], // 365
+  2081:    [ 31,  32,  31,  32,  31,  30,  30,  30,  29,  30,  29,  31 ], // 366
+  2082:    [ 31,  31,  32,  31,  31,  31,  30,  29,  30,  29,  30,  30 ], // 365
+  2083:    [ 31,  31,  32,  31,  31,  31,  30,  29,  30,  29,  30,  30 ], // 365
+  2084:    [ 31,  31,  32,  31,  31,  30,  30,  30,  29,  30,  30,  30 ], // 365
+  2085:    [ 31,  32,  31,  32,  30,  31,  30,  30,  29,  30,  30,  30 ], // 366
+  2086:    [ 30,  32,  31,  32,  31,  30,  30,  30,  29,  30,  30,  30 ], // 365
+  2087:    [ 31,  31,  32,  31,  31,  31,  30,  29,  30,  30,  30,  30 ], // 366
 }
 
 // ── All Nepal public holidays — RED only, no type distinction ─────────────────
-// Format key: 'YYYY-MM-DD' in BS  →  holiday title string
 export const NEPAL_HOLIDAYS = {
-  // ── 2081 BS ───────────────────────────────────────────────────────────────
+    // ── 2081 BS ───────────────────────────────────────────────────────────────
     '2081-01-01': 'Naya Barsha (नयाँ वर्ष)',
     '2081-01-08': 'Ram Nawami (राम नवमी)',
     '2081-02-07': 'Buddha Jayanti (बुद्ध जयन्ती)',
@@ -90,75 +85,81 @@ export const NEPAL_HOLIDAYS = {
 
     // ── 2083 BS ───────────────────────────────────────────────────────────────
     '2083-01-01': 'Naya Barsha (नयाँ वर्ष)',
-    '2083-01-10': 'Buddha Jayanti (बुद्ध जयन्ती)',
-    '2083-01-25': 'Sithinakha',
-    '2083-02-28': 'Naag Panchami (नाग पञ्चमी)',
-    '2083-03-25': 'Janai Purnima (जनै पूर्णिमा)',
-    '2083-03-26': 'Gai Jatra (गाई जात्रा)',
-    '2083-04-18': 'Krishna Astami (कृष्णाष्टमी)',
-    '2083-04-22': 'Teej (तीज)',
-    '2083-04-28': 'Indra Jatra (इन्द्र जात्रा)',
-    '2083-05-23': 'Ghatasthapana (घटस्थापना)',
-    '2083-05-30': 'Fulpati (फूलपाती)',
-    '2083-05-31': 'Maha Astami (महा अष्टमी)',
-    '2083-06-01': 'Maha Nawami (महा नवमी)',
-    '2083-06-02': 'Vijaya Dashami (विजया दशमी)',
-    '2083-06-13': 'Kojagrat Purnima (कोजाग्रत पूर्णिमा)',
-    '2083-07-06': 'Tihar — Kaag Tihar',
-    '2083-07-07': 'Tihar — Kukur Tihar',
-    '2083-07-08': 'Lakshmi Puja / Diwali (लक्ष्मीपूजा)',
-    '2083-07-09': 'Govardhan Puja',
-    '2083-07-10': 'Bhai Tika (भाई टीका)',
-    '2083-07-21': 'Chhath Parba (छठ पर्व)',
-    '2083-09-30': 'Maghe Sankranti (माघे सङ्क्रान्ति)',
-    '2083-10-06': 'Sonam Losar (सोनाम ल्होसार)',
-    '2083-11-03': 'Maha Shivaratri (महाशिवरात्री)',
-    '2083-11-07': 'Gyalpo Losar (ग्याल्पो ल्होसार)',
-    '2083-11-27': 'Fagu Purnima / Holi (फागु पूर्णिमा)',
-    '2083-12-14': 'Ghode Jatra (घोडे जात्रा)',
-    '2083-12-18': 'Ram Nawami (राम नवमी)',
+    '2083-01-18': 'Buddha Jayanti (बुद्ध जयन्ती)',
+    '2083-03-06': 'Sithinakha',
+    '2083-05-01': 'Naag Panchami (नाग पञ्चमी)',
+    '2083-05-12': 'Janai Purnima / Raksha Bandhan (जनै पूर्णिमा)',
+    '2083-05-13': 'Gai Jatra (गाई जात्रा)',
+    '2083-05-19': 'Krishna Astami / Janmashtami (कृष्णाष्टमी)',
+    '2083-05-29': 'Teej (तीज)',
+    '2083-06-09': 'Indra Jatra (इन्द्र जात्रा)',
+    '2083-06-25': 'Ghatasthapana (घटस्थापना)',
+    '2083-06-31': 'Fulpati (फूलपाती)',
+    '2083-07-01': 'Maha Astami (महा अष्टमी)',
+    '2083-07-02': 'Maha Nawami (महा नवमी)',
+    '2083-07-03': 'Vijaya Dashami (विजया दशमी)',
+    '2083-07-08': 'Kojagrat Purnima (कोजाग्रत पूर्णिमा)',
+    '2083-07-20': 'Tihar — Kaag Tihar',
+    '2083-07-21': 'Tihar — Kukur Tihar',
+    '2083-07-22': 'Lakshmi Puja / Diwali (लक्ष्मीपूजा)',
+    '2083-07-23': 'Govardhan Puja',
+    '2083-07-24': 'Bhai Tika (भाई टीका)',
+    '2083-07-29': 'Chhath Parba (छठ पर्व)',
+    '2083-10-01': 'Maghe Sankranti (माघे सङ्क्रान्ति)',
+    '2083-10-24': 'Sonam Losar (सोनाम ल्होसार)',
+    '2083-11-22': 'Maha Shivaratri (महाशिवरात्री)',
+    '2083-11-25': 'Gyalpo Losar (ग्याल्पो ल्होसार)',
+    '2083-12-07': 'Fagu Purnima / Holi (फागु पूर्णिमा)',
+    '2083-12-23': 'Ghode Jatra (घोडे जात्रा)',
 
     // ── 2084 BS ───────────────────────────────────────────────────────────────
     '2084-01-01': 'Naya Barsha (नयाँ वर्ष)',
     '2084-02-06': 'Buddha Jayanti (बुद्ध जयन्ती)',
     '2084-11-21': 'Maha Shivaratri (महाशिवरात्री)',
     '2084-12-16': 'Fagu Purnima / Holi (फागु पूर्णिमा)',
-    }
+}
 
-    // ── Conversion engine ─────────────────────────────────────────────────────────
-    // Epoch: 1 Baisakh 1970 BS = April 13, 1913 AD
-    const BS_EPOCH = new Date(1913, 3, 13)
+// ── Conversion engine ─────────────────────────────────────────────────────────
+const EPOCH_YEAR = 2077
+const BS_EPOCH   = new Date(2020, 3, 13)
 
-    function yearTotal(y) {
-    return (BS_DAYS[y] || Array(12).fill(30)).reduce((a, b) => a + b, 0)
-    }
+function yearTotal(y) {
+    return (BS_DAYS[y] || Array(12).fill(365 / 12)).reduce((a, b) => a + b, 0)
+}
 
-    export function adToBS(adDate) {
-    // Normalize to midnight to avoid DST edge cases
+export function adToBS(adDate) {
     const noon = new Date(adDate.getFullYear(), adDate.getMonth(), adDate.getDate())
     let diff = Math.round((noon - BS_EPOCH) / 86400000)
-    let y = 1970
-    while (diff >= yearTotal(y)) { diff -= yearTotal(y); y++ }
+    let y = EPOCH_YEAR
+    if (diff >= 0) {
+        while (diff >= yearTotal(y)) { diff -= yearTotal(y); y++ }
+    } else {
+        while (diff < 0) { y--; diff += yearTotal(y) }
+    }
     const months = BS_DAYS[y] || Array(12).fill(30)
     let m = 0
     while (m < 12 && diff >= months[m]) { diff -= months[m]; m++ }
     return { year: y, month: m + 1, day: diff + 1 }
-    }
+}
 
-    export function bsMonthStartAD(bsYear, bsMonth) {
+export function bsMonthStartAD(bsYear, bsMonth) {
     let days = 0
-    for (let y = 1970; y < bsYear; y++) days += yearTotal(y)
+    if (bsYear >= EPOCH_YEAR) {
+        for (let y = EPOCH_YEAR; y < bsYear; y++) days += yearTotal(y)
+    } else {
+        for (let y = bsYear; y < EPOCH_YEAR; y++) days -= yearTotal(y)
+    }
     const months = BS_DAYS[bsYear] || Array(12).fill(30)
     for (let m = 0; m < bsMonth - 1; m++) days += months[m]
     return new Date(BS_EPOCH.getTime() + days * 86400000)
-    }
+}
 
-    export function daysInBSMonth(year, month) {
+export function daysInBSMonth(year, month) {
     return (BS_DAYS[year] || Array(12).fill(30))[month - 1] ?? 30
-    }
+}
 
-    // Build the array of day objects for a given BS month
-    export function buildMonthDays(bsYear, bsMonth) {
+// Build the array of day objects for a given BS month
+export function buildMonthDays(bsYear, bsMonth) {
     const total   = daysInBSMonth(bsYear, bsMonth)
     const startAD = bsMonthStartAD(bsYear, bsMonth)
     return Array.from({ length: total }, (_, i) => {
@@ -167,14 +168,17 @@ export const NEPAL_HOLIDAYS = {
         const bsDay  = i + 1
         const bsKey  = `${bsYear}-${String(bsMonth).padStart(2,'0')}-${String(bsDay).padStart(2,'0')}`
         const hTitle = NEPAL_HOLIDAYS[bsKey] || null
+        const isSat  = dow === 6
+        const isSun  = dow === 0
         return {
-        bsDay, adDate, adDay: adDate.getDate(), dow,
-        isSat: dow === 6, isSun: dow === 0,
-        isHoliday: !!hTitle || dow === 6,
-        holidayTitle: hTitle,
-        bsKey,
-        // ISO string of AD date for task due_date matching
-        adISO: adDate.toISOString().split('T')[0],
+            bsDay, adDate, adDay: adDate.getDate(), dow,
+            isSat, isSun,
+            // both Saturday and Sunday now count as weekend holidays
+            isHoliday: !!hTitle || isSat || isSun,
+            holidayTitle: hTitle,
+            bsKey,
+            // ISO string of AD date for task due_date matching
+            adISO: adDate.toISOString().split('T')[0],
         }
     })
 }

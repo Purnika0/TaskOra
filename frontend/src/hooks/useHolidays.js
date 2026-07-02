@@ -1,7 +1,3 @@
-// src/hooks/useHolidays.js
-// Fetches BS calendar data from the real backend.
-// The backend uses nepali-datetime for accurate BS conversions.
-
 import { useState, useEffect, useCallback } from 'react'
 import holidaysService from '../services/holidays.service.js'
 import { BS_MONTHS } from '../utils/helpers.js'
@@ -56,3 +52,4 @@ export function useUpcomingHolidays() {
 
     return { holidays, loading }
 }
+ 

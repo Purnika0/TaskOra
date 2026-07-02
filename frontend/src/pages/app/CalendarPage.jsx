@@ -1,10 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, CalendarDays, Plus, Trash2, Loader, Info } from 'lucide-react'
 import { useToday, useBSCalendar }  from '../../hooks/useHolidays.js'
-import { useToast }                 from '../../context/ToastContext.jsx'
-import { useAuth }                  from '../../hooks/useAuth.js'
-import tasksService                 from '../../services/tasks.service.js'
-import { apiError }                 from '../../utils/helpers.js'
+import { useToast }                from '../../context/ToastContext.jsx'
+import { useAuth }                 from '../../hooks/useAuth.js'
+import tasksService                from '../../services/tasks.service.js'
+import { apiError }                from '../../utils/helpers.js'
 import {
     BS_MONTH_NAMES, AD_MONTH_NAMES, buildMonthDays,
     daysInBSMonth, adToBS,
@@ -20,8 +20,10 @@ const BLUE_BG = '#EEEEFE'
 // ── Day Cell ──────────────────────────────────────────────────────────────────
 function DayCell({ day, isToday, isSelected, taskCount, onClick }) {
     const [hov, setHov] = useState(false)
-    const hTitle = day.holidayTitle || (day.isSat ? 'Saturday — Holiday' : null)
-    const isRed  = day.isHoliday || day.isSat
+    const hTitle = day.holidayTitle
+        || (day.isSat ? 'Saturday — Holiday' : null)
+        || (day.isSun ? 'Sunday — Holiday' : null)
+    const isRed  = day.isHoliday || day.isSat || day.isSun
 
     let bgColor  = 'transparent'
     let txtColor = '#0F172A'
@@ -123,7 +125,9 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onAddTask, onDel
     )
 
     const dowName  = DOW_SHORT[day.dow]
-    const hTitle   = day.holidayTitle || (day.isSat ? 'Saturday — Holiday' : null)
+    const hTitle   = day.holidayTitle
+        || (day.isSat ? 'Saturday — Holiday' : null)
+        || (day.isSun ? 'Sunday — Holiday' : null)
     const adMonth  = AD_MONTH_NAMES?.[day.adDate.getMonth()] || ''
 
     async function handleAdd(e) {
@@ -234,8 +238,8 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onAddTask, onDel
                                 display:'flex', alignItems:'center', gap:4, padding:'8px 12px',
                                 fontSize:11, fontWeight:600, border:'none', borderRadius:8,
                                 background: title.trim() ? BLUE : '#E2E8F0',
-                                color:      title.trim() ? '#fff' : '#94A3B8',
-                                cursor:     title.trim() ? 'pointer' : 'default',
+                                color:   title.trim() ? '#fff' : '#94A3B8',
+                                cursor:  title.trim() ? 'pointer' : 'default',
                                 transition:'all 0.12s', flexShrink:0,
                             }}>
                             {saving ? <Loader size={11} style={{ animation:'to-spin 1s linear infinite' }}/> : <Plus size={11}/>}
@@ -263,35 +267,28 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onAddTask, onDel
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CalendarPage() {
     const { today: todayData }  = useToday()
-    const toast                  = useToast()
-    const { user }               = useAuth()
-    const isTeacher              = user?.role === 'teacher'
+    const toast                = useToast()
+    const { user }             = useAuth()
+    const isTeacher            = user?.role === 'teacher'
 
-    // ── Today BS (from backend, falls back to local conversion) ───────────────
     const todayBS = useMemo(() => {
         if (todayData?.today_bs) return todayData.today_bs
         const t = adToBS(new Date())
         return { year:t.year, month:t.month, day:t.day }
     }, [todayData])
 
-    // ── Current viewed month ──────────────────────────────────────────────────
     const [cur, setCur] = useState(() => {
         const t = adToBS(new Date())
-        return { y:t.year, m:t.month }          // defaults to today's BS month (e.g. Ashadh 2083)
+        return { y:t.year, m:t.month }
     })
 
-    // Sync to backend-provided today once it arrives
     useEffect(() => {
         if (todayBS?.year && todayBS?.month)
             setCur({ y:todayBS.year, m:todayBS.month })
     }, [todayBS?.year, todayBS?.month])
 
-    // ── Backend calendar data for current month ───────────────────────────────
-    // Calls GET /api/holidays/calendar/?year=2083&month=N
-    // Returns { year_bs, month_bs, days: [{day_bs, date_ad, is_holiday, holiday_title, holiday_type}] }
     const { calendar: backendCal, loading: calLoading } = useBSCalendar(cur.y, cur.m)
 
-    // ── Tasks ─────────────────────────────────────────────────────────────────
     const [selected, setSelected] = useState(null)
     const [allTasks, setAllTasks] = useState([])
     const [loadingT, setLoadingT] = useState(false)
@@ -304,31 +301,25 @@ export default function CalendarPage() {
             .finally(() => setLoadingT(false))
     }, [])
 
-    // ── Navigation ────────────────────────────────────────────────────────────
     const prev    = () => { setSelected(null); setCur(c => c.m === 1  ? { y:c.y-1, m:12 } : { y:c.y, m:c.m-1 }) }
     const next    = () => { setSelected(null); setCur(c => c.m === 12 ? { y:c.y+1, m:1  } : { y:c.y, m:c.m+1 }) }
     const goToday = () => { if (todayBS) { setCur({ y:todayBS.year, m:todayBS.month }); setSelected(null) } }
 
-    // ── Build local day structure (AD dates, DOW, local fallback holidays) ────
     const rawDays = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
 
-    // ── Merge backend holiday data on top of local days ───────────────────────
-    // Backend is authoritative for is_holiday / holiday_title.
-    // If backend hasn't loaded yet, rawDays already carry the local fallback.
     const days = useMemo(() => {
         if (!backendCal?.days?.length) return rawDays
 
-        // Build lookup:  day_bs (number) → backend day object
         const bkMap = {}
         backendCal.days.forEach(d => { bkMap[d.day_bs] = d })
 
         return rawDays.map(day => {
             const bk = bkMap[day.bsDay]
             if (!bk) return day
-            // Keep isSat always as holiday; layer backend holiday_title + is_holiday on top
             return {
                 ...day,
-                isHoliday:    bk.is_holiday || day.isSat,
+                // both Saturday and Sunday count as weekend holidays
+                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
                 holidayTitle: bk.holiday_title || day.holidayTitle || null,
             }
         })
@@ -338,7 +329,6 @@ export default function CalendarPage() {
     const trailBlanks = (7 - ((firstDow + days.length) % 7)) % 7
     const bsMonth     = BS_MONTH_NAMES[cur.m - 1]
 
-    // AD range string for subtitle
     const adRangeStr = useMemo(() => {
         if (!days.length) return ''
         const first = days[0], last = days[days.length - 1]
@@ -351,7 +341,6 @@ export default function CalendarPage() {
 
     const selectedDay = useMemo(() => selected ? days.find(d => d?.bsKey === selected) : null, [days, selected])
 
-    // Task count per AD ISO date string
     const taskCountMap = useMemo(() => {
         const map = {}
         allTasks.forEach(t => {
@@ -361,7 +350,6 @@ export default function CalendarPage() {
         return map
     }, [allTasks])
 
-    // Tasks for the selected day
     const dayTasks = useMemo(() => {
         if (!selectedDay) return []
         return allTasks.filter(t => {
@@ -388,12 +376,13 @@ export default function CalendarPage() {
         } catch (err) { toast.error(apiError(err)) }
     }, [toast, isTeacher])
 
-    const holidayCount = useMemo(() => days.filter(d => d?.isHoliday || d?.isSat).length, [days])
+    const holidayCount = useMemo(
+        () => days.filter(d => d?.isHoliday || d?.isSat || d?.isSun).length,
+        [days]
+    )
 
     return (
         <div className="anim-fade-in">
-
-            {/* Page header */}
             <div className="page-header">
                 <div>
                     <h2 className="page-title">Calendar</h2>
@@ -411,21 +400,19 @@ export default function CalendarPage() {
                         style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', fontSize:12, fontWeight:600, background:BLUE, color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontFamily:'var(--font-display)' }}>
                         <CalendarDays size={13}/> Today
                     </button>
-                    <span style={{ fontSize:10, fontWeight:600, padding:'4px 10px', borderRadius:99,
-                        background: BLUE_BG, color: BLUE,
-                        border: `1px solid rgba(84,82,228,0.18)`,
-                        fontFamily:'var(--font-display)' }}>
-                        {isTeacher ? 'Teacher' : 'Student · View Only'}
-                    </span>
+                    {isTeacher && (
+                        <span style={{ fontSize:10, fontWeight:600, padding:'4px 10px', borderRadius:99,
+                            background: BLUE_BG, color: BLUE,
+                            border: `1px solid rgba(84,82,228,0.18)`,
+                            fontFamily:'var(--font-display)' }}>
+                            Teacher
+                        </span>
+                    )}
                 </div>
             </div>
 
             <div className="cal-pg-grid" style={{ marginBottom:24 }}>
-
-                {/* ── Calendar card ── */}
                 <div className="white-card" style={{ padding:20 }}>
-
-                    {/* Month navigation */}
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                         <button className="cal-nav" onClick={prev} aria-label="Previous month">
                             <ChevronLeft size={14}/>
@@ -442,11 +429,10 @@ export default function CalendarPage() {
                             </div>
                             <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
                                 <p style={{ fontSize:11, color:'#94A3B8', margin:'2px 0 0' }}>{adRangeStr}</p>
-                                {/* Backend loading indicator */}
                                 {calLoading && (
                                     <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:9, color:'#94A3B8', margin:'2px 0 0' }}>
                                         <Loader size={9} style={{ animation:'to-spin 1s linear infinite' }}/>
-                                        Syncing holidays…
+                                        Syncing…
                                     </span>
                                 )}
                             </div>
@@ -456,7 +442,6 @@ export default function CalendarPage() {
                         </button>
                     </div>
 
-                    {/* DOW labels */}
                     <div className="cal-grid" style={{ marginBottom:4 }}>
                         {DOW_SHORT.map((d, i) => (
                             <div key={d} style={{
@@ -467,13 +452,9 @@ export default function CalendarPage() {
                                 {d}
                             </div>
                         ))}
-
-                        {/* Leading blanks */}
                         {Array(firstDow).fill(null).map((_, i) => <div key={`b${i}`}/>)}
-
-                        {/* Day cells */}
                         {days.map(day => {
-                            const isToday    = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
+                            const isToday = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
                             const isSelected = day.bsKey === selected
                             return (
                                 <DayCell
@@ -486,19 +467,15 @@ export default function CalendarPage() {
                                 />
                             )
                         })}
-
-                        {/* Trailing blanks */}
                         {Array(trailBlanks).fill(null).map((_, i) => <div key={`e${i}`}/>)}
                     </div>
 
                     {/* Legend */}
                     <div style={{ display:'flex', gap:14, paddingTop:10, borderTop:'1px solid #E2E8F0', justifyContent:'center', flexWrap:'wrap', marginTop:8 }}>
                         {[
-                            { label:'Today',           swatch: <span style={{ width:12, height:12, borderRadius:3, background:BLUE, border:`2px solid ${BLUE}`, flexShrink:0, display:'inline-block' }}/> },
-                            { label:'Holiday / Sat',   swatch: <span style={{ width:12, height:12, borderRadius:3, background:RED_BG, border:`1px solid #FECACA`, flexShrink:0, display:'inline-block' }}/> },
-                            { label:'Has Assignment',  swatch: <span style={{ width:8, height:8, borderRadius:'50%', background:BLUE, flexShrink:0, display:'inline-block' }}/> },
-                            { label: backendCal ? '✓ Live holidays' : 'Local holidays',
-                              swatch: <span style={{ width:8, height:8, borderRadius:'50%', background: backendCal ? '#059669' : '#94A3B8', flexShrink:0, display:'inline-block' }}/> },
+                            { label:'Today', swatch: <span style={{ width:12, height:12, borderRadius:3, background:BLUE, border:`2px solid ${BLUE}`, flexShrink:0, display:'inline-block' }}/> },
+                            { label:'Holiday / Weekend', swatch: <span style={{ width:12, height:12, borderRadius:3, background:RED, border:`1px solid ${RED}`, flexShrink:0, display:'inline-block' }}/> },
+                            { label:'Has Assignment', swatch: <span style={{ width:8, height:8, borderRadius:'50%', background:BLUE, flexShrink:0, display:'inline-block' }}/> },
                         ].map(l => (
                             <div key={l.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:'#64748B' }}>
                                 {l.swatch}
@@ -515,15 +492,9 @@ export default function CalendarPage() {
                         <span style={{ fontSize:10, color:'#94A3B8' }}>
                             <span style={{ fontWeight:700, color:RED, fontSize:12 }}>{holidayCount}</span> holidays
                         </span>
-                        {backendCal?.days?.length && (
-                            <span style={{ fontSize:10, color:'#059669', fontWeight:600 }}>
-                                Backend: {backendCal.days.filter(d => d.is_holiday).length} public holidays
-                            </span>
-                        )}
                     </div>
                 </div>
 
-                {/* ── Side panel ── */}
                 <div className="white-card" style={{ padding:16, display:'flex', flexDirection:'column', minHeight:300 }}>
                     <SidePanel
                         day={selectedDay}
@@ -537,8 +508,6 @@ export default function CalendarPage() {
                     />
                 </div>
             </div>
-
-
         </div>
     )
 }
