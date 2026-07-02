@@ -135,12 +135,64 @@ function HolidaysWidget() {
     )
 }
 
-// ── Upcoming Assignments widget ───────────────────────────────────────────────
+// OLD ── Upcoming Assignments widget ───────────────────────────────────────────────
+// function UpcomingWidget({ tasks }) {
+//     const upcoming = tasks
+//         .filter(t => !isCompleted(t))
+//         .sort((a,b) => (getTaskDueDate(a)||'9').localeCompare(getTaskDueDate(b)||'9'))
+//         .slice(0,5)
+//     return (
+//         <div className="white-card" style={{ padding:18, height:'100%' }}>
+//             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
+//                 <BookOpen size={14} style={{ color:'#3b6fd4', flexShrink:0 }}/>
+//                 <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:0 }}>Upcoming</h3>
+//             </div>
+//             {upcoming.length === 0
+//                 ? <p style={{ fontSize:12, color:'#b0a898' }}>No pending assignments.</p>
+//                 : <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+//                     {upcoming.map(t => {
+//                         const due = getTaskDueDate(t)
+//                         const d   = daysUntil(due)
+//                         const color = statusColor(t)
+//                         const bg    = statusBg(t)
+//                         return (
+//                             <div key={t.id} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', gap:8 }}>
+//                                 <div style={{ flex:1, minWidth:0 }}>
+//                                     <p style={{ fontSize:12, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+//                                         {getTaskTitle(t)}
+//                                     </p>
+//                                     <p style={{ fontSize:10, color:'#b0a898', margin:'1px 0 0' }}>{due||'No date'}</p>
+//                                 </div>
+//                                 <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', background:bg, color, borderRadius:99, whiteSpace:'nowrap' }}>
+//                                     {statusLabel(t)}
+//                                 </span>
+//                             </div>
+//                         )
+//                     })}
+//                 </div>
+//             }
+//         </div>
+//     )
+// }
+// UPDATED ── Upcoming Assignments widget ───────────────────────────────────────────────
 function UpcomingWidget({ tasks }) {
-    const upcoming = tasks
-        .filter(t => !isCompleted(t))
-        .sort((a,b) => (getTaskDueDate(a)||'9').localeCompare(getTaskDueDate(b)||'9'))
-        .slice(0,5)
+    const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+
+    const upcomingOnly = tasks
+        .filter(t => isPending(t) && getTaskDueDate(t) && getTaskDueDate(t) >= today)
+        .sort((a,b) => getTaskDueDate(a).localeCompare(getTaskDueDate(b)))
+
+    let upcoming = upcomingOnly.slice(0, 5)
+
+    if (upcoming.length < 5) {
+        const overdueOnly = tasks
+            .filter(isOverdue)
+            .sort((a,b) => (getTaskDueDate(a)||'').localeCompare(getTaskDueDate(b)||'')) // oldest due date first = most overdue
+
+        const needed = 5 - upcoming.length
+        upcoming = [...upcoming, ...overdueOnly.slice(0, needed)]
+    }
+
     return (
         <div className="white-card" style={{ padding:18, height:'100%' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
