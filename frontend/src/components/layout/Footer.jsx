@@ -1,11 +1,11 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { Mail, GraduationCap } from 'lucide-react'
+import { Mail, GraduationCap, LogIn } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
 
 function FtLink({ to, href, children }) {
     const style = {
-        color: 'rgba(255,255,255,0.60)',
+        color: 'rgba(255,255,255,0.75)',
         fontSize: 13,
         textDecoration: 'none',
         fontFamily: 'var(--font-body)',
@@ -15,7 +15,7 @@ function FtLink({ to, href, children }) {
         marginBottom: 8,
     }
     const on  = e => (e.currentTarget.style.color = '#fff')
-    const off = e => (e.currentTarget.style.color = 'rgba(255,255,255,0.60)')
+    const off = e => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')
     if (href) return <a href={href} style={style} onMouseEnter={on} onMouseLeave={off}>{children}</a>
     return <Link to={to} style={style} onMouseEnter={on} onMouseLeave={off}>{children}</Link>
 }
@@ -45,7 +45,7 @@ export function SiteFooter() {
                 }
                 .ft-col-title {
                     font-size: 10px; font-weight: 700;
-                    color: rgba(255,255,255,0.30); text-transform: uppercase;
+                    color: rgba(255,255,255,0.45); text-transform: uppercase;
                     letter-spacing: 0.10em; margin-bottom: 12px;
                     font-family: var(--font-display);
                 }
@@ -61,13 +61,13 @@ export function SiteFooter() {
                             TaskOra
                         </span>
                     </div>
-                    <p style={{ fontSize:13, color:'rgba(255,255,255,0.45)', lineHeight:1.65, margin:'0 0 14px', maxWidth:300 }}>
+                    <p style={{ fontSize:13, color:'rgba(255,255,255,0.65)', lineHeight:1.65, margin:'0 0 14px', maxWidth:300 }}>
                         Academic task management for IT students. Built for real classroom use.
                     </p>
                     <a href="mailto:taskora2083@gmail.com"
-                        style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:12, color:'rgba(255,255,255,0.45)', textDecoration:'none', transition:'color 0.13s' }}
+                        style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:12, color:'rgba(255,255,255,0.65)', textDecoration:'none', transition:'color 0.13s' }}
                         onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.45)')}>
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.65)')}>
                         <Mail size={12}/> taskora2083@gmail.com
                     </a>
                 </div>
@@ -77,7 +77,7 @@ export function SiteFooter() {
                     <FtLink to="/">Home</FtLink>
                     <FtLink to="/about">About</FtLink>
                     <FtLink to="/contact">Contact Us</FtLink>
-                    {!user && <FtLink to="/auth">Sign In</FtLink>}
+                    <FtLink to="/legal">Legal</FtLink>
                 </div>
 
                 <div>
@@ -91,23 +91,23 @@ export function SiteFooter() {
                         </>
                     ) : (
                         <>
-                            <FtLink to="/auth">Assignments</FtLink>
-                            <FtLink to="/auth">Calendar</FtLink>
-                            <FtLink to="/auth">Analytics</FtLink>
-                            <span style={{ fontSize:11, color:'rgba(255,255,255,0.22)', fontStyle:'italic', display:'block', marginTop:2 }}>
-                                Sign in to access
-                            </span>
+                            <FtLink to="/auth?view=login">Assignments</FtLink>
+                            <FtLink to="/auth?view=login">Calendar</FtLink>
+                            <FtLink to="/auth?view=login">Analytics</FtLink>
+                            <Link to="/auth?view=login"
+                                style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'#fff', textDecoration:'none', border:'1px solid rgba(255,255,255,0.20)', borderRadius:7, padding:'6px 12px', marginTop:6, fontFamily:'var(--font-display)', transition:'background 0.13s, border-color 0.13s' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.32)' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.20)' }}>
+                                <LogIn size={12}/> Sign In
+                            </Link>
                         </>
                     )}
                 </div>
             </div>
 
             <div className="ft-bar">
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.30)', margin:0 }}>
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:0 }}>
                     © {new Date().getFullYear()} TaskOra · Academic Task Management System
-                </p>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.18)', margin:0 }}>
-                    Final Year Project
                 </p>
             </div>
         </footer>

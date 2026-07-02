@@ -124,7 +124,7 @@ export default function AboutPage() {
             </section>
 
             {/* CTA */}
-            <section style={{ background:'var(--color-cream)', padding:'56px 24px', textAlign:'center' }}>
+            <section style={{ background:'var(--color-white)', padding:'56px 24px', textAlign:'center' }}>
                 <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:26, color:'#0F172A', letterSpacing:'-0.02em', margin:'0 0 12px' }}>
                     Ready to get started?
                 </h2>

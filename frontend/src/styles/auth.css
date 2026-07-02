@@ -9,7 +9,7 @@
     align-items: center;
     justify-content: center;
     /* Smooth transition using the cool-tinted cream profile */
-    background: linear-gradient(150deg, var(--color-white) 0%, var(--color-cream-subtle) 50%, var(--color-cream) 100__);
+    background: linear-gradient(150deg, var(--color-white) 0%, var(--color-cream-subtle) 50%, var(--color-cream) 100%);
     padding: 20px 16px;
     font-family: var(--font-body);
     min-height: 100vh;
@@ -40,7 +40,7 @@
 .signup-left {
     width: 36%;
     /* Gradient matches our lightened, vibrant navy-to-royal profile */
-    background: linear-gradient(160deg, var(--color-navy-light) 0%, var(--color-navy) 100__);
+    background: linear-gradient(160deg, var(--color-navy-light) 0%, var(--color-navy) 100%);
     padding: 38px 28px;
     display: flex;
     flex-direction: column;

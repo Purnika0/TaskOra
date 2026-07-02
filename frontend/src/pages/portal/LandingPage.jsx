@@ -204,7 +204,6 @@ export default function LandingPage() {
     const { user } = useAuth()
     const [menuOpen, setMenuOpen] = useState(false)
 
-    const ctaTo    = user ? '/app' : '/auth'
     const ctaLabel = user ? 'Go to Dashboard' : 'Get Started Free'
 
     return (
@@ -239,7 +238,7 @@ export default function LandingPage() {
                         Contact
                     </Link>
                     <div style={{ marginTop:20, display:'flex', flexDirection:'column', gap:10 }}>
-                        <Link to={ctaTo} onClick={() => setMenuOpen(false)}
+                        <Link to={user ? '/app' : '/auth?view=signup'} onClick={() => setMenuOpen(false)}
                             style={{ background:'#fff', color:'var(--color-navy)', textAlign:'center', fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, padding:14, borderRadius:10, textDecoration:'none' }}>
                             {ctaLabel}
                         </Link>
@@ -270,8 +269,8 @@ export default function LandingPage() {
                         </Link>
                     ) : (
                         <>
-                            <Link to="/auth" className="lp-nav-link" style={{ fontWeight:600 }}>Login</Link>
-                            <Link to="/auth" className="lp-btn-primary" style={{ padding:'8px 16px', fontSize:13 }}>
+                            <Link to="/auth?view=login" className="lp-nav-link" style={{ fontWeight:600 }}>Login</Link>
+                            <Link to="/auth?view=signup" className="lp-btn-primary" style={{ padding:'8px 16px', fontSize:13 }}>
                                 Sign Up <ArrowRight size={13}/>
                             </Link>
                         </>
@@ -299,8 +298,8 @@ export default function LandingPage() {
                                 <Link to="/app" className="lp-btn-primary">Go to Dashboard <ArrowRight size={15}/></Link>
                             ) : (
                                 <>
-                                    <Link to="/auth" className="lp-btn-primary">Get Started Free <ArrowRight size={15}/></Link>
-                                    <Link to="/auth" className="lp-btn-secondary">Login</Link>
+                                    <Link to="/auth?view=signup" className="lp-btn-primary">Get Started Free <ArrowRight size={15}/></Link>
+                                    <Link to="/auth?view=login" className="lp-btn-secondary">Login</Link>
                                 </>
                             )}
                         </div>
@@ -389,10 +388,10 @@ export default function LandingPage() {
                         </Link>
                     ) : (
                         <>
-                            <Link to="/auth" className="lp-btn-primary">
+                            <Link to="/auth?view=signup" className="lp-btn-primary">
                                 Create Student Account <ArrowRight size={15}/>
                             </Link>
-                            <Link to="/auth" className="lp-btn-secondary">
+                            <Link to="/auth?view=login" className="lp-btn-secondary">
                                 Login
                             </Link>
                         </>

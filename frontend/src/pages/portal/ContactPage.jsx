@@ -204,14 +204,14 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                 <UserMenu user={user} logout={logout} />
             ) : (
                 <>
-                <Link to="/auth" className="ct-register"
+                <Link to="/auth?view=signup" className="ct-register"
                     style={{ fontSize:13, fontWeight:500, color:'#64748B', textDecoration:'none', padding:'6px 12px', borderRadius:8, fontFamily:'var(--font-body)', transition:'color 0.15s' }}
                     onMouseEnter={e => (e.currentTarget.style.color = '#0F172A')}
                     onMouseLeave={e => (e.currentTarget.style.color = '#64748B')}
                 >
                     Register
                 </Link>
-                <Link to="/auth"
+                <Link to="/auth?view=login"
                     style={{ fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', padding:'7px 14px', borderRadius:8, background:'#0F172A', fontFamily:'var(--font-display)', transition:'background 0.15s', letterSpacing:'-0.01em' }}
                     onMouseEnter={e => (e.currentTarget.style.background = '#0F172A')}
                     onMouseLeave={e => (e.currentTarget.style.background = '#0F172A')}
@@ -243,7 +243,7 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                 <h2 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:17, margin:'0 0 8px', letterSpacing:'-0.01em' }}>
                     Get in touch
                 </h2>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.40)', lineHeight:1.75, margin:0 }}>
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.85)', lineHeight:1.75, margin:0 }}>
                     We respond to all messages within 24 hours on business days.
                 </p>
                 </div>
@@ -257,8 +257,8 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                     {row.icon}
                     </div>
                     <div>
-                    <p style={{ fontSize:9, color:'rgba(255,255,255,0.25)', margin:'0 0 2px', textTransform:'uppercase', letterSpacing:'0.09em' }}>{row.label}</p>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.70)', margin:0 }}>{row.val}</p>
+                    <p style={{ fontSize:9, color:'rgba(255,255,255,0.60)', margin:'0 0 2px', textTransform:'uppercase', letterSpacing:'0.09em' }}>{row.label}</p>
+                    <p style={{ fontSize:12, color:'#fff', margin:0 }}>{row.val}</p>
                     </div>
                 </div>
                 ))}

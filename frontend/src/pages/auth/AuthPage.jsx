@@ -337,14 +337,14 @@
                 <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,255,255,0.13)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:18 }}>
                 <GraduationCap size={18} style={{ color:'#fff' }}/>
                 </div>
-                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:20, color:'var(--color-text)', margin:'0 0 10px', letterSpacing:'-0.02em' }}>
+                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:20, color:'#fff', margin:'0 0 10px', letterSpacing:'-0.02em' }}>
                 TaskOra
                 </h2>
-                <p style={{ fontSize:13, color:'var(--color-text-muted)', lineHeight:1.7, margin:0 }}>
+                <p style={{ fontSize:13, color:'rgba(255,255,255,0.80)', lineHeight:1.7, margin:0 }}>
                 Academic assignment tracker for IT students. Stay on top of your deadlines.
                 </p>
             </div>
-            <p style={{ fontSize:11, color:'var(--color-text-placeholder)', margin:0 }}>
+            <p style={{ fontSize:11, color:'rgba(255,255,255,0.55)', margin:0 }}>
                 © {new Date().getFullYear()} TaskOra
             </p>
             </div>
