@@ -37,6 +37,7 @@ urlpatterns = [
     path('api/holidays/', include('holidays.urls')),
     path('api/analytics/', include('analytics.urls')),
     path('api/ml/', include('ml.urls')),
+    path('api/contact/', include('contact.urls')),
 ]
 
 # from django.contrib import admin

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'holidays',
     'analytics',
     'ml',
+    'contact',
 ]
 
 MIDDLEWARE = [

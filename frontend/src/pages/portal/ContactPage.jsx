@@ -121,14 +121,47 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
         return !Object.keys(e).length
     }
 
+    // OLD (fake — no API call)
+    // async function submit(e) {
+    //     e.preventDefault()
+    //     if (!validate()) return
+    //     setBusy(true)
+    //     await new Promise(r => setTimeout(r, 800))
+    //     toast.success("Message sent! We'll get back to you soon.")
+    //     setSent(true)
+    //     setBusy(false)
+    // }
+
+    // NEW — actually calls the backend
     async function submit(e) {
         e.preventDefault()
         if (!validate()) return
         setBusy(true)
-        await new Promise(r => setTimeout(r, 800))
-        toast.success("Message sent! We'll get back to you soon.")
-        setSent(true)
-        setBusy(false)
+        try {
+            const res = await fetch('http://127.0.0.1:8000/api/contact/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    full_name: form.name,
+                    email:     form.email,
+                    subject:   form.subject,
+                    message:   form.message,
+                }),
+            })
+            if (!res.ok) {
+                const data = await res.json()
+                // Show first validation error from backend if any
+                const firstError = Object.values(data)[0]
+                toast.error(Array.isArray(firstError) ? firstError[0] : firstError)
+                return
+            }
+            toast.success("Message sent! We'll get back to you soon.")
+            setSent(true)
+        } catch {
+            toast.error('Something went wrong. Please try again.')
+        } finally {
+            setBusy(false)
+        }
     }
 
     return (
