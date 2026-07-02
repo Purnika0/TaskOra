@@ -173,12 +173,8 @@ class MarkOverdueTasksView(APIView):
     permission_classes = [IsAdmin]
 
     def post(self, request):
-        from users.permissions import IsAdmin
-        today   = timezone.now().date()
-        updated = Task.objects.filter(
-            status=Task.Status.PENDING,
-            assignment__due_date__lt=today
-        ).update(status=Task.Status.OVERDUE)
+        from .services import mark_overdue_tasks
+        updated = mark_overdue_tasks()
         return Response(
             {"detail": f"{updated} task(s) marked as overdue."},
             status=status.HTTP_200_OK
