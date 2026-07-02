@@ -25,6 +25,7 @@ const NAV = {
         { to: '/app/courses',        icon: <BookOpen size={15}/>,        label: 'My Courses'   },
         { to: '/app/assignments',    icon: <ClipboardList size={15}/>,   label: 'Assignments'  },
         { to: '/app/calendar',       icon: <CalendarDays size={15}/>,    label: 'Calendar'     },
+        { to: '/app/recommendations',icon: <BarChart3 size={15}/>,       label: 'Recommendations' },
         { to: '/app/settings',       icon: <UserCircle size={15}/>,      label: 'Profile'      },
     ],
 }
