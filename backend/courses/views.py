@@ -6,6 +6,9 @@ from .models import Course, Enrollment
 from .serializers import CourseSerializer, CourseWriteSerializer, EnrollmentSerializer, JoinCourseSerializer
 from users.permissions import IsTeacher, IsAdmin, IsStudent
 from tasks.models import Assignment, Task
+from tasks.priority import calculate_priority_score
+from django.db import transaction
+
 
 class CourseListCreateView(generics.ListCreateAPIView):
     """
@@ -48,23 +51,6 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Course.objects.none()
 
 
-# class JoinCourseView(APIView):
-#     # Student joins a course using a join code
-#     permission_classes = [IsStudent]
-
-#     def post(self, request):
-#         serializer = JoinCourseSerializer(data=request.data, context={'request': request})
-#         if serializer.is_valid():
-#             course = serializer.context['course']
-
-#             if Enrollment.objects.filter(student=request.user, course=course).exists():
-#                 return Response({"detail": "You are already enrolled in this course."}, status=status.HTTP_400_BAD_REQUEST)
-
-#             Enrollment.objects.create(student=request.user, course=course)
-#             return Response({"detail": f"Successfully joined '{course.title}'."}, status=status.HTTP_201_CREATED)
-
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 class JoinCourseView(APIView):
     """Student joins a course using a join code."""
     permission_classes = [IsStudent]
@@ -88,31 +74,32 @@ class JoinCourseView(APIView):
             )
 
         # Enroll the student
-        Enrollment.objects.create(student=request.user, course=course)
+        with transaction.atomic():
+            Enrollment.objects.create(student=request.user, course=course)
 
-        # ── Auto-assign existing assignments ──────────────────────────────
-        existing_assignments = Assignment.objects.filter(course=course)
-        tasks_to_create = []
+            # ── Auto-assign existing assignments ──────────────────────────────
+            existing_assignments = Assignment.objects.filter(course=course)
+            tasks_to_create = []
 
-        for assignment in existing_assignments:
-            # Skip if task already exists for this student (safety check)
-            already_exists = Task.objects.filter(
-                student=request.user,
-                assignment=assignment
-            ).exists()
+            for assignment in existing_assignments:
+                 # Skip if task already exists for this student (safety check)
+                already_exists = Task.objects.filter(
+                    student=request.user,
+                    assignment=assignment
+                ).exists()
 
-            if not already_exists:
-                score = calculate_priority_score(assignment)
-                tasks_to_create.append(
-                    Task(
-                        student=request.user,
-                        assignment=assignment,
-                        priority_score=score
+                if not already_exists:
+                    score = calculate_priority_score(assignment)
+                    tasks_to_create.append(
+                        Task(
+                            student=request.user,
+                            assignment=assignment,
+                            priority_score=score
+                        )
                     )
-                )
 
-        if tasks_to_create:
-            Task.objects.bulk_create(tasks_to_create)
+            if tasks_to_create:
+                Task.objects.bulk_create(tasks_to_create)
         # ─────────────────────────────────────────────────────────────────
 
         return Response(
