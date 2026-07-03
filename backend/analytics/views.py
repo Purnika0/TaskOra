@@ -4,6 +4,7 @@ from django.utils import timezone
 from tasks.models import Task, Assignment
 from courses.models import Enrollment, Course
 from users.permissions import IsStudent, IsTeacher
+from users.models import User
 
 
 # ---------------------------------------------------------------------------
@@ -163,17 +164,29 @@ class TeacherStudentRankingView(APIView):
         if course_id:
             filter_kwargs["course_id"] = course_id
 
-        enrollments = Enrollment.objects.filter(
-            **filter_kwargs
-        ).select_related('student')
+        students = User.objects.filter(
+            role=User.Role.STUDENT,
+            enrollments__course__teacher=request.user,
+        ).distinct()
+
+        if course_id:
+            students = students.filter(
+                enrollments__course_id=course_id
+            )
 
         data = []
-        for enrollment in enrollments:
-            student   = enrollment.student
-            tasks     = Task.objects.filter(
+
+        for student in students:
+            tasks = Task.objects.filter(
                 student=student,
-                assignment__course__teacher=request.user
+                assignment__course__teacher=request.user,
             )
+
+            if course_id:
+                tasks = tasks.filter(
+                    assignment__course_id=course_id
+                )
+
             total     = tasks.count()
             completed = tasks.filter(status=Task.Status.COMPLETED).count()
             submitted = tasks.filter(status=Task.Status.SUBMITTED).count()

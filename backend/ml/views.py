@@ -32,7 +32,7 @@ class StudentGroupsView(APIView):
     permission_classes = [IsTeacher]
 
     def get(self, request):
-        result = cluster_students()
+        result = cluster_students(request.user)
         return Response(result)
 
 
@@ -44,6 +44,6 @@ class OutliersView(APIView):
     permission_classes = [IsTeacher]
 
     def get(self, request):
-        result = detect_outliers()
+        result = detect_outliers(request.user)
         return Response(result)
 

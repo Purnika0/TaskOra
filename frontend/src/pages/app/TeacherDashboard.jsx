@@ -878,73 +878,310 @@ function SubmissionPreviewModal({
 
         {/* Analytics row */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }} className="grid-2">
-            <Section title="Student Ranking" icon={<TrendingUp/>} tagColor="#d4a93c" loading={rkL}>
-            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                {(ranking||[]).slice(0,6).map((r,i) => (
-                <div key={i} style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <span style={{ fontSize:10, color:'#b0a898', width:16, flexShrink:0 }}>{i+1}.</span>
-                    <div style={{ flex:1, minWidth:0 }}>
-                    <p style={{ fontSize:12, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{r.student}</p>
-                    <p style={{ fontSize:10, color:'#a09080', margin:0 }}>{r.completed}/{r.total} assignments</p>
-                    </div>
-                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:99,
-                    background:r.completion_rate>=80?'#e0f7ee':r.completion_rate>=50?'#fffbeb':'#fde8e8',
-                    color:     r.completion_rate>=80?'#166534':r.completion_rate>=50?'#92400e':'#991b1b' }}>
-                    {r.completion_rate}%
-                    </span>
-                </div>
-                ))}
-                {!ranking?.length && <p style={{ fontSize:12, color:'#b0a898' }}>No student data yet.</p>}
-            </div>
-            </Section>
 
-            <Section title="Student Groups" tag="K-Means" tagColor="#6d4fc2" tagBg="#f0e8ff" icon={<Layers/>} loading={grL} error={grErr}>
+        {/* Student Ranking */}
+        <Section
+            title="Student Ranking"
+            icon={<TrendingUp/>}
+            tagColor="#d4a93c"
+            loading={rkL}
+        >
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {(ranking || []).slice(0,6).map((r,i) => (
+                    <div
+                        key={i}
+                        style={{
+                            padding:10,
+                            border:'1px solid #ece5dc',
+                            borderRadius:10,
+                            background:'#fff',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display:'flex',
+                                justifyContent:'space-between',
+                                alignItems:'center',
+                                marginBottom:8,
+                            }}
+                        >
+                            <strong style={{ fontSize:12 }}>
+                                #{i + 1} {r.student}
+                            </strong>
+
+                            <span
+                                style={{
+                                    fontSize:10,
+                                    fontWeight:700,
+                                    padding:'2px 7px',
+                                    borderRadius:99,
+                                    background:
+                                        r.completion_rate >= 80
+                                            ? '#e0f7ee'
+                                            : r.completion_rate >= 50
+                                            ? '#fffbeb'
+                                            : '#fde8e8',
+                                    color:
+                                        r.completion_rate >= 80
+                                            ? '#166534'
+                                            : r.completion_rate >= 50
+                                            ? '#92400e'
+                                            : '#991b1b',
+                                }}
+                            >
+                                {r.completion_rate}%
+                            </span>
+                        </div>
+
+                        <div
+                            style={{
+                                display:'grid',
+                                gridTemplateColumns:'1fr 1fr',
+                                gap:4,
+                                fontSize:10,
+                                color:'#666',
+                            }}
+                        >
+                            <span>Completed: {r.completed}</span>
+                            <span>Submitted: {r.submitted}</span>
+                            <span>Pending: {r.pending}</span>
+                            <span>Overdue: {r.overdue}</span>
+                            <span>Rejected: {r.rejected}</span>
+                            <span>Total: {r.total}</span>
+                        </div>
+                    </div>
+                ))}
+
+                {!ranking?.length && (
+                    <p style={{ fontSize:12, color:'#b0a898' }}>
+                        No student data yet.
+                    </p>
+                )}
+            </div>
+        </Section>
+
+        {/* Student Groups */}
+        <Section
+            title="Student Groups"
+            tag="K-Means"
+            tagColor="#6d4fc2"
+            tagBg="#f0e8ff"
+            icon={<Layers/>}
+            loading={grL}
+            error={grErr}
+        >
             {groups?.students && (
                 <>
-                <div style={{ display:'flex', gap:6, marginBottom:12, flexWrap:'wrap' }}>
-                    {Object.entries(groups.summary||{}).map(([label,count]) => {
-                    const s = GRP[label]||{bg:'#f3f4f6',text:'#374151'}
-                    return <span key={label} style={{ fontSize:11, fontWeight:600, padding:'3px 9px', borderRadius:99, background:s.bg, color:s.text }}>{label}: {count}</span>
-                    })}
-                </div>
-                <div style={{ display:'flex', flexDirection:'column', gap:8, maxHeight:200, overflowY:'auto' }}>
-                    {groups.students.map((s,i) => {
-                    const gStyle = GRP[s.group]||{bg:'#f3f4f6',text:'#374151'}
-                    return (
-                        <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:8 }}>
-                        <p style={{ fontSize:12, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', flex:1 }}>{s.student_name}</p>
-                        <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:99, background:gStyle.bg, color:gStyle.text }}>{s.group}</span>
-                        </div>
-                    )
-                    })}
-                </div>
+                    <div
+                        style={{
+                            display:'flex',
+                            gap:6,
+                            marginBottom:12,
+                            flexWrap:'wrap',
+                        }}
+                    >
+                        {Object.entries(groups.summary || {}).map(([label,count]) => {
+                            const style = GRP[label] || {
+                                bg:'#f3f4f6',
+                                text:'#374151',
+                            }
+
+                            return (
+                                <span
+                                    key={label}
+                                    style={{
+                                        fontSize:11,
+                                        fontWeight:600,
+                                        padding:'3px 9px',
+                                        borderRadius:99,
+                                        background:style.bg,
+                                        color:style.text,
+                                    }}
+                                >
+                                    {label}: {count}
+                                </span>
+                            )
+                        })}
+                    </div>
+
+                    <div
+                        style={{
+                            display:'flex',
+                            flexDirection:'column',
+                            gap:10,
+                            maxHeight:320,
+                            overflowY:'auto',
+                        }}
+                    >
+                        {groups.students.map((s,i) => {
+                            const gStyle = GRP[s.group] || {
+                                bg:'#f3f4f6',
+                                text:'#374151',
+                            }
+
+                            return (
+                                <div
+                                    key={i}
+                                    style={{
+                                        padding:10,
+                                        border:'1px solid #ece5dc',
+                                        borderRadius:10,
+                                        background:'#fff',
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display:'flex',
+                                            justifyContent:'space-between',
+                                            marginBottom:8,
+                                        }}
+                                    >
+                                        <strong style={{ fontSize:12 }}>
+                                            {s.student_name}
+                                        </strong>
+
+                                        <span
+                                            style={{
+                                                fontSize:10,
+                                                fontWeight:700,
+                                                padding:'2px 7px',
+                                                borderRadius:99,
+                                                background:gStyle.bg,
+                                                color:gStyle.text,
+                                            }}
+                                        >
+                                            {s.group}
+                                        </span>
+                                    </div>
+
+                                    <div
+                                        style={{
+                                            display:'grid',
+                                            gridTemplateColumns:'1fr 1fr',
+                                            gap:4,
+                                            fontSize:10,
+                                            color:'#666',
+                                        }}
+                                    >
+                                        <span>Completion: {s.completion_rate}%</span>
+                                        <span>Submission: {s.submission_rate}%</span>
+                                        <span>Pending: {s.pending_count}</span>
+                                        <span>Overdue: {s.overdue_count}</span>
+                                        <span>Rejected: {s.rejected_count}</span>
+                                        <span>
+                                            {s.avg_days_early >= 0
+                                                ? `${s.avg_days_early} days early`
+                                                : `${Math.abs(s.avg_days_early)} days late`}
+                                        </span>
+                                    </div>
+                                </div>
+                            )
+                        })}
+                    </div>
                 </>
             )}
-            </Section>
+        </Section>
         </div>
 
         {/* Outliers */}
-        <Section title="Outlier Students" tag="Isolation Forest" tagColor="#e05252" tagBg="#fde8e8" icon={<AlertTriangle/>} loading={olL} error={olErr}>
-            {outliers?.outliers && !outliers.outliers.length && (
-            <p style={{ fontSize:12, color:'#b0a898' }}>No outliers detected. Great class!</p>
-            )}
-            {outliers?.outliers && outliers.outliers.length > 0 && (
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))', gap:10 }}>
+        <Section
+        title="Outlier Students"
+        tag="Isolation Forest"
+        tagColor="#e05252"
+        tagBg="#fde8e8"
+        icon={<AlertTriangle/>}
+        loading={olL}
+        error={olErr}
+        >
+        {outliers?.outliers && !outliers.outliers.length && (
+            <p style={{ fontSize:12, color:'#b0a898' }}>
+                No outliers detected. Great class!
+            </p>
+        )}
+
+        {outliers?.outliers?.length > 0 && (
+            <div
+                style={{
+                    display:'grid',
+                    gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',
+                    gap:10,
+                }}
+            >
                 {outliers.outliers.map((o,i) => (
-                <div key={i} style={{ padding:'12px 14px', background:'#fde8e8', borderRadius:10, border:'1px solid #fecaca' }}>
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:4, gap:8 }}>
-                    <p style={{ fontSize:12, fontWeight:700, color:'#1a1f35', margin:0 }}>{o.student_name}</p>
-                    <span style={{ fontSize:9, fontWeight:700, background:'#fca5a5', color:'#7f1d1d', padding:'2px 6px', borderRadius:99 }}>{o.flagged_by}</span>
+                    <div
+                        key={i}
+                        style={{
+                            padding:'12px 14px',
+                            background:'#fde8e8',
+                            borderRadius:10,
+                            border:'1px solid #fecaca',
+                        }}
+                    >
+                        <div
+                            style={{
+                                display:'flex',
+                                justifyContent:'space-between',
+                                alignItems:'center',
+                                marginBottom:6,
+                            }}
+                        >
+                            <strong style={{ fontSize:12 }}>
+                                {o.student_name}
+                            </strong>
+
+                            <span
+                                style={{
+                                    fontSize:9,
+                                    fontWeight:700,
+                                    background:'#fca5a5',
+                                    color:'#7f1d1d',
+                                    padding:'2px 6px',
+                                    borderRadius:99,
+                                }}
+                            >
+                                {o.flagged_by}
+                            </span>
+                        </div>
+
+                        <div style={{ margin:'8px 0' }}>
+                            {o.reason.split('|').map((reason, idx) => (
+                                <div
+                                    key={idx}
+                                    style={{
+                                        fontSize:11,
+                                        color:'#8a7e6e',
+                                        marginBottom:3,
+                                    }}
+                                >
+                                    • {reason.trim()}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div
+                            style={{
+                                display:'grid',
+                                gridTemplateColumns:'1fr 1fr',
+                                gap:4,
+                                fontSize:10,
+                                color:'#666',
+                            }}
+                        >
+                            <span>Completion: {o.completion_rate}%</span>
+                            <span>Submission: {o.submission_rate}%</span>
+                            <span>Pending: {o.pending_count}</span>
+                            <span>Overdue: {o.overdue_count}</span>
+                            <span>Rejected: {o.rejected_count}</span>
+                            <span>
+                                {o.avg_days_early >= 0
+                                    ? `${o.avg_days_early} days early`
+                                    : `${Math.abs(o.avg_days_early)} days late`}
+                            </span>
+                        </div>
                     </div>
-                    <p style={{ fontSize:11, color:'#8a7e6e', margin:'0 0 4px' }}>{o.reason}</p>
-                    <div style={{ display:'flex', gap:12 }}>
-                    <span style={{ fontSize:10, color:'#b0a898' }}>Rate: {o.completion_rate}%</span>
-                    <span style={{ fontSize:10, color:'#b0a898' }}>Overdue: {o.overdue_count}</span>
-                    </div>
-                </div>
                 ))}
             </div>
-            )}
+        )}
         </Section>
 
         <DashboardFooter/>
