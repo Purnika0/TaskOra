@@ -176,6 +176,10 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ],
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_RATES': {
+        'otp_request': '5/hour',   # max 5 OTP sends/resends per email per hour
+        'otp_verify':  '10/hour',  # max 10 verify attempts per email per hour
+    },
 }
 
 SIMPLE_JWT = {
@@ -188,3 +192,18 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API for the TaskOra student task management platform',
     'VERSION': '1.0.0',
 }
+
+
+# Email — Gmail SMTP
+# EMAIL_BACKEND       = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_BACKEND = 'users.backends.IPv4EmailBackend'
+EMAIL_HOST          = 'smtp.gmail.com'
+# EMAIL_HOST = '192.178.158.109'  # temporary diagnostic only, not a real fix
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+EMAIL_HOST_USER     = 'taskora2083@gmail.com'
+EMAIL_HOST_PASSWORD = 'dnex lnin hypa fdwr'
+DEFAULT_FROM_EMAIL  = 'TaskOra <taskora2083@gmail.com>'
+
+import socket
+socket.setdefaulttimeout(10)

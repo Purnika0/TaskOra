@@ -5,8 +5,17 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 urlpatterns = [
     # Auth
     path('register/', views.RegisterView.as_view(), name='register'),
-    path('login/', TokenObtainPairView.as_view(), name='login'),
+    path('login/', views.VerifiedLoginView.as_view(), name='login'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # Email verification
+    path('verify-email/', views.VerifyEmailView.as_view(), name='verify-email'),
+    path('resend-otp/', views.ResendOTPView.as_view(), name='resend-otp'),
+
+    # Password reset
+    path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot-password'),
+    path('verify-otp/', views.VerifyOTPView.as_view(), name='verify-otp'),
+    path('reset-password/', views.ResetPasswordView.as_view(), name='reset-password'),
 
     # Admin — user management
     path('', views.UserListView.as_view(), name='user-list'),
