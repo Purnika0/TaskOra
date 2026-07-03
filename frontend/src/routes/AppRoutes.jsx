@@ -66,7 +66,7 @@ export default function AppRoutes() {
 
             <Route path="/auth" element={
                 user ? <Navigate to="/app" replace/>
-                     : <AuthLayout><AuthPage/></AuthLayout>
+                        : <AuthLayout><AuthPage/></AuthLayout>
             }/>
             <Route path="/reset-password" element={
                 <AuthLayout><AuthPage initialView="reset"/></AuthLayout>

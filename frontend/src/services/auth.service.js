@@ -153,6 +153,11 @@ const authService = {
         const { data } = await api.patch(`/api/users/${id}/promote/`, { role })
         return data
     },
+
+    async createTeacher({ username, full_name, email, password }) {
+        const { data } = await api.post('/api/users/create-teacher/', { username, full_name, email, password })
+        return data
+    },
 }
 
 export default authService

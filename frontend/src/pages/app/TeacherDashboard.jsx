@@ -25,6 +25,7 @@
     import coursesService     from '../../services/courses.service.js'
     import { apiError }       from '../../utils/helpers.js'
     import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
+    import StudentSubmissionWorkspace from "../../components/teacher/StudentSubmissionWorkspace"
 
     const DOW_LABELS = ['S','M','T','W','T','F','S']
     const RED     = '#ef4444'
@@ -212,112 +213,415 @@
     )
     }
 
-    // ── Submission tracker modal ──────────────────────────────────────────────────
-    function SubmissionsModal({ assignment, onClose }) {
-    const [subs,    setSubs]    = useState([])
-    const [loading, setLoading] = useState(true)
-    const toast = useToast()
 
-    useEffect(() => {
-        tasksService.getSubmissions(assignment.id)
-        .then(d => setSubs(Array.isArray(d) ? d : []))
-        .catch(() => {})
-        .finally(() => setLoading(false))
-    }, [assignment.id])
+    // ============================================================================
+// Submission Preview Modal
+// Place ABOVE SubmissionsModal()
+// ============================================================================
 
-    async function handleAction(subId, action) {
-        try {
-        await tasksService.reviewSubmission(subId, action)
-        setSubs(prev => prev.map(s => s.id === subId ? { ...s, status: action === 'approve' ? 'approved' : 'rejected' } : s))
-        toast.success(action === 'approve' ? 'Submission approved' : 'Submission rejected')
-        } catch(err) { toast.error(apiError(err)) }
-    }
+function SubmissionPreviewModal({
+    submission,
+    feedback,
+    setFeedback,
+    onApprove,
+    onReject,
+    onClose,
+    processing,
+}) {
+    if (!submission) return null
 
-    const approved = subs.filter(s => s.status === 'approved').length
-    const pending  = subs.filter(s => !s.status || s.status === 'pending').length
+    const file = submission.submission_file || ""
+
+    const extension = file
+        ? file.split(".").pop().toLowerCase()
+        : ""
+
+    const isPDF = extension === "pdf"
+
+    const isImage = [
+        "png",
+        "jpg",
+        "jpeg",
+        "gif",
+        "webp",
+        "bmp",
+        "svg"
+    ].includes(extension)
+
+    const isWord = [
+        "doc",
+        "docx"
+    ].includes(extension)
 
     return (
-        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:'16px' }}>
-        <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:560, maxHeight:'82vh', display:'flex', flexDirection:'column', boxShadow:'0 16px 48px rgba(0,0,0,0.22)', overflow:'hidden' }}>
+        <div
+            style={{
+                position: "fixed",
+                inset: 0,
+                zIndex: 10000,
+                background: "rgba(0,0,0,.65)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                padding: 24,
+            }}
+        >
+            <div
+                style={{
+                    width: "95%",
+                    maxWidth: 1400,
+                    height: "92vh",
+                    background: "#fff",
+                    borderRadius: 16,
+                    overflow: "hidden",
+                    display: "flex",
+                    boxShadow: "0 25px 80px rgba(0,0,0,.35)",
+                }}
+            >
 
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid #ece7df', flexShrink:0 }}>
-            <div>
-                <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:0 }}>Submissions</h3>
-                <p style={{ fontSize:11, color:'#a09080', margin:'2px 0 0' }}>{assignment.title}</p>
-            </div>
-            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, borderRadius:8, color:'#8a7e6e', display:'flex' }}><X size={16}/></button>
-            </div>
+                {/* ================================================= */}
+                {/* LEFT SIDE : FILE PREVIEW */}
+                {/* ================================================= */}
 
-            {/* Summary strip */}
-            <div style={{ display:'flex', gap:12, padding:'10px 20px', background:'#faf8f5', borderBottom:'1px solid #ece7df', flexShrink:0, flexWrap:'wrap' }}>
-            <span style={{ fontSize:12, color:'#1a1f35', fontWeight:600 }}>
-                <span style={{ color:'#3b6fd4' }}>{subs.length}</span> Students Submitted This Assignment
-            </span>
-            <span style={{ fontSize:11, color:'#3cb87a', fontWeight:600 }}>{approved} Approved</span>
-            <span style={{ fontSize:11, color:'#d4a93c', fontWeight:600 }}>{pending} Pending Review</span>
-            </div>
+                <div
+                    style={{
+                        flex: 2,
+                        background: "#f5f5f5",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        overflow: "hidden",
+                    }}
+                >
 
-            <div style={{ flex:1, overflowY:'auto', padding:'14px 20px' }}>
-            {loading ? <LoadingBlock/> : subs.length === 0 ? (
-                <p style={{ fontSize:13, color:'#b0a898', textAlign:'center', padding:'24px 0' }}>No submissions yet.</p>
-            ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                {subs.map(sub => {
-                    const status  = sub.status || 'pending'
-                    const isPend  = status === 'pending'
-                    const isApp   = status === 'approved'
-                    const isRej   = status === 'rejected'
-                    return (
-                    <div key={sub.id} style={{ display:'flex', alignItems:'center', gap:10, padding:'12px 14px', background:'#faf8f5', borderRadius:10, border:'1px solid #ece7df' }}>
-                        <div style={{ flex:1, minWidth:0 }}>
-                        <p style={{ fontSize:13, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                            {sub.student_name || sub.student || 'Student'}
-                        </p>
-                        <p style={{ fontSize:11, color:'#8a7e6e', margin:'2px 0 0' }}>
-                            {sub.file_name || sub.file?.split('/').pop() || 'Submitted file'}
-                        </p>
-                        <p style={{ fontSize:10, color:'#b0a898', margin:'1px 0 0' }}>
-                            {sub.submitted_at ? new Date(sub.submitted_at).toLocaleString() : ''}
-                            {sub.is_late && <span style={{ marginLeft:6, color:'#e05252', fontWeight:700 }}>LATE</span>}
-                        </p>
+                    {/* PDF */}
+
+                    {isPDF && (
+                        <iframe
+                            src={file}
+                            title="Submission"
+                            width="100%"
+                            height="100%"
+                            style={{
+                                border: "none",
+                                background: "#fff",
+                            }}
+                        />
+                    )}
+
+                    {/* IMAGE */}
+
+                    {isImage && (
+                        <img
+                            src={file}
+                            alt="submission"
+                            style={{
+                                maxWidth: "100%",
+                                maxHeight: "100%",
+                                objectFit: "contain",
+                            }}
+                        />
+                    )}
+
+                    {/* WORD */}
+
+                    {isWord && (
+                        <div
+                            style={{
+                                textAlign: "center",
+                                padding: 40,
+                            }}
+                        >
+                            <h2
+                                style={{
+                                    marginBottom: 16,
+                                    color: "#1a1f35",
+                                }}
+                            >
+                                Microsoft Word Document
+                            </h2>
+
+                            <p
+                                style={{
+                                    color: "#777",
+                                    marginBottom: 25,
+                                }}
+                            >
+                                Word files can't be previewed directly by
+                                the browser.
+                            </p>
+
+                            <a
+                                href={file}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="btn-primary"
+                            >
+                                Open Document
+                            </a>
                         </div>
-                        <div style={{ display:'flex', flexDirection:'column', alignItems:'flex-end', gap:6, flexShrink:0 }}>
-                        {/* Status badge */}
-                        <span style={{
-                            fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99,
-                            background: isApp ? '#e0f7ee' : isRej ? '#fde8e8' : '#fff8e6',
-                            color:      isApp ? '#166534' : isRej ? '#c0392b' : '#92400e',
-                        }}>
-                            {isApp ? '✓ Approved' : isRej ? '✗ Rejected' : '● Pending'}
-                        </span>
-                        {/* Action buttons — only for pending */}
-                        {isPend && (
-                            <div style={{ display:'flex', gap:6 }}>
-                            <button onClick={() => handleAction(sub.id, 'approve')}
-                                style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 10px', fontSize:11, fontWeight:600, background:'#e0f7ee', color:'#166534', border:'1px solid #bbf7d0', borderRadius:7, cursor:'pointer' }}>
-                                <ThumbsUp size={11}/> Approve
-                            </button>
-                            <button onClick={() => handleAction(sub.id, 'reject')}
-                                style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 10px', fontSize:11, fontWeight:600, background:'#fde8e8', color:'#c0392b', border:'1px solid #fecaca', borderRadius:7, cursor:'pointer' }}>
-                                <ThumbsDown size={11}/> Reject
-                            </button>
+                    )}
+
+                    {/* NO FILE */}
+
+                    {!file && (
+                        <div
+                            style={{
+                                color: "#888",
+                                textAlign: "center",
+                            }}
+                        >
+                            <h2>No file uploaded</h2>
+
+                            <p>
+                                This submission contains only text.
+                            </p>
+                        </div>
+                    )}
+
+                    {/* UNKNOWN */}
+
+                    {file &&
+                        !isPDF &&
+                        !isImage &&
+                        !isWord && (
+                            <div
+                                style={{
+                                    textAlign: "center",
+                                }}
+                            >
+                                <h2>
+                                    Preview unavailable
+                                </h2>
+
+                                <p
+                                    style={{
+                                        color: "#777",
+                                        marginBottom: 20,
+                                    }}
+                                >
+                                    This file type cannot be previewed.
+                                </p>
+
+                                <a
+                                    href={file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="btn-primary"
+                                >
+                                    Download File
+                                </a>
                             </div>
                         )}
-                        </div>
-                    </div>
-                    )
-                })}
-                </div>
-            )}
-            </div>
 
-            <div style={{ padding:'12px 20px', borderTop:'1px solid #ece7df', flexShrink:0 }}>
-            <p style={{ fontSize:12, color:'#8a7e6e', margin:0 }}>{subs.length} submission{subs.length !== 1 ? 's' : ''} received</p>
+                </div>
+
+                {/* ================================================= */}
+                {/* RIGHT SIDE */}
+                {/* ================================================= */}
+
+                <div
+                    style={{
+                        width: 420,
+                        borderLeft: "1px solid #ece7df",
+                        display: "flex",
+                        flexDirection: "column",
+                    }}
+                >
+
+                    {/* Header */}
+
+                    <div
+                        style={{
+                            padding: 20,
+                            borderBottom: "1px solid #ece7df",
+                        }}
+                    >
+
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                            }}
+                        >
+
+                            <div>
+
+                                <h2
+                                    style={{
+                                        margin: 0,
+                                        color: "#1a1f35",
+                                        fontSize: 18,
+                                    }}
+                                >
+                                    {submission.student_name}
+                                </h2>
+
+                                <p
+                                    style={{
+                                        margin: "6px 0 0",
+                                        fontSize: 12,
+                                        color: "#777",
+                                    }}
+                                >
+                                    Submitted{" "}
+                                    {submission.submitted_at
+                                        ? new Date(
+                                              submission.submitted_at
+                                          ).toLocaleString()
+                                        : ""}
+                                </p>
+
+                            </div>
+
+                            <button
+                                onClick={onClose}
+                                style={{
+                                    border: "none",
+                                    background: "none",
+                                    fontSize: 26,
+                                    cursor: "pointer",
+                                }}
+                            >
+                                ×
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                    {/* Submission Text */}
+
+                    <div
+                        style={{
+                            padding: 20,
+                            overflowY: "auto",
+                            flex: 1,
+                        }}
+                    >
+
+                        {submission.submission_text && (
+                            <>
+                                <h4
+                                    style={{
+                                        marginTop: 0,
+                                        color: "#1a1f35",
+                                    }}
+                                >
+                                    Student Response
+                                </h4>
+
+                                <div
+                                    style={{
+                                        padding: 14,
+                                        borderRadius: 10,
+                                        background: "#faf8f5",
+                                        border:
+                                            "1px solid #ece7df",
+                                        whiteSpace: "pre-wrap",
+                                        fontSize: 13,
+                                        lineHeight: 1.6,
+                                    }}
+                                >
+                                    {submission.submission_text}
+                                </div>
+                            </>
+                        )}
+
+                        <div
+                            style={{
+                                marginTop: 24,
+                            }}
+                        >
+
+                            <h4
+                                style={{
+                                    marginBottom: 10,
+                                    color: "#1a1f35",
+                                }}
+                            >
+                                Teacher Feedback
+                            </h4>
+
+                            <textarea
+                                rows={7}
+                                value={feedback}
+                                onChange={(e) =>
+                                    setFeedback(e.target.value)
+                                }
+                                placeholder="Write feedback..."
+                                style={{
+                                    width: "100%",
+                                    resize: "vertical",
+                                    padding: 12,
+                                    borderRadius: 10,
+                                    border:
+                                        "1px solid #ddd",
+                                    fontSize: 13,
+                                    boxSizing: "border-box",
+                                }}
+                            />
+
+                        </div>
+
+                    </div>
+
+                    {/* Footer */}
+
+                    <div
+                        style={{
+                            padding: 20,
+                            borderTop: "1px solid #ece7df",
+                            display: "flex",
+                            gap: 10,
+                        }}
+                    >
+
+                        <button
+                            onClick={onReject}
+                            disabled={processing}
+                            style={{
+                                flex: 1,
+                                padding: "11px",
+                                borderRadius: 10,
+                                border: "none",
+                                background: "#fde8e8",
+                                color: "#c0392b",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                            }}
+                        >
+                            Reject
+                        </button>
+
+                        <button
+                            onClick={onApprove}
+                            disabled={processing}
+                            style={{
+                                flex: 1,
+                                padding: "11px",
+                                borderRadius: 10,
+                                border: "none",
+                                background: "#3cb87a",
+                                color: "#fff",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                            }}
+                        >
+                            {processing
+                                ? "Saving..."
+                                : "Approve"}
+                        </button>
+
+                    </div>
+
+                </div>
+
             </div>
-        </div>
         </div>
     )
-    }
+}
 
     // ── Analytics stat card ───────────────────────────────────────────────────────
     function ACard({ label, value, icon: Icon, color }) {
@@ -363,7 +667,8 @@
     const [courses,       setCourses]       = useState([])
     const [loadingAssign, setLoadingAssign] = useState(true)
     const [showNewModal,  setShowNewModal]  = useState(false)
-    const [viewSubs,      setViewSubs]      = useState(null)
+
+    const [selectedAssignment, setSelectedAssignment] = useState(null)
 
     const { data:ranking, loading:rkL } = useStudentRanking()
     const { data:groups,  loading:grL, error:grErr } = useStudentGroups()
@@ -534,8 +839,22 @@
                                 </div>
                                 </div>
                                 <div style={{ display:'flex', gap:6, flexShrink:0 }}>
-                                <button onClick={() => setViewSubs(a)}
-                                    style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 9px', fontSize:11, fontWeight:600, background:'#eff3fd', color:'#1e40af', border:'none', borderRadius:7, cursor:'pointer' }}>
+                                <button
+                                    onClick={() => setSelectedAssignment(a)}
+                                    style={{
+                                        display:'flex',
+                                        alignItems:'center',
+                                        gap:4,
+                                        padding:'5px 9px',
+                                        fontSize:11,
+                                        fontWeight:600,
+                                        background:'#eff3fd',
+                                        color:'#1e40af',
+                                        border:'none',
+                                        borderRadius:7,
+                                        cursor:'pointer'
+                                    }}
+                                >
                                     <Eye size={11}/> Submissions
                                 </button>
                                 <button onClick={() => handleDeleteAssignment(a.id)}
@@ -633,8 +952,11 @@
         {showNewModal && (
             <NewAssignmentModal courses={courses} onClose={() => setShowNewModal(false)} onSave={handleCreateAssignment}/>
         )}
-        {viewSubs && (
-            <SubmissionsModal assignment={viewSubs} onClose={() => setViewSubs(null)}/>
+        {selectedAssignment && (
+            <StudentSubmissionWorkspace
+                assignment={selectedAssignment}
+                onClose={() => setSelectedAssignment(null)}
+            />
         )}
         </div>
     )
