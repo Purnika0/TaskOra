@@ -393,7 +393,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                                     const sb     = { label: t.status ? t.status.charAt(0).toUpperCase()+t.status.slice(1) : 'Pending', color: statusColor(t), bg: statusBg(t) }
                                     const due    = getTaskDueDate(t)
                                     const d      = daysUntil(due)
-                                    const canSub = t.status === 'pending' || t.status === 'overdue'
+                                    const canSub = t.status === 'pending' || t.status === 'overdue' || t.status === 'rejected'
                                     return (
                                         <tr key={t.id}>
                                             <td style={{ paddingLeft:20, color:'#b0a898', fontSize:12 }}>{i+1}</td>
@@ -423,11 +423,11 @@ function AssignmentTable({ tasks, onSubmit }) {
                                                 </span>
                                             </td>
                                             <td>
-                                                {/* Submit button — only for pending/overdue */}
+                                                {/* Submit / Resubmit button — pending, overdue, or rejected */}
                                                 {canSub && (
                                                     <button onClick={() => onSubmit(t)}
-                                                        style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', fontSize:11, fontWeight:600, background:'#eff3fd', color:'#1e40af', border:'1px solid #bfdbfe', borderRadius:7, cursor:'pointer', whiteSpace:'nowrap' }}>
-                                                        <Upload size={11}/> Submit
+                                                        style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 10px', fontSize:11, fontWeight:600, background: t.status==='rejected' ? '#fde8e8' : '#eff3fd', color: t.status==='rejected' ? '#991b1b' : '#1e40af', border: t.status==='rejected' ? '1px solid #fecaca' : '1px solid #bfdbfe', borderRadius:7, cursor:'pointer', whiteSpace:'nowrap' }}>
+                                                        <Upload size={11}/> {t.status === 'rejected' ? 'Resubmit' : 'Submit'}
                                                     </button>
                                                 )}
                                                 {t.status === 'submitted' && (

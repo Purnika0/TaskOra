@@ -1,0 +1,139 @@
+"""
+notifications/services.py
+==========================
+Small, explicit helper functions that create Notification rows for each of
+the six trigger events. These are called directly from the views/services
+that already handle the underlying action (assignment creation, submission,
+review, overdue sweep) — there are no Django signals involved, so every
+notification has a single, easy-to-find call site.
+
+Intentionally duck-typed: this module does NOT import Assignment/Task/Course
+classes, only the Notification model. That keeps the import graph one-way
+(tasks/courses → notifications) and avoids any circular-import risk.
+"""
+
+from django.utils import timezone
+from .models import Notification
+
+
+def _display_name(user):
+    return user.full_name or user.username
+
+
+# ---------------------------------------------------------------------------
+# 1. Student — new assignment posted for an enrolled course
+# ---------------------------------------------------------------------------
+def notify_new_assignment(assignment, students):
+    """
+    students: iterable of User (the enrolled students the assignment was
+    just fanned out to). Bulk-creates one notification per student.
+    """
+    course_title = assignment.course.title
+    notifications = [
+        Notification(
+            recipient=student,
+            actor=assignment.created_by,
+            notif_type=Notification.Type.NEW_ASSIGNMENT,
+            title='New assignment posted',
+            message=f"\"{assignment.title}\" was posted in {course_title}. "
+                    f"Due {assignment.due_date.strftime('%d %b %Y')}.",
+            course=assignment.course,
+            assignment=assignment,
+        )
+        for student in students
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+
+
+# ---------------------------------------------------------------------------
+# 2. Teacher — student submits or resubmits an assignment
+# ---------------------------------------------------------------------------
+def notify_new_submission(task, is_resubmission=False):
+    teacher = task.assignment.created_by
+    student_name = _display_name(task.student)
+    submitted_at = timezone.localtime(task.submitted_at) if task.submitted_at else timezone.localtime()
+    verb = 'resubmitted' if is_resubmission else 'submitted'
+
+    Notification.objects.create(
+        recipient=teacher,
+        actor=task.student,
+        notif_type=Notification.Type.NEW_SUBMISSION,
+        title=f"{student_name} {verb} an assignment",
+        message=f"{student_name} {verb} \"{task.assignment.title}\" "
+                f"at {submitted_at.strftime('%d %b %Y, %I:%M %p')}.",
+        course=task.assignment.course,
+        assignment=task.assignment,
+        task=task,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 3. Student — submission approved by teacher
+#    (No notification is sent on rejection — rejected work stays visible to
+#    the student in their assignments list with feedback, but does not
+#    generate a bell notification.)
+# ---------------------------------------------------------------------------
+def notify_submission_reviewed(task, approved):
+    if not approved:
+        return
+
+    assignment_title = task.assignment.title
+    message = f"Your submission for \"{assignment_title}\" was approved."
+    if task.teacher_feedback:
+        message += f" Feedback: \"{task.teacher_feedback}\""
+
+    Notification.objects.create(
+        recipient=task.student,
+        actor=task.assignment.created_by,
+        notif_type=Notification.Type.SUBMISSION_APPROVED,
+        title='Assignment approved',
+        message=message,
+        course=task.assignment.course,
+        assignment=task.assignment,
+        task=task,
+    )
+
+
+# ---------------------------------------------------------------------------
+# 4. Student — deadline reminder (e.g. 24h before due)
+# ---------------------------------------------------------------------------
+def notify_deadline_reminder(task):
+    # Avoid duplicate reminders for the same task.
+    already_sent = Notification.objects.filter(
+        recipient=task.student,
+        task=task,
+        notif_type=Notification.Type.DEADLINE_REMINDER,
+    ).exists()
+    if already_sent:
+        return False
+
+    assignment = task.assignment
+    Notification.objects.create(
+        recipient=task.student,
+        notif_type=Notification.Type.DEADLINE_REMINDER,
+        title='Deadline approaching',
+        message=f"\"{assignment.title}\" ({assignment.course.title}) is due "
+                f"{assignment.due_date.strftime('%d %b %Y')}. Submit it soon.",
+        course=assignment.course,
+        assignment=assignment,
+        task=task,
+    )
+    return True
+
+
+# ---------------------------------------------------------------------------
+# 5. Student — assignment becomes overdue
+# ---------------------------------------------------------------------------
+def notify_overdue(task):
+    assignment = task.assignment
+    Notification.objects.create(
+        recipient=task.student,
+        notif_type=Notification.Type.ASSIGNMENT_OVERDUE,
+        title='Assignment overdue',
+        message=f"\"{assignment.title}\" ({assignment.course.title}) was due "
+                f"{assignment.due_date.strftime('%d %b %Y')} and is now overdue.",
+        course=assignment.course,
+        assignment=assignment,
+        task=task,
+    )

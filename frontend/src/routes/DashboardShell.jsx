@@ -18,6 +18,7 @@ import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar        from '../components/layout/Sidebar.jsx'
 import { SiteFooter } from '../components/layout/Footer.jsx'
 import { useAuth }    from '../hooks/useAuth.js'
+import NotificationBell from '../components/notifications/NotificationBell.jsx'
 
 function HamburgerIcon() {
     return (
@@ -69,8 +70,9 @@ export default function DashboardShell() {
                         <HamburgerIcon/>
                     </button>
 
-                    {/* Right side — role badge + avatar */}
+                    {/* Right side — notifications + role badge + avatar */}
                     <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                        <NotificationBell/>
                         {user?.role && (
                             <span style={{
                                 fontSize:10, fontWeight:600, padding:'3px 9px', borderRadius:99,

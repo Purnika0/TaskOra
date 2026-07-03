@@ -11,7 +11,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { Search, LayoutGrid, List, RefreshCw, Upload } from 'lucide-react'
-import { useTasks, isCompleted, isPending, isSubmitted, isOverdue, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
+import { useTasks, isCompleted, isPending, isSubmitted, isOverdue, isRejected, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { useAuth }         from '../../hooks/useAuth.js'
 import { useToast }        from '../../context/ToastContext.jsx'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
@@ -190,7 +190,7 @@ export default function AssignmentManagement() {
                                     const due   = getTaskDueDate(t)
                                     const d     = daysUntil(due)
                                     const sb    = { label: statusLabel(t), color: statusColor(t), bg: statusBg(t) }
-                                    const canSub = isStudent && (t.status === 'pending' || t.status === 'overdue')
+                                    const canSub = isStudent && (t.status === 'pending' || t.status === 'overdue' || t.status === 'rejected')
                                     return (
                                         <tr key={t.id}>
                                             <td style={{ paddingLeft:18, color:'#b0a898', fontSize:12 }}>{i+1}</td>

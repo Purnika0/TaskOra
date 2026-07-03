@@ -38,6 +38,7 @@ urlpatterns = [
     path('api/analytics/', include('analytics.urls')),
     path('api/ml/', include('ml.urls')),
     path('api/contact/', include('contact.urls')),
+    path('api/notifications/', include('notifications.urls')),
 ]
 
 # from django.contrib import admin

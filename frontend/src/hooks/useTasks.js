@@ -13,12 +13,14 @@ export function isCompleted(task)  { return task.status === 'completed'  }
 export function isPending(task)    { return task.status === 'pending'    }
 export function isSubmitted(task)  { return task.status === 'submitted'  }
 export function isOverdue(task)    { return task.status === 'overdue'    }
-export function isActionable(task) { return task.status === 'pending' || task.status === 'overdue' }
+export function isRejected(task)   { return task.status === 'rejected'   }
+export function isActionable(task) { return task.status === 'pending' || task.status === 'overdue' || task.status === 'rejected' }
 
 export function statusLabel(task) {
     switch (task.status) {
         case 'completed': return 'Completed'
         case 'submitted': return 'Submitted'
+        case 'rejected':  return 'Rejected'
         case 'overdue':   return 'Overdue'
         default:          return 'Pending'
     }
@@ -28,6 +30,7 @@ export function statusColor(task) {
     switch (task.status) {
         case 'completed': return '#3cb87a'
         case 'submitted': return '#3b6fd4'
+        case 'rejected':  return '#e05252'
         case 'overdue':   return '#e05252'
         default:          return '#d4a93c'
     }
@@ -37,6 +40,7 @@ export function statusBg(task) {
     switch (task.status) {
         case 'completed': return '#e0f7ee'
         case 'submitted': return '#eff3fd'
+        case 'rejected':  return '#fde8e8'
         case 'overdue':   return '#fde8e8'
         default:          return '#fff8e6'
     }
@@ -70,13 +74,14 @@ export function useTasks() {
         return updated
     }, [])
 
-    // Compute 4-state stats
+    // Compute 5-state stats
     const stats = {
         total:     tasks.length,
         completed: tasks.filter(isCompleted).length,
         submitted: tasks.filter(isSubmitted).length,
         pending:   tasks.filter(isPending).length,
         overdue:   tasks.filter(isOverdue).length,
+        rejected:  tasks.filter(isRejected).length,
         progress:  tasks.length
             ? Math.round(tasks.filter(isCompleted).length / tasks.length * 100)
             : 0,

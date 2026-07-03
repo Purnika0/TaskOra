@@ -32,6 +32,7 @@ class Task(models.Model):
         SUBMITTED = 'submitted', 'Submitted'
         COMPLETED = 'completed', 'Completed'
         OVERDUE   = 'overdue',   'Overdue'
+        REJECTED  = 'rejected',  'Rejected'
 
     student    = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
     assignment = models.ForeignKey(

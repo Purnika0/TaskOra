@@ -4,6 +4,7 @@ import { BrowserRouter }   from 'react-router-dom'
 import { AuthProvider }    from './context/AuthContext.jsx'
 import { ToastProvider }   from './context/ToastContext.jsx'
 import { ConfirmProvider } from './context/ConfirmContext.jsx'
+import { NotificationProvider } from './context/NotificationContext.jsx'
 import  ErrorBoundary   from './components/shared/ErrorBoundary.jsx'
 import { PageLoader }      from './components/shared/Loader.jsx'
 import AppRoutes           from './routes/AppRoutes.jsx'
@@ -15,9 +16,11 @@ export default function App() {
             <ToastProvider>
             <ConfirmProvider>
                 <AuthProvider>
+                <NotificationProvider>
                 <Suspense fallback={<PageLoader/>}>
                     <AppRoutes/>
                 </Suspense>
+                </NotificationProvider>
                 </AuthProvider>
             </ConfirmProvider>
             </ToastProvider>

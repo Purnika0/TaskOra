@@ -38,7 +38,7 @@ export function getTaskDueDateBS(task) {
     return task.due_date_bs || null
 }
 
-// ── Status helpers (4-state) ────────────────────────────────────────────────
+// ── Status helpers (5-state) ────────────────────────────────────────────────
 export function isOverdue(task) {
     return task.status === 'overdue'
 }
@@ -48,11 +48,14 @@ export function isCompleted(task) {
 export function isSubmitted(task) {
     return task.status === 'submitted'
 }
+export function isRejected(task) {
+    return task.status === 'rejected'
+}
 export function isPending(task) {
     return task.status === 'pending' || !task.status
 }
 
-// ── 4-state status badge ────────────────────────────────────────────────────
+// ── 5-state status badge ────────────────────────────────────────────────────
 // Replaces old boolean statusBadge(isCompleted)
 export function statusBadge(task) {
     switch (task.status) {
@@ -60,6 +63,8 @@ export function statusBadge(task) {
             return { label: 'Completed', color: '#166534', bg: '#e0f7ee', border: '#bbf7d0' }
         case 'submitted':
             return { label: 'Submitted', color: '#1e40af', bg: '#eff3fd', border: '#bfdbfe' }
+        case 'rejected':
+            return { label: 'Rejected',  color: '#991b1b', bg: '#fde8e8', border: '#fecaca' }
         case 'overdue':
             return { label: 'Overdue',   color: '#991b1b', bg: '#fde8e8', border: '#fecaca' }
         default:
@@ -71,6 +76,7 @@ export function statusBadge(task) {
 export function deadlinePill(task) {
     if (task.status === 'completed') return { label: 'Done', color: '#166534', bg: '#e0f7ee' }
     if (task.status === 'submitted') return { label: 'Awaiting Review', color: '#1e40af', bg: '#eff3fd' }
+    if (task.status === 'rejected')  return { label: 'Needs Revision', color: '#991b1b', bg: '#fde8e8' }
     if (task.status === 'overdue')   return { label: 'Overdue', color: '#991b1b', bg: '#fde8e8' }
     const due = getTaskDueDate(task)
     if (!due) return { label: 'No date', color: '#6b7280', bg: '#f3f4f6' }

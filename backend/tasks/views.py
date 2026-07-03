@@ -14,6 +14,11 @@ from .serializers import (
 from .priority import calculate_priority_score
 from courses.models import Enrollment
 from users.permissions import IsTeacher, IsStudent
+from notifications.services import (
+    notify_new_assignment,
+    notify_new_submission,
+    notify_submission_reviewed,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -31,12 +36,14 @@ class AssignmentListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         assignment = serializer.save(created_by=self.request.user)
         # Auto-create a Task for every enrolled student
-        enrollments   = Enrollment.objects.filter(course=assignment.course)
+        enrollments   = Enrollment.objects.filter(course=assignment.course).select_related('student')
         score         = calculate_priority_score(assignment)
         Task.objects.bulk_create([
             Task(student=e.student, assignment=assignment, priority_score=score)
             for e in enrollments
         ])
+        # Notify every enrolled student that a new assignment was posted
+        notify_new_assignment(assignment, [e.student for e in enrollments])
 
 
 class AssignmentDetailView(generics.RetrieveUpdateDestroyAPIView):
@@ -101,9 +108,12 @@ class StudentSubmitTaskView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        is_resubmission = task.status == Task.Status.REJECTED
+
         serializer = TaskSubmitSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            notify_new_submission(task, is_resubmission=is_resubmission)
             return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -156,6 +166,7 @@ class TeacherReviewTaskView(APIView):
         serializer = TaskReviewSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
+            notify_submission_reviewed(task, approved=(task.status == Task.Status.COMPLETED))
             return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 

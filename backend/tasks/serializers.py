@@ -67,7 +67,10 @@ class TaskSubmitSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        if instance.status != Task.Status.PENDING:
+        # A task can be (re)submitted while PENDING (first submission),
+        # OVERDUE (late first submission) or REJECTED (resubmission after
+        # the teacher sent it back for revision).
+        if instance.status not in (Task.Status.PENDING, Task.Status.OVERDUE, Task.Status.REJECTED):
             raise serializers.ValidationError(
                 "This task has already been submitted."
             )
@@ -81,19 +84,32 @@ class TaskSubmitSerializer(serializers.ModelSerializer):
 
 class TaskReviewSerializer(serializers.ModelSerializer):
     """
-    Teacher marks a submitted task as completed with optional feedback.
+    Teacher approves or rejects a submitted task, with optional feedback.
+
+    `action` accepts 'approve' (default) or 'reject':
+      • approve → status becomes COMPLETED
+      • reject  → status becomes REJECTED, and the student may resubmit
     """
+    action = serializers.ChoiceField(choices=['approve', 'reject'], required=False, default='approve')
+
     class Meta:
         model = Task
-        fields = ['teacher_feedback']
+        fields = ['teacher_feedback', 'action']
 
     def update(self, instance, validated_data):
         if instance.status != Task.Status.SUBMITTED:
             raise serializers.ValidationError(
-                "Only submitted tasks can be marked as completed."
+                "Only submitted tasks can be reviewed."
             )
+        action = validated_data.pop('action', 'approve')
         instance.teacher_feedback = validated_data.get('teacher_feedback', '')
-        instance.status           = Task.Status.COMPLETED
-        instance.completed_at     = timezone.now()
+
+        if action == 'reject':
+            instance.status       = Task.Status.REJECTED
+            instance.completed_at = None
+        else:
+            instance.status       = Task.Status.COMPLETED
+            instance.completed_at = timezone.now()
+
         instance.save()
         return instance
