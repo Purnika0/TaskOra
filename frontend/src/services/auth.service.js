@@ -1,21 +1,26 @@
-    // src/services/auth.service.js
-    // Supports login with EITHER username OR email.
-    // Detects @ in the credential and sends the right field.
-    //
-    // ── RBAC Portal Enforcement ─────────────────────────────────────────────────
-    //  portalRole = the tab the user clicked on the login screen ('student' | 'teacher')
-    //
-    //  Student tab  → ONLY backend role 'student' is allowed
-    //  Teacher tab  → backend role 'teacher' OR 'admin' is allowed
-    //                 (admin credentials entered in the Teacher tab redirect to /app/admin)
-    //
-    //  Any mismatch: tokens are immediately cleared and a ROLE_MISMATCH error is thrown.
-    //  The caller (AuthContext → AuthPage) catches it and shows the red error banner.
-    // ─────────────────────────────────────────────────────────────────────────────
+// src/services/auth.service.js
+// Supports login with EITHER username OR email.
+// Detects @ in the credential and sends the right field.
+//
+// ── RBAC Portal Enforcement ─────────────────────────────────────────────────
+//  portalRole = the tab the user clicked on the login screen ('student' | 'teacher')
+//
+//  Student tab  → ONLY backend role 'student' is allowed
+//  Teacher tab  → backend role 'teacher' OR 'admin' is allowed
+//                 (admin credentials entered in the Teacher tab redirect to /app/admin)
+//
+//  Any mismatch: tokens are immediately cleared and a ROLE_MISMATCH error is thrown.
+//  The caller (AuthContext → AuthPage) catches it and shows the red error banner.
+//
+// ── Email verification enforcement ───────────────────────────────────────────
+//  Login can also fail with EMAIL_NOT_VERIFIED — tagged the same way as
+//  ROLE_MISMATCH so AuthPage can redirect to the verify-email screen instead
+//  of showing a generic "invalid credentials" message.
+// ─────────────────────────────────────────────────────────────────────────────
 
-    import api, { setTokens, clearTokens, TOKEN_KEYS } from './api.js'
+import api, { setTokens, clearTokens, TOKEN_KEYS } from './api.js'
 
-    const authService = {
+const authService = {
     async register({ username, full_name, email, password, role }) {
         const { data } = await api.post('/api/users/register/', { username, full_name, email, password, role })
         return data
@@ -28,10 +33,25 @@
         const cred = credential.trim()
         const isEmail = cred.includes('@')
         const payload = isEmail
-        ? { email: cred, password }
-        : { username: cred, password }
+            ? { email: cred, password }
+            : { username: cred, password }
 
-        const { data: tokens } = await api.post('/api/users/login/', payload)
+        let tokens
+        try {
+            const res = await api.post('/api/users/login/', payload)
+            tokens = res.data
+        } catch (err) {
+            const detail = err.response?.data?.detail
+            const msg = Array.isArray(detail) ? detail[0] : detail
+            if (typeof msg === 'string' && msg.toLowerCase().includes('verify your email')) {
+                const vErr = new Error(msg)
+                vErr.code = 'EMAIL_NOT_VERIFIED'
+                vErr.email = isEmail ? cred : undefined  // only known if they logged in with an email
+                throw vErr
+            }
+            throw err
+        }
+
         setTokens(tokens)
         const { data: user } = await api.get('/api/users/me/')
 
@@ -39,26 +59,21 @@
         // Only enforced when portalRole is supplied (i.e. during an interactive login).
         // Session restore (getMe) does NOT pass portalRole, so it skips this gate.
         if (portalRole) {
-        const backendRole = user.role
+            const backendRole = user.role
 
-        // Student portal: ONLY 'student' accounts are permitted.
-        // Teacher/Admin accounts must be rejected — admin NEVER opens from Student tab.
-        const isAllowed =
-            portalRole === 'student'
-            ? backendRole === 'student'
-            // Teacher portal: 'teacher' accounts login normally.
-            // 'admin' accounts are also allowed here and are redirected to /app/admin.
-            : portalRole === 'teacher'
-            ? backendRole === 'teacher' || backendRole === 'admin'
-            : true  // unknown portalRole — let through (future-proof)
+            const isAllowed =
+                portalRole === 'student'
+                    ? backendRole === 'student'
+                    : portalRole === 'teacher'
+                        ? backendRole === 'teacher' || backendRole === 'admin'
+                        : true
 
-        if (!isAllowed) {
-            // Immediately invalidate the tokens — the session must not persist.
-            clearTokens()
-            const err = new Error('Unauthorized login for this portal')
-            err.code = 'ROLE_MISMATCH'
-            throw err
-        }
+            if (!isAllowed) {
+                clearTokens()
+                const err = new Error('Unauthorized login for this portal')
+                err.code = 'ROLE_MISMATCH'
+                throw err
+            }
         }
         // ─────────────────────────────────────────────────────────────────────────
 
@@ -80,22 +95,38 @@
 
     getStoredUser() {
         try {
-        const s = sessionStorage.getItem(TOKEN_KEYS.user)
-        return s ? JSON.parse(s) : null
+            const s = sessionStorage.getItem(TOKEN_KEYS.user)
+            return s ? JSON.parse(s) : null
         } catch { return null }
     },
 
     saveUser(user) { sessionStorage.setItem(TOKEN_KEYS.user, JSON.stringify(user)) },
 
-    // Password reset — backend: POST /api/users/password-reset/
-    async requestPasswordReset(email) {
-        const { data } = await api.post('/api/users/password-reset/', { email })
+    // ── Email verification ──────────────────────────────────────────────────
+    async verifyEmail(email, otp_code) {
+        const { data } = await api.post('/api/users/verify-email/', { email, otp_code })
         return data
     },
 
-    // Password reset confirm — backend: POST /api/users/password-reset/confirm/
-    async confirmPasswordReset(token, new_password) {
-        const { data } = await api.post('/api/users/password-reset/confirm/', { token, new_password })
+    async resendOtp(email, purpose) {
+        // purpose: 'email_verification' | 'password_reset'
+        const { data } = await api.post('/api/users/resend-otp/', { email, purpose })
+        return data
+    },
+
+    // ── Password reset (OTP-based) ──────────────────────────────────────────
+    async requestPasswordReset(email) {
+        const { data } = await api.post('/api/users/forgot-password/', { email })
+        return data
+    },
+
+    async verifyResetOtp(email, otp_code) {
+        const { data } = await api.post('/api/users/verify-otp/', { email, otp_code })
+        return data
+    },
+
+    async resetPassword(email, otp_code, new_password) {
+        const { data } = await api.post('/api/users/reset-password/', { email, otp_code, new_password })
         return data
     },
 
@@ -122,6 +153,6 @@
         const { data } = await api.patch(`/api/users/${id}/promote/`, { role })
         return data
     },
-    }
+}
 
-    export default authService
+export default authService
