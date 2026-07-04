@@ -59,10 +59,13 @@ function Bar({ label, value, max, accent = '#3b6fd4' }) {
 }
 
 // ── Section wrapper ───────────────────────────────────────────
-function Section({ title, icon, children, loading, badge }) {
+// `filters` renders a control bar under the header (used for the
+// per-component filtering in the 2x2 analytics grid). Content area
+// scrolls internally so all 4 grid cards stay the same height.
+function Section({ title, icon, children, loading, badge, filters }) {
     return (
-        <div className="white-card" style={{ overflow:'hidden' }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'13px 20px', borderBottom:'1px solid #f0ece4' }}>
+        <div className="white-card" style={{ overflow:'hidden', display:'flex', flexDirection:'column', height:'100%' }}>
+        <div style={{ display:'flex', alignItems:'center', gap:8, padding:'13px 20px', borderBottom:'1px solid #f0ece4', flexShrink:0 }}>
             {icon && React.cloneElement(icon, { size:14, style:{ color:'#3b6fd4' } })}
             <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:0, flex:1 }}>
             {title}
@@ -73,10 +76,52 @@ function Section({ title, icon, children, loading, badge }) {
             </span>
             )}
         </div>
-        <div style={{ padding:'18px 20px' }}>
+        {filters && (
+            <div style={{ display:'flex', alignItems:'center', flexWrap:'wrap', gap:8, padding:'10px 20px', borderBottom:'1px solid #f0ece4', background:'#faf8f5', flexShrink:0 }}>
+            {filters}
+            </div>
+        )}
+        <div style={{ padding:'18px 20px', overflowY:'auto', flex:1, minHeight:0 }}>
             {loading ? <LoadingBlock/> : children}
         </div>
         </div>
+    )
+    }
+
+// ── Small filter controls ─────────────────────────────────────
+function FilterSelect({ value, onChange, options }) {
+    return (
+        <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        style={{
+            fontSize:12, fontWeight:600, color:'#1a1f35', background:'#fff',
+            border:'1px solid #ece5dc', borderRadius:8, padding:'6px 10px',
+            cursor:'pointer', outline:'none',
+        }}
+        >
+        {options.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+        ))}
+        </select>
+    )
+    }
+
+function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
+    return (
+        <button
+        type="button"
+        onClick={onClick}
+        style={{
+            fontSize:11, fontWeight:600, padding:'5px 11px', borderRadius:99,
+            border: active ? `1px solid ${accent}` : '1px solid #ece5dc',
+            background: active ? `${accent}14` : '#fff',
+            color: active ? accent : '#6a5e4e',
+            cursor:'pointer', transition:'all 0.15s ease',
+        }}
+        >
+        {children}
+        </button>
     )
     }
 
@@ -85,8 +130,15 @@ function Section({ title, icon, children, loading, badge }) {
     // The Teacher Dashboard only shows the top 5; the complete
     // ranking lives here.
     // ═══════════════════════════════════════════════════════════════
+    const RANKING_FILTERS = [
+    { value:'all',    label:'All'        },
+    { value:'top10',  label:'Top 10'     },
+    { value:'bottom10', label:'Bottom 10' },
+    ]
+
     function StudentRankingSection() {
     const { data:ranking, loading, error } = useStudentRanking()
+    const [rankFilter, setRankFilter] = React.useState('all')
 
     if (error) return (
         <Section title="Student Ranking" icon={<TrendingUp/>} loading={false}>
@@ -94,21 +146,39 @@ function Section({ title, icon, children, loading, badge }) {
         </Section>
     )
 
+    // `ranking` is assumed to already be ordered best → worst (as the
+    // original #1, #2... display implies). We keep that order and just
+    // slice, so displayed rank numbers stay true to the full list.
+    const full = ranking || []
+    let view = full
+    let startIndex = 0
+    if (rankFilter === 'top10') {
+        view = full.slice(0, 10)
+    } else if (rankFilter === 'bottom10') {
+        view = full.slice(-10)
+        startIndex = Math.max(full.length - 10, 0)
+    }
+
     return (
         <Section
         title="Student Ranking"
         icon={<TrendingUp/>}
         loading={loading}
-        badge={ranking?.length ? `${ranking.length} students` : undefined}
+        badge={full.length ? `${full.length} students` : undefined}
+        filters={
+            !loading && full.length > 0 && (
+            <FilterSelect value={rankFilter} onChange={setRankFilter} options={RANKING_FILTERS}/>
+            )
+        }
         >
-        {!loading && !ranking?.length ? (
+        {!loading && !full.length ? (
             <p style={{ fontSize:13, color:'#b0a898' }}>No student data yet.</p>
         ) : !loading && (
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-            {ranking.map((r, i) => (
-                <div key={i} style={{ padding:'10px 12px', border:'1px solid #ece5dc', borderRadius:10, background:'#fff' }}>
+            {view.map((r, i) => (
+                <div key={startIndex + i} style={{ padding:'10px 12px', border:'1px solid #ece5dc', borderRadius:10, background:'#fff' }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                    <strong style={{ fontSize:12.5, color:'#1a1f35' }}>#{i + 1} {r.student}</strong>
+                    <strong style={{ fontSize:12.5, color:'#1a1f35' }}>#{startIndex + i + 1} {r.student}</strong>
                     <span style={{
                         fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:99,
                         background: r.completion_rate >= 80 ? '#e0f7ee' : r.completion_rate >= 50 ? '#fffbeb' : '#fde8e8',
@@ -144,12 +214,24 @@ function Section({ title, icon, children, loading, badge }) {
     'At-Risk':        { color:'#dc2626', bg:'#fef2f2', bar:'#ef4444', label:'Needs Support'   },
     }
 
+    const GROUP_FILTERS = [
+    { value:'all',            label:'All'             },
+    { value:'High Performer', label:'High Performers' },
+    { value:'Average',        label:'Average'         },
+    { value:'At-Risk',        label:'Needs Support'   },
+    ]
+
     function StudentGroupsSection() {
     const { data, loading, error } = useStudentGroups()
+    const [groupFilter, setGroupFilter] = React.useState('all')
 
     const summary  = data?.summary  || {}
     const students = data?.students || []
     const total    = Object.values(summary).reduce((s, n) => s + Number(n), 0)
+
+    const filteredStudents = groupFilter === 'all'
+        ? students
+        : students.filter(s => (s.group || s.cluster_label || 'Average') === groupFilter)
 
     if (error) return (
         <Section title="Student Performance Groups" icon={<Users/>} loading={false}>
@@ -159,7 +241,24 @@ function Section({ title, icon, children, loading, badge }) {
 
     return (
         <Section title="Student Performance Groups" icon={<Users/>} loading={loading}
-        badge={total > 0 ? `${total} students` : undefined}>
+        badge={total > 0 ? `${total} students` : undefined}
+        filters={
+            !loading && total > 0 && (
+            <>
+                {GROUP_FILTERS.map(f => (
+                <FilterPill
+                    key={f.value}
+                    active={groupFilter === f.value}
+                    onClick={() => setGroupFilter(f.value)}
+                    accent={f.value === 'all' ? '#3b6fd4' : (GROUP_CONFIG[f.value]?.color || '#3b6fd4')}
+                >
+                    {f.label}
+                </FilterPill>
+                ))}
+            </>
+            )
+        }
+        >
 
         {!loading && total === 0 ? (
             <p style={{ fontSize:13, color:'#b0a898' }}>
@@ -194,10 +293,13 @@ function Section({ title, icon, children, loading, badge }) {
             {students.length > 0 && (
                 <div style={{ marginTop:4 }}>
                 <p style={{ fontSize:11, color:'#b0a898', marginBottom:10, textTransform:'uppercase', letterSpacing:'0.06em', fontWeight:600 }}>
-                    Individual Students
+                    Individual Students {groupFilter !== 'all' && `— ${filteredStudents.length} shown`}
                 </p>
+                {filteredStudents.length === 0 ? (
+                    <p style={{ fontSize:12, color:'#b0a898' }}>No students in this group.</p>
+                ) : (
                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                    {students.map((s, i) => {
+                    {filteredStudents.map((s, i) => {
                     const grp = s.group || s.cluster_label || 'Average'
                     const cfg = GROUP_CONFIG[grp] || GROUP_CONFIG['Average']
                     return (
@@ -212,6 +314,7 @@ function Section({ title, icon, children, loading, badge }) {
                     )
                     })}
                 </div>
+                )}
                 </div>
             )}
             </div>
@@ -227,9 +330,19 @@ function Section({ title, icon, children, loading, badge }) {
     // ═══════════════════════════════════════════════════════════════
     function OutliersSection() {
     const { data, loading, error } = useOutliers()
+    const [courseFilter, setCourseFilter] = React.useState('all')
 
     const outliers = data?.outliers || []
     const total    = data?.total_flagged ?? outliers.length
+
+    // NOTE: filtering by course here assumes each outlier object has a
+    // `course` field. If useOutliers() doesn't currently return one,
+    // this select will just render with only the "All Courses" option —
+    // add `course` to the Isolation Forest API response to enable it.
+    const courses = [...new Set(outliers.map(o => o.course).filter(Boolean))]
+    const filteredOutliers = courseFilter === 'all'
+        ? outliers
+        : outliers.filter(o => o.course === courseFilter)
 
     if (error) return (
         <Section title="Students Needing Attention" icon={<AlertCircle/>} loading={false}>
@@ -239,7 +352,17 @@ function Section({ title, icon, children, loading, badge }) {
 
     return (
         <Section title="Students Needing Attention" icon={<AlertCircle/>} loading={loading}
-        badge={total > 0 ? `${total} flagged` : undefined}>
+        badge={total > 0 ? `${total} flagged` : undefined}
+        filters={
+            !loading && courses.length > 0 && (
+            <FilterSelect
+                value={courseFilter}
+                onChange={setCourseFilter}
+                options={[{ value:'all', label:'All Courses' }, ...courses.map(c => ({ value:c, label:c }))]}
+            />
+            )
+        }
+        >
 
         {!loading && outliers.length === 0 ? (
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -255,7 +378,9 @@ function Section({ title, icon, children, loading, badge }) {
                 Consider reaching out to offer support.
             </p>
 
-            {outliers.map((o, i) => {
+            {filteredOutliers.length === 0 ? (
+                <p style={{ fontSize:12, color:'#b0a898' }}>No flagged students for this course.</p>
+            ) : filteredOutliers.map((o, i) => {
                 // Map completion_rate to a visual indicator — never show z_score/flagged_by
                 const rate = typeof o.completion_rate === 'number'
                 ? o.completion_rate
@@ -303,6 +428,56 @@ function Section({ title, icon, children, loading, badge }) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// ASSIGNMENT COMPLETION (Teacher view) — course filter
+// ═══════════════════════════════════════════════════════════════
+function AssignmentCompletionSection() {
+    const { data:progress, loading:pl } = useTaskProgress()
+    const [courseFilter, setCourseFilter] = React.useState('all')
+
+    const all = progress || []
+    const courses = [...new Set(all.map(p => p.course).filter(Boolean))]
+    const filtered = courseFilter === 'all' ? all : all.filter(p => p.course === courseFilter)
+
+    return (
+        <Section title="Assignment Completion" icon={<BarChart3/>} loading={pl}
+        badge={all.length ? `${all.length} assignments` : undefined}
+        filters={
+            !pl && courses.length > 0 && (
+            <FilterSelect
+                value={courseFilter}
+                onChange={setCourseFilter}
+                options={[{ value:'all', label:'All Courses' }, ...courses.map(c => ({ value:c, label:c }))]}
+            />
+            )
+        }
+        >
+        {all.length === 0 && !pl ? (
+            <p style={{ fontSize:13, color:'#b0a898' }}>No assignment data yet.</p>
+        ) : filtered.length === 0 ? (
+            <p style={{ fontSize:13, color:'#b0a898' }}>No assignments for this course.</p>
+        ) : (
+            <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            {filtered.map((p, i) => (
+                <div key={i} style={{ padding:'12px 14px', background:'#faf8f5', borderRadius:10, border:'1px solid #f0ece4' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8, gap:8 }}>
+                    <p style={{ fontSize:13, fontWeight:600, color:'#1a1f35', margin:0 }}>{p.assignment}</p>
+                    <span style={{ fontSize:11, color:'#8a7e6e', flexShrink:0 }}>{p.course}</span>
+                </div>
+                <div className="progress-bar-track" style={{ marginBottom:6 }} aria-label={`${p.completion_rate}% complete`}>
+                    <div className="progress-bar-fill" style={{ width:`${p.completion_rate}%`, background:'#1a1f35' }}/>
+                </div>
+                <p style={{ fontSize:10, color:'#b0a898', margin:0 }}>
+                    Due: {p.due_date} · {p.completed}/{p.total_students} students · {p.completion_rate}%
+                </p>
+                </div>
+            ))}
+            </div>
+        )}
+        </Section>
+    )
+}
+
+// ═══════════════════════════════════════════════════════════════
 // MAIN COMPONENT
 // ═══════════════════════════════════════════════════════════════
 export default function AnalyticsPage() {
@@ -312,7 +487,6 @@ export default function AnalyticsPage() {
     const { data:summary,  loading:sl }  = useStudentSummary()
     const { data:weekly,   loading:wl }  = useWeeklyProgress()
     const { data:workload, loading:cl }  = useCourseWorkload()
-    const { data:progress, loading:pl }  = useTaskProgress()
     const { tasks }                       = useTasks()
     const overdueCount = tasks.filter(isOverdue).length
 
@@ -376,38 +550,33 @@ export default function AnalyticsPage() {
         {/* ── Teacher analytics ── */}
         {isTeacher && (
             <>
-            {/* Assignment progress */}
-            <Section title="Assignment Completion" icon={<BarChart3/>} loading={pl}>
-                {(progress || []).length === 0 && !pl ? (
-                <p style={{ fontSize:13, color:'#b0a898' }}>No assignment data yet.</p>
-                ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                    {(progress || []).map((p, i) => (
-                    <div key={i} style={{ padding:'12px 14px', background:'#faf8f5', borderRadius:10, border:'1px solid #f0ece4' }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8, gap:8 }}>
-                        <p style={{ fontSize:13, fontWeight:600, color:'#1a1f35', margin:0 }}>{p.assignment}</p>
-                        <span style={{ fontSize:11, color:'#8a7e6e', flexShrink:0 }}>{p.course}</span>
-                        </div>
-                        <div className="progress-bar-track" style={{ marginBottom:6 }} aria-label={`${p.completion_rate}% complete`}>
-                        <div className="progress-bar-fill" style={{ width:`${p.completion_rate}%`, background:'#1a1f35' }}/>
-                        </div>
-                        <p style={{ fontSize:10, color:'#b0a898', margin:0 }}>
-                        Due: {p.due_date} · {p.completed}/{p.total_students} students · {p.completion_rate}%
-                        </p>
-                    </div>
-                    ))}
-                </div>
-                )}
-            </Section>
+            <style>{`
+                .analytics-2x2-grid {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                grid-auto-rows: 600px;
+                gap: 18px;
+                }
+                @media (max-width: 860px) {
+                .analytics-2x2-grid {
+                    grid-template-columns: 1fr;
+                    grid-auto-rows: 500px;
+                }
+                }
+            `}</style>
+            <div className="analytics-2x2-grid">
+                {/* Assignment progress */}
+                <AssignmentCompletionSection/>
 
-            {/* Full student ranking (top 5 shown on the dashboard) */}
-            <StudentRankingSection/>
+                {/* Full student ranking (top 5 shown on the dashboard) */}
+                <StudentRankingSection/>
 
-            {/* K-Means Clustering — student performance groups */}
-            <StudentGroupsSection/>
+                {/* K-Means Clustering — student performance groups */}
+                <StudentGroupsSection/>
 
-            {/* Isolation Forest — students needing attention */}
-            <OutliersSection/>
+                {/* Isolation Forest — students needing attention */}
+                <OutliersSection/>
+            </div>
             </>
         )}
 
