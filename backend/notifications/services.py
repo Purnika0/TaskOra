@@ -69,30 +69,41 @@ def notify_new_submission(task, is_resubmission=False):
 
 
 # ---------------------------------------------------------------------------
-# 3. Student — submission approved by teacher
-#    (No notification is sent on rejection — rejected work stays visible to
-#    the student in their assignments list with feedback, but does not
-#    generate a bell notification.)
+# 3. Student — submission reviewed by teacher (approved or rejected)
 # ---------------------------------------------------------------------------
 def notify_submission_reviewed(task, approved):
-    if not approved:
-        return
-
     assignment_title = task.assignment.title
-    message = f"Your submission for \"{assignment_title}\" was approved."
-    if task.teacher_feedback:
-        message += f" Feedback: \"{task.teacher_feedback}\""
 
-    Notification.objects.create(
-        recipient=task.student,
-        actor=task.assignment.created_by,
-        notif_type=Notification.Type.SUBMISSION_APPROVED,
-        title='Assignment approved',
-        message=message,
-        course=task.assignment.course,
-        assignment=task.assignment,
-        task=task,
-    )
+    if approved:
+        message = f"Your submission for \"{assignment_title}\" was approved."
+        if task.teacher_feedback:
+            message += f" Feedback: \"{task.teacher_feedback}\""
+
+        Notification.objects.create(
+            recipient=task.student,
+            actor=task.assignment.created_by,
+            notif_type=Notification.Type.SUBMISSION_APPROVED,
+            title='Assignment approved',
+            message=message,
+            course=task.assignment.course,
+            assignment=task.assignment,
+            task=task,
+        )
+    else:
+        message = f"Your submission for \"{assignment_title}\" was rejected. You may resubmit."
+        if task.teacher_feedback:
+            message += f" Feedback: \"{task.teacher_feedback}\""
+
+        Notification.objects.create(
+            recipient=task.student,
+            actor=task.assignment.created_by,
+            notif_type=Notification.Type.SUBMISSION_REJECTED,
+            title='Assignment rejected',
+            message=message,
+            course=task.assignment.course,
+            assignment=task.assignment,
+            task=task,
+        )
 
 
 # ---------------------------------------------------------------------------

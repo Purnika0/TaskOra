@@ -3,8 +3,9 @@ import { ChevronLeft, ChevronRight, CalendarDays, Plus, Trash2, Loader, Info } f
 import { useToday, useBSCalendar }  from '../../hooks/useHolidays.js'
 import { useToast }                from '../../context/ToastContext.jsx'
 import { useAuth }                 from '../../hooks/useAuth.js'
+import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import tasksService                from '../../services/tasks.service.js'
-import { apiError }                from '../../utils/helpers.js'
+import { apiError, getTaskTitle, getTaskDueDate } from '../../utils/helpers.js'
 import {
     BS_MONTH_NAMES, AD_MONTH_NAMES, buildMonthDays,
     daysInBSMonth, adToBS,
@@ -193,26 +194,42 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onAddTask, onDel
                         <p style={{ fontSize:12, color:'#CBD5E1', margin:0, padding:'6px 0' }}>
                             No assignments on this day
                         </p>
-                    ) : tasks.map(t => (
-                        <div key={t.id} style={{
-                            display:'flex', alignItems:'center', justifyContent:'space-between',
-                            gap:8, padding:'8px 10px',
-                            background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:8,
-                        }}>
-                            <p style={{ fontSize:12, fontWeight:600, color:BLUE, margin:0, flex:1, minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                                {t.title || t.display_title || 'Untitled'}
-                            </p>
-                            {isTeacher && (
-                                <button onClick={() => onDeleteTask(t.id)}
-                                    style={{ background:'none', border:'none', cursor:'pointer', color:'#CBD5E1', padding:2, borderRadius:5, display:'flex', alignItems:'center', transition:'color 0.12s' }}
-                                    onMouseEnter={e => e.currentTarget.style.color = RED}
-                                    onMouseLeave={e => e.currentTarget.style.color = '#CBD5E1'}
-                                    title="Delete assignment">
-                                    <Trash2 size={12}/>
-                                </button>
-                            )}
-                        </div>
-                    ))}
+                    ) : tasks.map(t => {
+                        const sb = { label: statusLabel(t), color: statusColor(t), bg: statusBg(t) }
+                        const course = t.assignment?.course_name || t.course_name
+                        return (
+                            <div key={t.id} style={{
+                                display:'flex', alignItems:'flex-start', justifyContent:'space-between',
+                                gap:8, padding:'9px 10px',
+                                background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:8,
+                            }}>
+                                <div style={{ flex:1, minWidth:0 }}>
+                                    <p style={{ fontSize:12.5, fontWeight:600, color:'#0F172A', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                        {getTaskTitle(t)}
+                                    </p>
+                                    <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:3 }}>
+                                        {course && (
+                                            <span style={{ fontSize:10.5, color:'#94A3B8', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                                {course}
+                                            </span>
+                                        )}
+                                        <span style={{ fontSize:9.5, fontWeight:700, padding:'1px 6px', borderRadius:99, background:sb.bg, color:sb.color, whiteSpace:'nowrap', flexShrink:0 }}>
+                                            {sb.label}
+                                        </span>
+                                    </div>
+                                </div>
+                                {isTeacher && (
+                                    <button onClick={() => onDeleteTask(t.id)}
+                                        style={{ background:'none', border:'none', cursor:'pointer', color:'#CBD5E1', padding:2, borderRadius:5, display:'flex', alignItems:'center', flexShrink:0, transition:'color 0.12s' }}
+                                        onMouseEnter={e => e.currentTarget.style.color = RED}
+                                        onMouseLeave={e => e.currentTarget.style.color = '#CBD5E1'}
+                                        title="Delete assignment">
+                                        <Trash2 size={12}/>
+                                    </button>
+                                )}
+                            </div>
+                        )
+                    })}
                 </div>
             </div>
 
@@ -282,10 +299,14 @@ export default function CalendarPage() {
         return { y:t.year, m:t.month }
     })
 
-    useEffect(() => {
-        if (todayBS?.year && todayBS?.month)
-            setCur({ y:todayBS.year, m:todayBS.month })
-    }, [todayBS?.year, todayBS?.month])
+    // Render-time adjustment (React's recommended pattern) instead of a useEffect,
+    // comparing primitive values so it stays correct regardless of upstream memoization.
+    const todayKey = todayBS?.year && todayBS?.month ? `${todayBS.year}-${todayBS.month}` : null
+    const [syncedKey, setSyncedKey] = useState(todayKey)
+    if (todayKey && todayKey !== syncedKey) {
+        setSyncedKey(todayKey)
+        setCur({ y:todayBS.year, m:todayBS.month })
+    }
 
     const { calendar: backendCal, loading: calLoading } = useBSCalendar(cur.y, cur.m)
 
