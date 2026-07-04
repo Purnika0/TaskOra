@@ -176,6 +176,38 @@
 .auth-btn-blue       { background: var(--color-primary); color: var(--color-white); }
 .auth-btn-blue:hover { background: var(--color-primary-hover); box-shadow: 0 4px 12px rgba(77, 127, 232, 0.25); }
 
+/* ── Status icon badges (Forgot / Verify-OTP / Reset / Verify-Email views) ──
+   Replaces the previous rgba(255,255,255,0.15)+white-icon combo, which was
+   effectively invisible on the white .login-card background. */
+.auth-icon-badge {
+    width: 46px; height: 46px; border-radius: var(--radius-md);
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+}
+.auth-icon-badge-round { border-radius: 50%; width: 56px; height: 56px; margin: 0 auto 16px; display: flex; align-items: center; justify-content: center; }
+
+.auth-icon-badge-primary { background: var(--color-primary-light); color: var(--color-primary); }
+.auth-icon-badge-success { background: var(--color-green-light); color: var(--color-green); }
+.auth-icon-badge-sm { width: 38px; height: 38px; margin: 0; flex-shrink: 0; }
+
+/* ── Forgot Password: inline left-aligned header (replaces the centered
+   floating-icon pattern shared by every other status screen, so this
+   view reads less like a generic template) ── */
+.auth-header-inline {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+}
+.auth-heading-left {
+    font-family: var(--font-display); font-weight: 800; font-size: 18px;
+    color: var(--color-text); margin: 0; letter-spacing: -0.02em; text-align: left;
+}
+.auth-subtext-left {
+    font-size: 13px; color: var(--color-text-secondary); text-align: left;
+    margin: 0 0 20px; line-height: 1.6;
+}
+.auth-hint {
+    font-size: 12px; color: var(--color-text-muted); margin: -2px 0 2px; line-height: 1.5;
+}
+
 /* ── App Icon Style Logo Wrapper (Matches image_b7eac8.png) ── */
 .auth-logo-wrap {
     width: 48px; 

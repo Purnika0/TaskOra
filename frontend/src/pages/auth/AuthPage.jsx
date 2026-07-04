@@ -15,7 +15,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import {
     User, Lock, Mail, Eye, EyeOff,
-    GraduationCap, BookOpen, ShieldCheck, ArrowRight,
+    GraduationCap, BookOpen, ArrowRight,
     AlertTriangle, RotateCcw, CheckCircle2, KeyRound, MailCheck,
 } from 'lucide-react'
 import { useAuth }    from '../../hooks/useAuth.js'
@@ -76,6 +76,28 @@ function LockBar({ timer }) {
                 <div style={{ height:'100%', background:'#f59e0b', borderRadius:99, width:`${(timer/LOCK_SECS)*100}%`, transition:'width 1s linear' }}/>
             </div>
         </div>
+    )
+}
+
+// Shared header used by every non-login auth view (forgot / verify-otp /
+// reset / verify-email / success screens): icon badge + heading + subtext.
+// Purely presentational — takes no state, so it's safe to hoist to module
+// scope (matches the audit's fix for Label/FieldError in TaskForm.jsx).
+function AuthStatusHeader({ icon, tone = 'primary', title, subtitle }) {
+    return (
+        <>
+            <div className={`auth-icon-badge auth-icon-badge-${tone}`} aria-hidden="true">
+                {icon}
+            </div>
+            <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--color-text)', textAlign:'center', margin:'0 0 8px', letterSpacing:'-0.02em' }}>
+                {title}
+            </h2>
+            {subtitle && (
+                <p style={{ fontSize:13, color:'var(--color-text-secondary)', textAlign:'center', marginBottom:22, lineHeight:1.6 }}>
+                    {subtitle}
+                </p>
+            )}
+        </>
     )
 }
 
@@ -454,27 +476,27 @@ export default function AuthPage({ initialView }) {
                         Join TaskOra to manage your assignments and deadlines.
                     </p>
 
-                    <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'var(--color-primary-light)', border:'1px solid rgba(0,85,255,0.15)', borderRadius:99, padding:'5px 12px', marginBottom:14 }}>
+                    <div style={{ display:'inline-flex', alignItems:'center', gap:6, background:'var(--color-primary-light)', border:'1px solid color-mix(in srgb, var(--color-primary) 20%, white)', borderRadius:99, padding:'5px 12px', marginBottom:14 }}>
                         <BookOpen size={12} style={{ color:'var(--color-primary)' }}/>
                         <span style={{ fontSize:12, fontWeight:600, color:'var(--color-primary)', fontFamily:'var(--font-display)' }}>Student Registration</span>
                     </div>
 
                     <form onSubmit={handleSignup} noValidate style={{ display:'flex', flexDirection:'column', gap:9 }}>
-                        <Field id="rn" type="text" placeholder="Full name" autoComplete="name"
+                        <Field id="rn" type="text" placeholder="Full name" autoComplete="name" aria-label="Full name"
                             value={regName} onChange={e => setRegName(e.target.value)} required
                             iconL={<User size={14}/>} error={regErrors.name}/>
-                        <Field id="ru" type="text" placeholder="Username" autoComplete="username"
+                        <Field id="ru" type="text" placeholder="Username" autoComplete="username" aria-label="Username"
                             value={regUser} onChange={e => setRegUser(e.target.value)} required
                             iconL={<User size={14}/>} error={regErrors.user}/>
-                        <Field id="re" type="email" placeholder="Email address" autoComplete="email"
+                        <Field id="re" type="email" placeholder="Email address" autoComplete="email" aria-label="Email address"
                             value={regEmail} onChange={e => setRegEmail(e.target.value)} required
                             iconL={<Mail size={14}/>} error={regErrors.email}/>
-                        <Field id="rp" placeholder="Password (min. 8 chars)" autoComplete="new-password"
+                        <Field id="rp" placeholder="Password (min. 8 chars)" autoComplete="new-password" aria-label="Password"
                             type={showRegPw ? 'text' : 'password'}
                             value={regPw} onChange={e => setRegPw(e.target.value)} required
                             iconL={<Lock size={14}/>} showEye eyeOpen={showRegPw} onEye={() => setShowRegPw(s => !s)}
                             error={regErrors.pw}/>
-                        <Field id="rc" placeholder="Confirm password" autoComplete="new-password"
+                        <Field id="rc" placeholder="Confirm password" autoComplete="new-password" aria-label="Confirm password"
                             type={showRegConf ? 'text' : 'password'}
                             value={regConf} onChange={e => setRegConf(e.target.value)} required
                             iconL={<Lock size={14}/>} showEye eyeOpen={showRegConf} onEye={() => setShowRegConf(s => !s)}
@@ -524,22 +546,15 @@ export default function AuthPage({ initialView }) {
     if (view === 'verify') return (
         <div className="auth-root">
             <div className="login-card">
-                <div style={{ width:46, height:46, borderRadius:12, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-                    <MailCheck size={20} style={{ color:'#ffffff' }}/>
-                </div>
-                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--color-text)', textAlign:'center', margin:'0 0 8px', letterSpacing:'-0.02em' }}>
-                    Verify your email
-                </h2>
-                <p style={{ fontSize:13, color:'var(--color-text-secondary)', textAlign:'center', marginBottom:22, lineHeight:1.6 }}>
-                    {verifyEmail
+                <AuthStatusHeader icon={<MailCheck size={20}/>} title="Verify your email"
+                    subtitle={verifyEmail
                         ? <>We sent a 6-digit code to <strong>{verifyEmail}</strong>. Enter it below to activate your account.</>
-                        : 'Enter your email and the 6-digit code you received to activate your account.'}
-                </p>
+                        : 'Enter your email and the 6-digit code you received to activate your account.'}/>
                 <form onSubmit={handleVerifyEmail} noValidate style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                    <Field id="ve" type="email" placeholder="your@email.com" autoComplete="email"
+                    <Field id="ve" type="email" placeholder="your@email.com" autoComplete="email" aria-label="Email address"
                         value={verifyEmail} onChange={e => setVerifyEmail(e.target.value)} required
                         iconL={<Mail size={14}/>} error={verifyErrors.email}/>
-                    <Field id="vcode" type="text" inputMode="numeric" placeholder="6-digit code" maxLength={6}
+                    <Field id="vcode" type="text" inputMode="numeric" placeholder="6-digit code" maxLength={6} aria-label="6-digit verification code"
                         value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/\D/g, ''))} required
                         iconL={<KeyRound size={14}/>} error={verifyErrors.code}/>
                     {verifyErrors.form && <ErrBanner msg={verifyErrors.form}/>}
@@ -568,8 +583,8 @@ export default function AuthPage({ initialView }) {
     if (view === 'verified') return (
         <div className="auth-root">
             <div className="login-card" style={{ textAlign:'center' }}>
-                <div style={{ width:56, height:56, borderRadius:'50%', background:'#DCFCE7', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-                    <CheckCircle2 size={26} style={{ color:'#16A34A' }}/>
+                <div className="auth-icon-badge-round auth-icon-badge-success" aria-hidden="true">
+                    <CheckCircle2 size={26}/>
                 </div>
                 <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--color-text)', margin:'0 0 10px', letterSpacing:'-0.02em' }}>
                     Email verified!
@@ -588,22 +603,25 @@ export default function AuthPage({ initialView }) {
     if (view === 'forgot') return (
         <div className="auth-root">
             <div className="login-card">
-                <div style={{ width:46, height:46, borderRadius:12, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-                    <RotateCcw size={20} style={{ color:'#ffffff' }}/>
+                <div className="auth-header-inline">
+                    <div className="auth-icon-badge auth-icon-badge-primary auth-icon-badge-sm" aria-hidden="true">
+                        <RotateCcw size={18}/>
+                    </div>
+                    <h2 className="auth-heading-left">Reset Your Password</h2>
                 </div>
-                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--color-text)', textAlign:'center', margin:'0 0 8px', letterSpacing:'-0.02em' }}>
-                    Reset Password
-                </h2>
-                <p style={{ fontSize:13, color:'var(--color-text-secondary)', textAlign:'center', marginBottom:22, lineHeight:1.6 }}>
-                    Enter your email and we'll send you a 6-digit code.
+                <p className="auth-subtext-left">
+                    Enter the email address associated with your account and we'll send a verification code to reset your password.
                 </p>
-                <form onSubmit={handleForgot} noValidate style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                    <Field id="fe" type="email" placeholder="your@email.com" autoComplete="email"
+                <form onSubmit={handleForgot} noValidate style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                    <Field id="fe" type="email" placeholder="your@email.com" autoComplete="email" aria-label="Email address"
                         value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required
                         iconL={<Mail size={14}/>} error={forgotErrors.email}/>
+                    <p className="auth-hint">
+                        The code will arrive within a few minutes. If you don't see it, please check your spam folder.
+                    </p>
                     {forgotErrors.form && <ErrBanner msg={forgotErrors.form}/>}
-                    <button type="submit" disabled={submitting} className="auth-btn auth-btn-navy">
-                        {submitting ? <Spinner size={16} color="white"/> : <><ArrowRight size={14}/> Send Code</>}
+                    <button type="submit" disabled={submitting} className="auth-btn auth-btn-navy" style={{ marginTop:4 }}>
+                        {submitting ? <Spinner size={16} color="white"/> : <><ArrowRight size={14}/> Send Verification Code</>}
                     </button>
                 </form>
                 <p style={{ textAlign:'center', fontSize:13, color:'var(--color-text-secondary)', marginTop:16 }}>
@@ -620,17 +638,10 @@ export default function AuthPage({ initialView }) {
     if (view === 'resetOtp') return (
         <div className="auth-root">
             <div className="login-card">
-                <div style={{ width:46, height:46, borderRadius:12, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-                    <KeyRound size={20} style={{ color:'#ffffff' }}/>
-                </div>
-                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--color-text)', textAlign:'center', margin:'0 0 8px', letterSpacing:'-0.02em' }}>
-                    Enter Reset Code
-                </h2>
-                <p style={{ fontSize:13, color:'var(--color-text-secondary)', textAlign:'center', marginBottom:22, lineHeight:1.6 }}>
-                    If an account exists for <strong>{forgotEmail}</strong>, a 6-digit code was sent. Enter it below.
-                </p>
+                <AuthStatusHeader icon={<KeyRound size={20}/>} title="Enter Reset Code"
+                    subtitle={<>If an account exists for <strong>{forgotEmail}</strong>, a 6-digit code was sent. Enter it below.</>}/>
                 <form onSubmit={handleVerifyResetOtp} noValidate style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                    <Field id="rotp" type="text" inputMode="numeric" placeholder="6-digit code" maxLength={6}
+                    <Field id="rotp" type="text" inputMode="numeric" placeholder="6-digit code" maxLength={6} aria-label="6-digit reset code"
                         value={resetOtp} onChange={e => setResetOtp(e.target.value.replace(/\D/g, ''))} required
                         iconL={<KeyRound size={14}/>} error={resetOtpErrors.code}/>
                     {resetOtpErrors.form && <ErrBanner msg={resetOtpErrors.form}/>}
@@ -660,8 +671,8 @@ export default function AuthPage({ initialView }) {
         if (resetDone) return (
             <div className="auth-root">
                 <div className="login-card" style={{ textAlign:'center' }}>
-                    <div style={{ width:56, height:56, borderRadius:'50%', background:'#DCFCE7', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-                        <CheckCircle2 size={26} style={{ color:'#16A34A' }}/>
+                    <div className="auth-icon-badge-round auth-icon-badge-success" aria-hidden="true">
+                        <CheckCircle2 size={26}/>
                     </div>
                     <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--color-text)', margin:'0 0 10px', letterSpacing:'-0.02em' }}>
                         Password updated!
@@ -679,22 +690,15 @@ export default function AuthPage({ initialView }) {
         return (
             <div className="auth-root">
                 <div className="login-card">
-                    <div style={{ width:46, height:46, borderRadius:12, background:'rgba(255,255,255,0.15)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 16px' }}>
-                        <KeyRound size={20} style={{ color:'#ffffff' }}/>
-                    </div>
-                    <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:18, color:'var(--color-text)', textAlign:'center', margin:'0 0 8px', letterSpacing:'-0.02em' }}>
-                        Set New Password
-                    </h2>
-                    <p style={{ fontSize:13, color:'var(--color-text-secondary)', textAlign:'center', marginBottom:22, lineHeight:1.6 }}>
-                        Choose a strong password for your account.
-                    </p>
+                    <AuthStatusHeader icon={<KeyRound size={20}/>} title="Set New Password"
+                        subtitle="Choose a strong password for your account."/>
                     <form onSubmit={handleReset} noValidate style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                        <Field id="rspw" placeholder="New password (min. 8 chars)" autoComplete="new-password"
+                        <Field id="rspw" placeholder="New password (min. 8 chars)" autoComplete="new-password" aria-label="New password"
                             type={showResetPw ? 'text' : 'password'}
                             value={resetPw} onChange={e => setResetPw(e.target.value)} required
                             iconL={<Lock size={14}/>} showEye eyeOpen={showResetPw} onEye={() => setShowResetPw(s => !s)}
                             error={resetErrors.pw}/>
-                        <Field id="rscf" placeholder="Confirm new password" autoComplete="new-password"
+                        <Field id="rscf" placeholder="Confirm new password" autoComplete="new-password" aria-label="Confirm new password"
                             type={showResetConf ? 'text' : 'password'}
                             value={resetConf} onChange={e => setResetConf(e.target.value)} required
                             iconL={<Lock size={14}/>} showEye eyeOpen={showResetConf} onEye={() => setShowResetConf(s => !s)}
