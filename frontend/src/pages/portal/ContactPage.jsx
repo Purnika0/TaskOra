@@ -7,15 +7,16 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
     import { Link, useNavigate }  from 'react-router-dom'
     import { useAuth }             from '../../hooks/useAuth.js'
     import { useToast }            from '../../context/ToastContext.jsx'
-    import { GraduationCap, Mail, Phone, MapPin, CheckCircle2, ChevronDown, LayoutDashboard, LogOut } from 'lucide-react'
+    import contactService          from '../../services/contact.service.js'
+    import { GraduationCap, Mail, Phone, MapPin, CheckCircle2, ChevronDown, LayoutDashboard, LogOut, ArrowRight } from 'lucide-react'
 
     const inp = {
-    width:'100%', border:'1.5px solid #E2E8F0', borderRadius:9, padding:'10px 12px',
-    fontSize:13, fontFamily:'var(--font-body)', color:'#0F172A', background:'#F8FAFC',
+    width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'10px 12px',
+    fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-bg)',
     outline:'none', boxSizing:'border-box', transition:'border-color 0.18s, box-shadow 0.18s, background 0.18s',
     }
     const lbl = {
-    display:'block', fontSize:11, fontWeight:600, color:'#0F172A',
+    display:'block', fontSize:11, fontWeight:600, color:'var(--color-text)',
     marginBottom:5, letterSpacing:'0.04em', fontFamily:'var(--font-body)',
     }
 
@@ -25,9 +26,9 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
         <Tag {...props}
         style={{
             ...inp, ...extraStyle,
-            borderColor: err ? '#dc2626' : focused ? '#0F172A' : '#E2E8F0',
+            borderColor: err ? 'var(--color-red)' : focused ? 'var(--color-text)' : 'var(--color-border)',
             boxShadow: err ? '0 0 0 3px rgba(220,38,38,0.07)' : focused ? '0 0 0 3px rgba(26,31,53,0.07)' : 'none',
-            background: focused ? '#fff' : '#F8FAFC',
+            background: focused ? '#fff' : 'var(--color-bg)',
         }}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
@@ -56,39 +57,39 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             aria-label="User menu"
             style={{
             display:'flex', alignItems:'center', gap:8, padding:'6px 10px',
-            border:'1.5px solid #E2E8F0', borderRadius:9, cursor:'pointer',
+            border:'1.5px solid var(--color-border)', borderRadius:9, cursor:'pointer',
             background:'#fff', transition:'border-color 0.15s', fontFamily:'var(--font-body)',
             }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = '#94A3B8')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = '#E2E8F0')}
+            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-text-placeholder)')}
+            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
         >
             <div style={{ width:26, height:26, borderRadius:'50%', background:'var(--color-navy)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', fontFamily:'var(--font-display)', flexShrink:0 }}>
             {init}
             </div>
-            <span style={{ fontSize:13, fontWeight:600, color:'#0F172A', maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+            <span style={{ fontSize:13, fontWeight:600, color:'var(--color-text)', maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
             {name}
             </span>
-            <ChevronDown size={12} style={{ color:'#94A3B8', transition:'transform 0.15s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+            <ChevronDown size={12} style={{ color:'var(--color-text-placeholder)', transition:'transform 0.15s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
         </button>
 
         {open && (
             <div style={{
             position:'absolute', right:0, top:'calc(100% + 6px)', zIndex:50,
-            background:'#fff', border:'1px solid #E2E8F0', borderRadius:10,
+            background:'#fff', border:'1px solid var(--color-border)', borderRadius:10,
             boxShadow:'0 4px 20px rgba(26,31,53,0.12)', minWidth:168, padding:5,
             animation:'to-slideUp 0.15s ease both',
             }}>
             <Link to="/app/dashboard" onClick={() => setOpen(false)}
-                style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', fontSize:13, color:'#0F172A', borderRadius:6, textDecoration:'none', fontFamily:'var(--font-body)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#F8FAFC')}
+                style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', fontSize:13, color:'var(--color-text)', borderRadius:6, textDecoration:'none', fontFamily:'var(--font-body)' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
-                <LayoutDashboard size={13} style={{ color:'#64748B' }} />
+                <LayoutDashboard size={13} style={{ color:'var(--color-text-muted)' }} />
                 Dashboard
             </Link>
-            <div style={{ height:1, background:'#F8FAFC', margin:'3px 4px' }} />
+            <div style={{ height:1, background:'var(--color-bg)', margin:'3px 4px' }} />
             <button onClick={() => { logout(); setOpen(false) }}
-                style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 10px', fontSize:13, color:'#dc2626', background:'none', border:'none', cursor:'pointer', borderRadius:6, fontFamily:'var(--font-body)', textAlign:'left' }}
+                style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 10px', fontSize:13, color:'var(--color-red)', background:'none', border:'none', cursor:'pointer', borderRadius:6, fontFamily:'var(--font-body)', textAlign:'left' }}
                 onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
                 onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
             >
@@ -121,51 +122,27 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
         return !Object.keys(e).length
     }
 
-    // OLD (fake — no API call)
-    // async function submit(e) {
-    //     e.preventDefault()
-    //     if (!validate()) return
-    //     setBusy(true)
-    //     await new Promise(r => setTimeout(r, 800))
-    //     toast.success("Message sent! We'll get back to you soon.")
-    //     setSent(true)
-    //     setBusy(false)
-    // }
-
-    // NEW — actually calls the backend
     async function submit(e) {
         e.preventDefault()
         if (!validate()) return
         setBusy(true)
         try {
-            const res = await fetch('http://127.0.0.1:8000/api/contact/', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    full_name: form.name,
-                    email:     form.email,
-                    subject:   form.subject,
-                    message:   form.message,
-                }),
+            await contactService.submit({
+                name: form.name, email: form.email, subject: form.subject, message: form.message,
             })
-            if (!res.ok) {
-                const data = await res.json()
-                // Show first validation error from backend if any
-                const firstError = Object.values(data)[0]
-                toast.error(Array.isArray(firstError) ? firstError[0] : firstError)
-                return
-            }
             toast.success("Message sent! We'll get back to you soon.")
             setSent(true)
-        } catch {
-            toast.error('Something went wrong. Please try again.')
+        } catch (err) {
+            const data = err.response?.data
+            const firstError = data && Object.values(data)[0]
+            toast.error(Array.isArray(firstError) ? firstError[0] : firstError || 'Something went wrong. Please try again.')
         } finally {
             setBusy(false)
         }
     }
 
     return (
-        <div style={{ minHeight:'100vh', background:'#F8FAFC', fontFamily:'var(--font-body)', display:'flex', flexDirection:'column' }}>
+        <div style={{ minHeight:'100vh', background:'var(--color-bg)', fontFamily:'var(--font-body)', display:'flex', flexDirection:'column' }}>
         <style>{`
             .ct-grid {
             display: grid;
@@ -194,7 +171,7 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,var(--color-navy),var(--color-primary))', display:'flex', alignItems:'center', justifyContent:'center' }}>
                 <GraduationCap size={15} color="#fff" />
             </div>
-            <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'#0F172A', letterSpacing:'-0.01em' }}>
+            <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'var(--color-text)', letterSpacing:'-0.01em' }}>
                 TaskOra
             </span>
             </Link>
@@ -205,16 +182,16 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             ) : (
                 <>
                 <Link to="/auth?view=signup" className="ct-register"
-                    style={{ fontSize:13, fontWeight:500, color:'#64748B', textDecoration:'none', padding:'6px 12px', borderRadius:8, fontFamily:'var(--font-body)', transition:'color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#0F172A')}
-                    onMouseLeave={e => (e.currentTarget.style.color = '#64748B')}
+                    style={{ fontSize:13, fontWeight:500, color:'var(--color-text-muted)', textDecoration:'none', padding:'6px 12px', borderRadius:8, fontFamily:'var(--font-body)', transition:'color 0.15s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
                 >
                     Register
                 </Link>
                 <Link to="/auth?view=login"
-                    style={{ fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', padding:'7px 14px', borderRadius:8, background:'#0F172A', fontFamily:'var(--font-display)', transition:'background 0.15s', letterSpacing:'-0.01em' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = '#0F172A')}
-                    onMouseLeave={e => (e.currentTarget.style.background = '#0F172A')}
+                    style={{ fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', padding:'7px 14px', borderRadius:8, background:'var(--color-text)', fontFamily:'var(--font-display)', transition:'background 0.15s', letterSpacing:'-0.01em' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-primary)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-text)')}
                 >
                     Sign In
                 </Link>
@@ -225,10 +202,10 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
 
         {/* Page heading */}
         <div style={{ textAlign:'center', padding:'28px 24px 16px' }}>
-            <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:24, color:'#0F172A', margin:'0 0 6px', letterSpacing:'-0.03em' }}>
+            <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:24, color:'var(--color-text)', margin:'0 0 6px', letterSpacing:'-0.03em' }}>
             Contact Us
             </h1>
-            <p style={{ fontSize:13, color:'#64748B', margin:0 }}>
+            <p style={{ fontSize:13, color:'var(--color-text-muted)', margin:0 }}>
             Have a question or feedback? We'd love to hear from you.
             </p>
         </div>
@@ -248,8 +225,8 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                 </p>
                 </div>
                 {[
-                { icon:<Mail size={13}/>,   label:'Email',   val:'taskora@gmail.com' },
-                { icon:<Phone size={13}/>,  label:'Phone',   val:'+977 98XXXXXXXX' },
+                { icon:<Mail size={13}/>,   label:'Email',   val:'taskora2083@gmail.com' },
+                { icon:<Phone size={13}/>,  label:'Phone',   val:'+977 9864160480' },
                 { icon:<MapPin size={13}/>, label:'Address', val:'Kathmandu, Nepal' },
                 ].map(row => (
                 <div key={row.label} style={{ display:'flex', gap:11, alignItems:'flex-start' }}>
@@ -268,11 +245,11 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             <div style={{ padding:'32px 28px', background:'#fff' }}>
                 {sent ? (
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:280, gap:12, textAlign:'center' }}>
-                    <div style={{ width:52, height:52, borderRadius:'50%', background:'#DCFCE7', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                    <CheckCircle2 size={24} style={{ color:'#16A34A' }} />
+                    <div style={{ width:52, height:52, borderRadius:'50%', background:'var(--color-green-light)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <CheckCircle2 size={24} style={{ color:'var(--color-green)' }} />
                     </div>
-                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#0F172A', margin:0 }}>Message Sent!</h3>
-                    <p style={{ fontSize:13, color:'#64748B', margin:0, lineHeight:1.6 }}>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'var(--color-text)', margin:0 }}>Message Sent!</h3>
+                    <p style={{ fontSize:13, color:'var(--color-text-muted)', margin:0, lineHeight:1.6 }}>
                     Thanks for reaching out. We'll get back to you within 24 hours.
                     </p>
                     <button
@@ -284,7 +261,7 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                 </div>
                 ) : (
                 <>
-                    <h2 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#0F172A', margin:'0 0 18px', letterSpacing:'-0.01em' }}>
+                    <h2 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'var(--color-text)', margin:'0 0 18px', letterSpacing:'-0.01em' }}>
                     Send a Message
                     </h2>
                     <form onSubmit={submit} noValidate style={{ display:'flex', flexDirection:'column', gap:13 }}>
@@ -294,25 +271,25 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                         { id:'cs', key:'subject', type:'text',  label:'Subject',        required:false, ph:'What is this about?'  },
                     ].map(({ id, key, type, label, required, ph }) => (
                         <div key={id}>
-                        <label htmlFor={id} style={lbl}>{label}{required && <span style={{ color:'#dc2626' }} aria-hidden="true"> *</span>}</label>
+                        <label htmlFor={id} style={lbl}>{label}{required && <span style={{ color:'var(--color-red)' }} aria-hidden="true"> *</span>}</label>
                         <FocusInput id={id} type={type} placeholder={ph}
                             value={form[key]} onChange={e => f(key, e.target.value)} err={errs[key]} />
-                        {errs[key] && <p style={{ color:'#dc2626', fontSize:11, marginTop:4 }}>{errs[key]}</p>}
+                        {errs[key] && <p style={{ color:'var(--color-red)', fontSize:11, marginTop:4 }}>{errs[key]}</p>}
                         </div>
                     ))}
                     <div>
-                        <label htmlFor="cm" style={lbl}>Message <span style={{ color:'#dc2626' }} aria-hidden="true">*</span></label>
+                        <label htmlFor="cm" style={lbl}>Message <span style={{ color:'var(--color-red)' }} aria-hidden="true">*</span></label>
                         <FocusInput as="textarea" id="cm" rows={4} placeholder="Tell us how we can help…"
                         value={form.message} onChange={e => f('message', e.target.value)}
                         err={errs.message} style={{ resize:'vertical' }} />
-                        {errs.message && <p style={{ color:'#dc2626', fontSize:11, marginTop:4 }}>{errs.message}</p>}
+                        {errs.message && <p style={{ color:'var(--color-red)', fontSize:11, marginTop:4 }}>{errs.message}</p>}
                     </div>
                     <button type="submit" disabled={busy}
-                        style={{ background:'var(--color-primary)', color:'#fff', border:'none', borderRadius:9, padding:'11px 20px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'var(--font-display)', width:'100%', transition:'background 0.15s', opacity: busy ? 0.65 : 1, letterSpacing:'-0.01em', marginTop:2 }}
+                        style={{ background:'var(--color-primary)', color:'#fff', border:'none', borderRadius:9, padding:'11px 20px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'var(--font-display)', width:'100%', transition:'background 0.15s', opacity: busy ? 0.65 : 1, letterSpacing:'-0.01em', marginTop:2, display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}
                         onMouseEnter={e => { if (!busy) e.currentTarget.style.background = 'var(--color-primary-hover)' }}
                         onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-primary)' }}
                     >
-                        {busy ? 'Sending…' : 'Send Message →'}
+                        {busy ? 'Sending…' : <>Send Message <ArrowRight size={14}/></>}
                     </button>
                     </form>
                 </>

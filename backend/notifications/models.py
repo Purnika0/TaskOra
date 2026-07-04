@@ -17,6 +17,7 @@ class Notification(models.Model):
     class Type(models.TextChoices):
         NEW_ASSIGNMENT       = 'new_assignment',       'New Assignment'
         SUBMISSION_APPROVED  = 'submission_approved',  'Submission Approved'
+        SUBMISSION_REJECTED  = 'submission_rejected',  'Submission Rejected'
         DEADLINE_REMINDER    = 'deadline_reminder',    'Deadline Reminder'
         ASSIGNMENT_OVERDUE   = 'assignment_overdue',   'Assignment Overdue'
         NEW_SUBMISSION       = 'new_submission',       'New Submission'

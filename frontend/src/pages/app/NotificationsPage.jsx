@@ -4,7 +4,7 @@
 
 import React, { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { CheckCheck, Trash2, Inbox } from 'lucide-react'
+import { CheckCheck, Trash2, Inbox, Eraser } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { useNotifications } from '../../context/NotificationContext.jsx'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
@@ -17,9 +17,12 @@ const TABS = [
 ]
 
 export default function NotificationsPage() {
-    const { notifications, unreadCount, loading, markAsRead, markAllAsRead, removeNotification } = useNotifications()
+    const { notifications, unreadCount, loading, markAsRead, markAllAsRead, removeNotification, clearReadNotifications } = useNotifications()
     const [activeTab, setActiveTab] = useState('all')
+    const [hoveredId, setHoveredId] = useState(null)
     const navigate = useNavigate()
+
+    const readCount = notifications.length - unreadCount
 
     const filtered = useMemo(() => {
         if (activeTab === 'unread') return notifications.filter(n => !n.is_read)
@@ -41,10 +44,19 @@ export default function NotificationsPage() {
                         {notifications.length} total · {unreadCount} unread
                     </p>
                 </div>
-                {unreadCount > 0 && (
-                    <button onClick={markAllAsRead} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <CheckCheck size={14} /> Mark all as read
-                    </button>
+                {(unreadCount > 0 || readCount > 0) && (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        {unreadCount > 0 && (
+                            <button onClick={markAllAsRead} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <CheckCheck size={14} /> Mark all as read
+                            </button>
+                        )}
+                        {readCount > 0 && (
+                            <button onClick={clearReadNotifications} className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Eraser size={14} /> Clear read
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -57,8 +69,8 @@ export default function NotificationsPage() {
                         style={{
                             padding: '7px 14px', borderRadius: 99, fontSize: 12, fontWeight: 600,
                             border: '1.5px solid ' + (activeTab === t.key ? 'var(--color-primary)' : 'var(--color-border)'),
-                            background: activeTab === t.key ? 'var(--color-primary)' : '#fff',
-                            color: activeTab === t.key ? '#fff' : 'var(--color-text-secondary)',
+                            background: activeTab === t.key ? 'var(--color-primary)' : 'var(--color-surface)',
+                            color: activeTab === t.key ? 'var(--color-white)' : 'var(--color-text-secondary)',
                             cursor: 'pointer', whiteSpace: 'nowrap',
                         }}
                     >
@@ -68,7 +80,7 @@ export default function NotificationsPage() {
             </div>
 
             {/* List */}
-            <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden' }}>
+            <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden' }}>
                 {loading && notifications.length === 0 && (
                     <div style={{ padding: 20 }}><LoadingBlock rows={4} /></div>
                 )}
@@ -85,9 +97,14 @@ export default function NotificationsPage() {
                 {filtered.map(n => (
                     <div
                         key={n.id}
+                        onMouseEnter={() => setHoveredId(n.id)}
+                        onMouseLeave={() => setHoveredId(null)}
                         style={{
-                            display: 'flex', gap: 12, padding: '14px 16px', borderBottom: '1px solid #F1F5F9',
-                            background: n.is_read ? '#fff' : 'var(--color-primary-light)',
+                            display: 'flex', gap: 12, padding: '14px 16px', borderBottom: '1px solid var(--color-border)',
+                            background: n.is_read
+                                ? (hoveredId === n.id ? 'var(--color-surface-subtle)' : 'var(--color-surface)')
+                                : 'var(--color-primary-light)',
+                            transition: 'background 0.12s',
                         }}
                     >
                         <button
@@ -122,7 +139,7 @@ export default function NotificationsPage() {
                                 background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-placeholder)',
                                 padding: 6, borderRadius: 8, alignSelf: 'flex-start', flexShrink: 0,
                             }}
-                            onMouseEnter={e => { e.currentTarget.style.color = '#DC2626' }}
+                            onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-red)' }}
                             onMouseLeave={e => { e.currentTarget.style.color = 'var(--color-text-placeholder)' }}
                         >
                             <Trash2 size={14} />

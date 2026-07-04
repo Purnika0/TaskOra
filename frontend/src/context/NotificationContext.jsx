@@ -1,19 +1,3 @@
-// src/context/NotificationContext.jsx
-//
-// Polling-based notification store (Django Channels isn't installed on the
-// backend, so this is the efficient alternative — a lightweight interval
-// that only asks the server for what's changed).
-//
-//   • unread-count is polled every 30s — a tiny, cheap request that drives
-//     the bell badge.
-//   • the full recent-notifications list is only (re)fetched when: the
-//     provider mounts, the unread count goes up, or the caller explicitly
-//     calls refresh() (e.g. when the bell dropdown is opened).
-//   • polling pauses while the browser tab is hidden and resumes — with an
-//     immediate refresh — when it becomes visible again, so a laptop left
-//     open overnight doesn't spam the API.
-//   • polling only runs at all while a user is logged in.
-
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
 import notificationsService from '../services/notifications.service.js'
@@ -139,6 +123,15 @@ export function NotificationProvider({ children }) {
         fetchList()
     }, [fetchUnreadCount, fetchList])
 
+    const clearReadNotifications = useCallback(async () => {
+        setNotifications(prev => prev.filter(n => !n.is_read))
+        try {
+            await notificationsService.clearRead()
+        } catch {
+            fetchList()
+        }
+    }, [fetchList])
+
     const value = {
         notifications,
         unreadCount,
@@ -146,6 +139,7 @@ export function NotificationProvider({ children }) {
         markAsRead,
         markAllAsRead,
         removeNotification,
+        clearReadNotifications,
         refresh,
     }
 

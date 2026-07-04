@@ -1,7 +1,7 @@
 // src/pages/portal/LandingPage.jsx
 // Simplified and polished landing page for TaskOra (Students & Educators)
 
-import React, { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import { SiteFooter } from '../../components/layout/Footer.jsx'
@@ -76,7 +76,7 @@ const LP_CSS = `
     border:1.5px solid var(--color-border); cursor:pointer;
     text-decoration:none; transition:border-color 0.15s, background 0.15s;
 }
-.lp-btn-secondary:hover { border-color:#94A3B8; background:var(--color-surface-subtle); }
+.lp-btn-secondary:hover { border-color:var(--color-text-placeholder); background:var(--color-surface-subtle); }
 
 /* Mockup rendering */
 .lp-mockup {
@@ -148,21 +148,49 @@ const LP_CSS = `
     position:fixed; inset:0; z-index:200;
     background:var(--color-navy);
     padding:20px 24px; display:flex; flex-direction:column; gap:8px;
+    animation: to-fadeIn 0.18s ease both;
+}
+.lp-mobile-menu a:focus-visible,
+.lp-mobile-menu button:focus-visible {
+    outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px;
 }
 `
 
 const FEATURE_ROWS = [
-    { icon:<ClipboardList size={16}/>, title:'Assignment Tracking', desc:'View all your subject assignments and official due dates in one organized dashboard.' },
-    { icon:<ThumbsUp size={16}/>, title:'Direct Submissions', desc:'Submit coursework files online and receive structured grades and remarks from teachers.' },
-    { icon:<Users size={16}/>, title:'Quick Class Enrollment', desc:'Instantly connect to your classes by entering enrollment codes shared by your instructors.' },
+    {
+        icon:<ClipboardList size={16}/>,
+        title:'Assignment Tracking',
+        desc:'View all your assignments and due dates in one organized dashboard.'
+    },
+    {
+        icon:<ThumbsUp size={16}/>,
+        title:'Online Submissions',
+        desc:'Submit assignments online and receive grades and feedback from your teachers.'
+    },
+    {
+        icon:<Users size={16}/>,
+        title:'Class Enrollment',
+        desc:'Join your classes quickly using enrollment codes provided by your teachers.'
+    },
 ]
 
 const BENEFITS = [
-    { icon:<Upload size={18}/>, title:'Hassle-Free File Uploads', desc:'Upload PDF, DOC, or DOCX assignment drafts directly from any computer or mobile device.' },
-    { icon:<BookOpen size={18}/>, title:'Focused Workspace', desc:'Declutter your workspace by viewing only the active courses and assignments for this semester.' },
-    { icon:<BarChart3 size={18}/>, title:'Clear Performance Progress', desc:'Monitor submission trends, pending flags, and completion statistics at a single glance.' },
+    {
+        icon:<Upload size={18}/>,
+        title:'Easy File Uploads',
+        desc:'Upload assignment files securely from your computer or mobile device.'
+    },
+    {
+        icon:<BookOpen size={18}/>,
+        title:'Organized Workspace',
+        desc:'Keep your courses, assignments, and deadlines organized in one place.'
+    },
+    {
+        icon:<BarChart3 size={18}/>,
+        title:'Track Your Progress',
+        desc:'Monitor assignment status, submissions, and overall academic progress.'
+    },
 ]
-
 function DashboardMockup() {
     return (
         <div className="lp-mockup">
@@ -186,7 +214,7 @@ function DashboardMockup() {
             {[
                 { title: 'Assignment: Implement JDBC — Connect Java Application to PostgreSQL', course: 'Advanced Java Programming', status: 'Completed' },
                 { title: 'Lab Report: Deploy an Application on AWS/Azure/GCP', course: 'Cloud Computing', status: 'Pending' },
-                { title: 'Homework: Compare COCOMO and Function Point Estimation Models', course: 'Software Project Management', status: 'Submitted' },
+                { title: 'Homework: Effort Estimation Case Study', course: 'Software Project Management', status: 'Submitted' },
             ].map((a, i) => (
                 <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 10px', background:'var(--color-surface-subtle)', borderRadius:8, marginBottom:6, border:'1px solid var(--color-border)' }}>
                     <div style={{ minWidth:0, flex:1 }}>
@@ -203,15 +231,33 @@ function DashboardMockup() {
 export default function LandingPage() {
     const { user } = useAuth()
     const [menuOpen, setMenuOpen] = useState(false)
+    const menuRef = useRef(null)
+    const menuBtnRef = useRef(null)
 
-    const ctaLabel = user ? 'Go to Dashboard' : 'Get Started Free'
+    const ctaLabel = user ? 'Go to Dashboard' : 'Get Started'
+
+    // Close on Escape, lock body scroll, move focus into the menu on open,
+    // and restore focus to the hamburger button on close.
+    useEffect(() => {
+        if (!menuOpen) return
+        const prevOverflow = document.body.style.overflow
+        document.body.style.overflow = 'hidden'
+        menuRef.current?.querySelector('a,button')?.focus()
+        const handler = e => { if (e.key === 'Escape') setMenuOpen(false) }
+        window.addEventListener('keydown', handler)
+        return () => {
+            document.body.style.overflow = prevOverflow
+            window.removeEventListener('keydown', handler)
+            menuBtnRef.current?.focus()
+        }
+    }, [menuOpen])
 
     return (
         <div style={{ fontFamily:'var(--font-body)', background:'var(--color-bg)', minHeight:'100vh' }}>
             <style>{LP_CSS}</style>
 
             {menuOpen && (
-                <div className="lp-mobile-menu">
+                <div className="lp-mobile-menu" ref={menuRef} role="dialog" aria-modal="true" aria-label="Site menu">
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                             <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,255,255,0.14)', display:'flex', alignItems:'center', justifyContent:'center' }}>
@@ -219,7 +265,7 @@ export default function LandingPage() {
                             </div>
                             <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:16, color:'#fff' }}>TaskOra</span>
                         </div>
-                        <button onClick={() => setMenuOpen(false)} style={{ background:'none', border:'none', color:'#fff', cursor:'pointer', padding:6 }}><X size={22}/></button>
+                        <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ background:'none', border:'none', color:'#fff', cursor:'pointer', padding:6, borderRadius:7 }}><X size={22}/></button>
                     </div>
                     <Link to="/" onClick={() => setMenuOpen(false)}
                         style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
@@ -269,13 +315,13 @@ export default function LandingPage() {
                         </Link>
                     ) : (
                         <>
-                            <Link to="/auth?view=login" className="lp-nav-link" style={{ fontWeight:600 }}>Login</Link>
+                            <Link to="/auth?view=login" className="lp-nav-link" style={{ fontWeight:600 }}>Sign In</Link>
                             <Link to="/auth?view=signup" className="lp-btn-primary" style={{ padding:'8px 16px', fontSize:13 }}>
                                 Sign Up <ArrowRight size={13}/>
                             </Link>
                         </>
                     )}
-                    <button className="lp-mobile-btn" onClick={() => setMenuOpen(true)}
+                    <button ref={menuBtnRef} className="lp-mobile-btn" onClick={() => setMenuOpen(true)} aria-label="Open menu"
                         style={{ display:'none', background:'none', border:'none', cursor:'pointer', padding:6, color:'var(--color-text-secondary)', alignItems:'center', borderRadius:7 }}>
                         <Menu size={20}/>
                     </button>
@@ -286,20 +332,20 @@ export default function LandingPage() {
             <section className="lp-hero">
                 <div className="lp-hero-inner">
                     <div>
-                        <span className="lp-eyebrow"><GraduationCap size={10}/> Built for academic use</span>
+                        <span className="lp-eyebrow"><GraduationCap size={12}/> Smart Assignment Management</span>
                         <h1 className="lp-h1">
-                            Your academic deadlines,<br/><em>beautifully organized</em>
+                            Manage Every Assignment,<br/><em>Meet Every Deadline.</em>
                         </h1>
                         <p className="lp-sub">
-                            TaskOra brings all your course assignments, submission deadlines, and instructor feedback into one focused workspace — built specifically for IT students and educators.
+                            TaskOra helps students and teachers manage assignments, track deadlines, submit coursework, and receive feedback through one organized and easy-to-use platform.
                         </p>
                         <div className="lp-cta-row">
                             {user ? (
                                 <Link to="/app" className="lp-btn-primary">Go to Dashboard <ArrowRight size={15}/></Link>
                             ) : (
                                 <>
-                                    <Link to="/auth?view=signup" className="lp-btn-primary">Get Started Free <ArrowRight size={15}/></Link>
-                                    <Link to="/auth?view=login" className="lp-btn-secondary">Login</Link>
+                                    <Link to="/auth?view=signup" className="lp-btn-primary">Create Your Account <ArrowRight size={15}/></Link>
+                                    <Link to="/auth?view=login" className="lp-btn-secondary">Sign In</Link>
                                 </>
                             )}
                         </div>
@@ -311,15 +357,15 @@ export default function LandingPage() {
             {/* ── Key Features Section ── */}
             <section className="lp-section" id="features">
                 <div className="lp-section-head">
-                    <h2 className="lp-section-title">Purpose-built for academic workflows</h2>
-                    <p className="lp-section-sub">Designed around how IT students and teachers actually work — no clutter, no distractions.</p>
+                    <h2 className="lp-section-title">Everything You Need to Stay Organized Throughout the Semester</h2>
+                    <p className="lp-section-sub">Designed to simplify assignment management for students and teachers with an intuitive, distraction-free experience.</p>
                 </div>
                 <div className="lp-features">
                     <div className="lp-feature-lead">
                         <BookOpen size={26} style={{ marginBottom:14, opacity:0.85 }}/>
-                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:18, margin:'0 0 8px' }}>Course Coordination</h3>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:18, margin:'0 0 8px' }}>Manage Your Courses</h3>
                         <p style={{ fontSize:13, color:'rgba(255,255,255,0.70)', margin:0, lineHeight:1.6 }}>
-                            Stay organized with an absolute separation of courses. View active timelines, submit assignments, and review instructor comments without distracting clutter.
+                            Keep all your courses organized in one place. View assignments, monitor deadlines, submit work, and receive feedback from teachers—all from an easy-to-use dashboard.
                         </p>
                     </div>
                     <div className="lp-feature-list">
@@ -337,9 +383,10 @@ export default function LandingPage() {
             </section>
 
             {/* ── Benefits Section ── */}
-            <section className="lp-section" id="benefits">
+            <section style={{ background:'var(--color-surface-subtle)', borderTop:'1px solid var(--color-border)', borderBottom:'1px solid var(--color-border)' }}>
+                <div className="lp-section" id="benefits">
                 <div className="lp-section-head center">
-                    <h2 className="lp-section-title">Designed to reduce academic stress</h2>
+                    <h2 className="lp-section-title">Simplify Your Academic Journey</h2>
                     <p className="lp-section-sub">From enrollment to graded feedback — everything your semester needs, in one place.</p>
                 </div>
                 <div className="lp-benefits-grid">
@@ -351,11 +398,12 @@ export default function LandingPage() {
                         </div>
                     ))}
                 </div>
+                </div>
             </section>
 
-            {/* ── Call to Action Section (Contrasted with Cream Background) ── */}
+            {/* ── Call to Action Section ── */}
             <section style={{ 
-                background: 'var(--color-cream)', 
+                background: 'var(--color-primary-light)', 
                 borderTop: '1px solid var(--color-border)',
                 borderBottom: '1px solid var(--color-border)',
                 padding: '64px 24px', 
@@ -369,7 +417,7 @@ export default function LandingPage() {
                     letterSpacing: '-0.02em', 
                     margin: '0 0 12px' 
                 }}>
-                    Take control of your semester today
+                    Stay Organized Throughout Your Semester
                 </h2>
                 <p style={{ 
                     fontFamily: 'var(--font-body)',
@@ -379,7 +427,7 @@ export default function LandingPage() {
                     margin: '0 auto 28px',
                     lineHeight: '1.6'
                 }}>
-                    Join TaskOra for free and spend less time chasing deadlines — and more time doing great work.
+                    Experience a smarter way to manage assignments, submissions, and academic progress with TaskOra.
                 </p>
                 <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
                     {user ? (
@@ -389,10 +437,10 @@ export default function LandingPage() {
                     ) : (
                         <>
                             <Link to="/auth?view=signup" className="lp-btn-primary">
-                                Create Student Account <ArrowRight size={15}/>
+                                Create Your Account <ArrowRight size={15}/>
                             </Link>
                             <Link to="/auth?view=login" className="lp-btn-secondary">
-                                Login
+                                Sign In
                             </Link>
                         </>
                     )}
