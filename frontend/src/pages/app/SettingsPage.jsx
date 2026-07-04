@@ -1,6 +1,6 @@
 // src/pages/app/SettingsPage.jsx
 import React, { useState, useRef, useEffect } from 'react'
-import { Save, LogOut, User, Trash2, Settings, Lock, KeyRound, Mail, ShieldCheck, CheckCircle2 } from 'lucide-react'
+import { LogOut, User, Trash2, Settings, Lock, KeyRound, Mail, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { useAuth }     from '../../hooks/useAuth.js'
 import { useToast }    from '../../context/ToastContext.jsx'
 import { useConfirm }  from '../../context/ConfirmContext.jsx'
@@ -268,25 +268,12 @@ function SecurityCard({ user }) {
 }
 
 export default function SettingsPage() {
-    const { user, logout, refreshUser } = useAuth()
+    const { user, logout } = useAuth()
     const toast   = useToast()
     const confirm = useConfirm()
 
-    const [fullName, setFullName] = useState(user?.full_name || '')
-    const [email,    setEmail]    = useState(user?.email     || '')
-    const [saving,   setSaving]   = useState(false)
-
-    async function handleSave(e) {
-        e.preventDefault()
-        setSaving(true)
-        try {
-            await authService.updateMe({ full_name:fullName.trim(), email:email.trim() })
-            await refreshUser()
-            toast.success('Profile updated successfully')
-        } catch (err) {
-            toast.error(apiError(err))
-        } finally { setSaving(false) }
-    }
+    const fullName = user?.full_name || ''
+    const email    = user?.email     || ''
 
     async function handleLogout() {
         const ok = await confirm({ 
@@ -349,25 +336,18 @@ export default function SettingsPage() {
                         </div>
                     </div>
 
-                    <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div style={{ display: 'flex', gap: 16 }}>
                             <div style={{ flex: 1 }}>
                                 <FieldLabel>Full Name</FieldLabel>
-                                <SInput value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Enter your full name"/>
+                                <SInput value={fullName} disabled onChange={()=>{}} placeholder="Enter your full name"/>
                             </div>
                             <div style={{ flex: 1 }}>
                                 <FieldLabel>Email Address</FieldLabel>
-                                <SInput type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@company.com"/>
+                                <SInput type="email" value={email} disabled onChange={()=>{}} placeholder="name@company.com"/>
                             </div>
                         </div>
-                        <button type="submit" disabled={saving}
-                            style={{ ...primaryBtn, opacity: saving ? 0.7 : 1, marginTop: '8px' }}
-                            onMouseEnter={e => { if(!saving) e.currentTarget.style.background = '#334155' }}
-                            onMouseLeave={e => { e.currentTarget.style.background = '#0f172a' }}>
-                            <Save size={14} aria-hidden="true"/>
-                            {saving ? 'Saving Changes...' : 'Save Changes'}
-                        </button>
-                    </form>
+                    </div>
                 </div>
             </div>
 
