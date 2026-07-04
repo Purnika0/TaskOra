@@ -21,7 +21,7 @@ from .serializers import (
 
 from .throttles import OTPRequestThrottle, OTPVerifyThrottle
 
-from .permissions import IsAdmin
+from .permissions import IsAdmin, IsAdminOrTeacher
 from .models import User, OTP
 from .utils import send_otp_email
 
@@ -77,11 +77,10 @@ class MeView(APIView):
 
 class ChangePasswordView(APIView):
     """
-    Any authenticated user can change their own password.
-    POST /api/users/change-password/
-    Requires: current_password, new_password
+    Teacher/Admin only — change your own password with current_password + new_password.
+    Students must use the OTP-based forgot-password → verify-otp → reset-password flow instead.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAdminOrTeacher]
 
     def post(self, request):
         serializer = ChangePasswordSerializer(
@@ -94,7 +93,6 @@ class ChangePasswordView(APIView):
                 status=status.HTTP_200_OK
             )
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 class CreateTeacherView(generics.CreateAPIView):
     """

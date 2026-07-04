@@ -114,6 +114,11 @@ const authService = {
         return data
     },
 
+    // ── Password change (authenticated, current-password based — teacher/admin only) ──
+    async changePassword(current_password, new_password) {
+        const { data } = await api.post('/api/users/change-password/', { current_password, new_password })
+        return data
+    },
     // ── Password reset (OTP-based) ──────────────────────────────────────────
     async requestPasswordReset(email) {
         const { data } = await api.post('/api/users/forgot-password/', { email })

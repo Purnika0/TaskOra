@@ -75,11 +75,12 @@ class CreateTeacherSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create_user(
-            username  = validated_data['username'],
-            email     = validated_data['email'],
-            password  = validated_data['password'],
-            full_name = validated_data.get('full_name', ''),
-            role      = User.Role.TEACHER,
+            username           = validated_data['username'],
+            email              = validated_data['email'],
+            password           = validated_data['password'],
+            full_name          = validated_data.get('full_name', ''),
+            role               = User.Role.TEACHER,
+            is_email_verified  = True,   # admin vouches for them — no OTP needed
         )
         return user
 
@@ -233,7 +234,7 @@ class ResetPasswordSerializer(serializers.Serializer):
 class VerifiedTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)  # runs normal username/password auth first
-        if not self.user.is_email_verified:
+        if self.user.role == User.Role.STUDENT and not self.user.is_email_verified:
             raise serializers.ValidationError(
                 {"detail": "Please verify your email before logging in."},
                 code='email_not_verified',
