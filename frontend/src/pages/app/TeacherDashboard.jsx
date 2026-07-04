@@ -1,4 +1,4 @@
-    // src/pages/app/TeacherDashboard.jsx
+// src/pages/app/TeacherDashboard.jsx
     // CHANGES:
     //  • "Task" → "Assignment" throughout
     //  • Assignment creation form: title, course select, due date, description, file upload (PDF/DOC/DOCX)
@@ -8,12 +8,13 @@
     //  • "X Students Submitted" count inside assignment details
 
     import React, { useState, useMemo, useEffect, useCallback } from 'react'
+    import { useNavigate } from 'react-router-dom'
     import {
     Plus, Users, AlertTriangle, TrendingUp, Layers,
     ChevronLeft, ChevronRight, FileText, Eye, Clock,
     CheckCircle2, X, Calendar, Upload, BookOpen,
     ClipboardList, BarChart3, ThumbsUp, ThumbsDown,
-    Paperclip, RefreshCw,
+    Paperclip, RefreshCw, XCircle, ArrowRight,
     } from 'lucide-react'
     import { useToday }       from '../../hooks/useHolidays.js'
     import { useCourseOverview, useStudentRanking, useStudentGroups, useOutliers } from '../../hooks/useAnalytics.js'
@@ -662,6 +663,8 @@ function SubmissionPreviewModal({
     export default function TeacherDashboard() {
     const { user }  = useAuth()
     const toast     = useToast()
+    const navigate  = useNavigate()
+    const [groupFilter, setGroupFilter] = useState(null) // null = show all
 
     const [assignments,   setAssignments]   = useState([])
     const [courses,       setCourses]       = useState([])
@@ -718,6 +721,7 @@ function SubmissionPreviewModal({
     const totalSubmitted   = assignments.reduce((s,a) => s + (a.submission_count || 0), 0)
     const totalPendingRev  = assignments.reduce((s,a) => s + (a.pending_review_count || 0), 0)
     const totalApproved    = assignments.reduce((s,a) => s + (a.approved_count || 0), 0)
+    const totalRejected    = assignments.reduce((s,a) => s + (a.rejected_count || 0), 0)
 
     const hour         = new Date().getHours()
     const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
@@ -757,93 +761,95 @@ function SubmissionPreviewModal({
             <ACard label="Submitted"         value={totalSubmitted}      icon={Upload}        color="#6d4fc2"/>
             <ACard label="Pending Reviews"   value={totalPendingRev}     icon={Clock}         color="#d4a93c"/>
             <ACard label="Approved"          value={totalApproved}       icon={CheckCircle2}  color="#3cb87a"/>
+            <ACard label="Rejected"          value={totalRejected}       icon={XCircle}       color="#e05252"/>
         </div>
 
-        {/* Assignments grouped by course + Calendar */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 260px', gap:16 }} className="teacher-main-grid">
-            <style>{`@media(max-width:820px){.teacher-main-grid{grid-template-columns:1fr !important;}}`}</style>
+        {/* Courses (grouped assignments, side-by-side scrollable) + Calendar, side-by-side */}
+        <div style={{ display:'flex', gap:16, alignItems:'flex-start' }} className="courses-calendar-row">
+            <style>{`
+                .assignment-columns-scroll{scrollbar-width:thin;scrollbar-color:#d8d0c4 transparent;}
+                .assignment-columns-scroll::-webkit-scrollbar{height:8px;width:8px;}
+                .assignment-columns-scroll::-webkit-scrollbar-thumb{background:#d8d0c4;border-radius:99px;}
+                .assignment-columns-scroll::-webkit-scrollbar-track{background:transparent;}
+            `}</style>
 
-            <div className="white-card overflow-hidden">
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid #f0ece4', gap:10, flexWrap:'wrap' }}>
+            {/* Courses card */}
+            <div className="white-card overflow-hidden" style={{ flex:'1 1 auto', minWidth:0 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid #f0ece4', gap:10, flexWrap:'wrap' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <ClipboardList size={14} style={{ color:'#3b6fd4' }}/>
-                <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#1a1f35', margin:0 }}>Assignments</h3>
-                <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99 }}>{assignments.length}</span>
+                    <BookOpen size={14} style={{ color:'#3b6fd4' }}/>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#1a1f35', margin:0 }}>Courses</h3>
+                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99 }}>{courses.length}</span>
                 </div>
-                <div style={{ display:'flex', gap:8 }}>
                 <button onClick={loadData} style={{ background:'none', border:'1px solid #e2dbd0', borderRadius:8, padding:'6px 10px', cursor:'pointer', color:'#6a6052', display:'flex', alignItems:'center', gap:5, fontSize:12 }}>
                     <RefreshCw size={12}/>
                 </button>
-                <button onClick={() => setShowNewModal(true)} className="btn-primary" style={{ padding:'7px 13px', fontSize:12 }}>
-                    <Plus size={13}/> New Assignment
-                </button>
                 </div>
-            </div>
 
-            <div style={{ padding:'14px 18px' }}>
-                {loadingAssign ? <LoadingBlock/> : assignments.length === 0 ? (
+                {loadingAssign ? (
+                <div style={{ padding:'14px 18px' }}><LoadingBlock/></div>
+                ) : assignments.length === 0 ? (
                 <div style={{ textAlign:'center', padding:'32px 20px' }}>
                     <ClipboardList size={24} style={{ color:'#d4cec6', margin:'0 auto 10px', display:'block' }}/>
-                    <p style={{ fontSize:13, color:'#b0a898', margin:'0 0 14px' }}>No assignments yet. Create your first one!</p>
-                    <button onClick={() => setShowNewModal(true)} className="btn-primary"><Plus size={13}/> New Assignment</button>
+                    <p style={{ fontSize:13, color:'#b0a898', margin:0 }}>No assignments yet. Create your first one!</p>
                 </div>
                 ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:14, padding:'14px 18px', alignItems:'stretch' }}>
                     {grouped.map(({ course, items }) => (
-                    <div key={course.id}>
-                        {/* Course header */}
-                        <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10, paddingBottom:8, borderBottom:'2px solid #f0ece4' }}>
+                    <div key={course.id} style={{ minWidth:0, background:'#faf8f5', border:'1px solid #ece7df', borderRadius:12, overflow:'hidden', display:'flex', flexDirection:'column' }}>
+                        {/* Course column header */}
+                        <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 12px', borderBottom:'2px solid #f0ece4', background:'#fff' }}>
                         <BookOpen size={13} style={{ color:'#3b6fd4', flexShrink:0 }}/>
-                        <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#1a1f35', margin:0 }}>
+                        <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12.5, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                             {course.title || course.name}
                         </h4>
-                        <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99, marginLeft:'auto' }}>
-                            {items.length} assignment{items.length !== 1 ? 's' : ''}
+                        <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99, marginLeft:'auto', flexShrink:0 }}>
+                            {items.length}
                         </span>
                         </div>
+
                         {/* Assignments under this course */}
-                        <div style={{ display:'flex', flexDirection:'column', gap:8, paddingLeft:8 }}>
+                        <div style={{ display:'flex', flexDirection:'column', gap:8, padding:10, maxHeight:440, overflowY:'auto' }}>
                         {items.map(a => {
                             const due    = a.due_date
                             const dDays  = due ? Math.ceil((new Date(due)-new Date()) / 86400000) : null
                             const isLate = dDays !== null && dDays < 0
                             const subCount = a.submission_count || 0
                             return (
-                            <div key={a.id} style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 14px', background:'#faf8f5', borderRadius:10, border:'1px solid #ece7df' }}>
-                                <div style={{ flex:1, minWidth:0 }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:3, flexWrap:'wrap' }}>
-                                    <p style={{ fontSize:13, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            <div key={a.id} style={{ padding:'11px 12px', background:'#fff', borderRadius:10, border:'1px solid #ece7df' }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5, flexWrap:'wrap' }}>
+                                <p style={{ fontSize:12.5, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%' }}>
                                     {a.title}
-                                    </p>
-                                    {a.file && (
-                                    <span style={{ fontSize:10, color:'#6d4fc2', background:'#f0e8ff', padding:'1px 6px', borderRadius:99, display:'flex', alignItems:'center', gap:3 }}>
-                                        <Paperclip size={9}/> File attached
-                                    </span>
-                                    )}
+                                </p>
                                 </div>
-                                <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
-                                    {due && (
+                                {a.file && (
+                                <span style={{ fontSize:10, color:'#6d4fc2', background:'#f0e8ff', padding:'1px 6px', borderRadius:99, display:'inline-flex', alignItems:'center', gap:3, marginBottom:6 }}>
+                                    <Paperclip size={9}/> File attached
+                                </span>
+                                )}
+                                <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:9 }}>
+                                {due && (
                                     <span style={{ fontSize:10, color: isLate?'#c0392b':'#8a7e6e', display:'flex', alignItems:'center', gap:3 }}>
-                                        <Calendar size={9}/> {due}{isLate && ' (past)'}
+                                    <Calendar size={9}/> {due}{isLate && ' (past)'}
                                     </span>
-                                    )}
-                                    {a.submission_time && (
+                                )}
+                                {a.submission_time && (
                                     <span style={{ fontSize:10, color:'#8a7e6e', display:'flex', alignItems:'center', gap:3 }}>
-                                        <Clock size={9}/> by {a.submission_time}
+                                    <Clock size={9}/> by {a.submission_time}
                                     </span>
-                                    )}
-                                    {/* Submission count */}
-                                    <span style={{ fontSize:10, color:'#3b6fd4', fontWeight:600, display:'flex', alignItems:'center', gap:3 }}>
+                                )}
+                                <span style={{ fontSize:10, color:'#3b6fd4', fontWeight:600, display:'flex', alignItems:'center', gap:3 }}>
                                     <Users size={9}/> {subCount} Student{subCount !== 1 ? 's' : ''} Submitted
-                                    </span>
+                                </span>
                                 </div>
-                                </div>
-                                <div style={{ display:'flex', gap:6, flexShrink:0 }}>
+                                <div style={{ display:'flex', gap:6 }}>
                                 <button
                                     onClick={() => setSelectedAssignment(a)}
                                     style={{
+                                        flex:1,
                                         display:'flex',
                                         alignItems:'center',
+                                        justifyContent:'center',
                                         gap:4,
                                         padding:'5px 9px',
                                         fontSize:11,
@@ -871,9 +877,11 @@ function SubmissionPreviewModal({
                 </div>
                 )}
             </div>
-            </div>
 
-            <BSCalWidget/>
+            {/* Calendar card */}
+            <div style={{ flex:'0 0 260px', width:260 }}>
+                <BSCalWidget/>
+            </div>
         </div>
 
         {/* Analytics row */}
@@ -882,12 +890,14 @@ function SubmissionPreviewModal({
         {/* Student Ranking */}
         <Section
             title="Student Ranking"
-            icon={<TrendingUp/>}
+            tag="Top 5"
             tagColor="#d4a93c"
+            tagBg="#fffbeb"
+            icon={<TrendingUp/>}
             loading={rkL}
         >
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-                {(ranking || []).slice(0,6).map((r,i) => (
+                {(ranking || []).slice(0,5).map((r,i) => (
                     <div
                         key={i}
                         style={{
@@ -957,6 +967,29 @@ function SubmissionPreviewModal({
                         No student data yet.
                     </p>
                 )}
+
+                {(ranking || []).length > 5 && (
+                    <button
+                        onClick={() => navigate('/app/analytics')}
+                        style={{
+                            display:'flex',
+                            alignItems:'center',
+                            justifyContent:'center',
+                            gap:6,
+                            marginTop:2,
+                            padding:'8px 10px',
+                            fontSize:11.5,
+                            fontWeight:600,
+                            background:'#faf8f5',
+                            color:'#3b6fd4',
+                            border:'1px solid #ece7df',
+                            borderRadius:9,
+                            cursor:'pointer',
+                        }}
+                    >
+                        View full ranking ({ranking.length} students) <ArrowRight size={12}/>
+                    </button>
+                )}
             </div>
         </Section>
 
@@ -980,15 +1013,33 @@ function SubmissionPreviewModal({
                             flexWrap:'wrap',
                         }}
                     >
+                        <button
+                            onClick={() => setGroupFilter(null)}
+                            style={{
+                                fontSize:11,
+                                fontWeight:600,
+                                padding:'3px 9px',
+                                borderRadius:99,
+                                background: groupFilter === null ? '#1a1f35' : '#f3f4f6',
+                                color: groupFilter === null ? '#fff' : '#374151',
+                                border:'none',
+                                cursor:'pointer',
+                            }}
+                        >
+                            All: {groups.students.length}
+                        </button>
+
                         {Object.entries(groups.summary || {}).map(([label,count]) => {
                             const style = GRP[label] || {
                                 bg:'#f3f4f6',
                                 text:'#374151',
                             }
+                            const active = groupFilter === label
 
                             return (
-                                <span
+                                <button
                                     key={label}
+                                    onClick={() => setGroupFilter(active ? null : label)}
                                     style={{
                                         fontSize:11,
                                         fontWeight:600,
@@ -996,10 +1047,13 @@ function SubmissionPreviewModal({
                                         borderRadius:99,
                                         background:style.bg,
                                         color:style.text,
+                                        border: active ? `1.5px solid ${style.text}` : '1.5px solid transparent',
+                                        cursor:'pointer',
+                                        opacity: groupFilter && !active ? 0.55 : 1,
                                     }}
                                 >
                                     {label}: {count}
-                                </span>
+                                </button>
                             )
                         })}
                     </div>
@@ -1009,11 +1063,19 @@ function SubmissionPreviewModal({
                             display:'flex',
                             flexDirection:'column',
                             gap:10,
-                            maxHeight:320,
+                            height:460,
                             overflowY:'auto',
                         }}
+                        className="assignment-columns-scroll"
                     >
-                        {groups.students.map((s,i) => {
+                        {groupFilter && !groups.students.some(s => s.group === groupFilter) && (
+                            <p style={{ fontSize:12, color:'#b0a898' }}>
+                                No students in this group.
+                            </p>
+                        )}
+                        {groups.students
+                            .filter(s => !groupFilter || s.group === groupFilter)
+                            .map((s,i) => {
                             const gStyle = GRP[s.group] || {
                                 bg:'#f3f4f6',
                                 text:'#374151',

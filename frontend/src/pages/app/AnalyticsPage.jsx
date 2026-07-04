@@ -16,7 +16,7 @@ import React from 'react'
 import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Clock, Users, AlertCircle } from 'lucide-react'
 import {
     useStudentSummary, useWeeklyProgress, useCourseWorkload,
-    useTaskProgress, useStudentGroups, useOutliers,
+    useTaskProgress, useStudentGroups, useOutliers, useStudentRanking,
 } from '../../hooks/useAnalytics.js'
 import { useAuth }            from '../../hooks/useAuth.js'
 import { DashboardFooter }    from '../../components/layout/Footer.jsx'
@@ -77,6 +77,59 @@ function Section({ title, icon, children, loading, badge }) {
             {loading ? <LoadingBlock/> : children}
         </div>
         </div>
+    )
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // STUDENT RANKING — full leaderboard (Teacher view)
+    // The Teacher Dashboard only shows the top 5; the complete
+    // ranking lives here.
+    // ═══════════════════════════════════════════════════════════════
+    function StudentRankingSection() {
+    const { data:ranking, loading, error } = useStudentRanking()
+
+    if (error) return (
+        <Section title="Student Ranking" icon={<TrendingUp/>} loading={false}>
+        <p style={{ fontSize:12, color:'#e05252' }}>Could not load student ranking.</p>
+        </Section>
+    )
+
+    return (
+        <Section
+        title="Student Ranking"
+        icon={<TrendingUp/>}
+        loading={loading}
+        badge={ranking?.length ? `${ranking.length} students` : undefined}
+        >
+        {!loading && !ranking?.length ? (
+            <p style={{ fontSize:13, color:'#b0a898' }}>No student data yet.</p>
+        ) : !loading && (
+            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+            {ranking.map((r, i) => (
+                <div key={i} style={{ padding:'10px 12px', border:'1px solid #ece5dc', borderRadius:10, background:'#fff' }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
+                    <strong style={{ fontSize:12.5, color:'#1a1f35' }}>#{i + 1} {r.student}</strong>
+                    <span style={{
+                        fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:99,
+                        background: r.completion_rate >= 80 ? '#e0f7ee' : r.completion_rate >= 50 ? '#fffbeb' : '#fde8e8',
+                        color:      r.completion_rate >= 80 ? '#166534' : r.completion_rate >= 50 ? '#92400e' : '#991b1b',
+                    }}>
+                    {r.completion_rate}%
+                    </span>
+                </div>
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:4, fontSize:11, color:'#6a5e4e' }}>
+                    <span>Completed: {r.completed}</span>
+                    <span>Submitted: {r.submitted}</span>
+                    <span>Pending: {r.pending}</span>
+                    <span>Overdue: {r.overdue}</span>
+                    <span>Rejected: {r.rejected}</span>
+                    <span>Total: {r.total}</span>
+                </div>
+                </div>
+            ))}
+            </div>
+        )}
+        </Section>
     )
     }
 
@@ -346,6 +399,9 @@ export default function AnalyticsPage() {
                 </div>
                 )}
             </Section>
+
+            {/* Full student ranking (top 5 shown on the dashboard) */}
+            <StudentRankingSection/>
 
             {/* K-Means Clustering — student performance groups */}
             <StudentGroupsSection/>

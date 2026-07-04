@@ -8,12 +8,22 @@ class AssignmentSerializer(serializers.ModelSerializer):
     due_date_bs = serializers.SerializerMethodField()
     course_name  = serializers.SerializerMethodField()
 
+    # Per-assignment task counts for the teacher dashboard's analytics cards.
+    # Populated via annotate() on the queryset (see views.py) when available,
+    # falling back to a live count so this serializer is also safe to use
+    # on a single, non-annotated instance (e.g. after create/update).
+    submission_count     = serializers.SerializerMethodField()
+    pending_review_count = serializers.SerializerMethodField()
+    approved_count        = serializers.SerializerMethodField()
+    rejected_count        = serializers.SerializerMethodField()
+
     class Meta:
         model = Assignment
         fields = [
             'id', 'title', 'description', 'course', 'course_name', 'created_by',
             'due_date', 'due_date_bs', 'task_type',
-            'estimated_hours', 'priority', 'created_at'
+            'estimated_hours', 'priority', 'created_at',
+            'submission_count', 'pending_review_count', 'approved_count', 'rejected_count',
         ]
         read_only_fields = ['created_by', 'created_at']
 
@@ -22,6 +32,27 @@ class AssignmentSerializer(serializers.ModelSerializer):
     
     def get_course_name(self, obj):
         return obj.course.title
+
+    def get_submission_count(self, obj):
+        # Annotated by the view's queryset when listing; fall back otherwise.
+        if hasattr(obj, 'submission_count'):
+            return obj.submission_count
+        return obj.tasks.filter(submitted_at__isnull=False).count()
+
+    def get_pending_review_count(self, obj):
+        if hasattr(obj, 'pending_review_count'):
+            return obj.pending_review_count
+        return obj.tasks.filter(status=Task.Status.SUBMITTED).count()
+
+    def get_approved_count(self, obj):
+        if hasattr(obj, 'approved_count'):
+            return obj.approved_count
+        return obj.tasks.filter(status=Task.Status.COMPLETED).count()
+
+    def get_rejected_count(self, obj):
+        if hasattr(obj, 'rejected_count'):
+            return obj.rejected_count
+        return obj.tasks.filter(status=Task.Status.REJECTED).count()
 
 
 
@@ -109,8 +140,8 @@ class TaskReviewSerializer(serializers.ModelSerializer):
     Teacher approves or rejects a submitted task, with optional feedback.
 
     `action` accepts 'approve' (default) or 'reject':
-      • approve → status becomes COMPLETED
-      • reject  → status becomes REJECTED, and the student may resubmit
+        • approve → status becomes COMPLETED
+        • reject  → status becomes REJECTED, and the student may resubmit
     """
     action = serializers.ChoiceField(choices=['approve', 'reject'], required=False, default='approve')
 
