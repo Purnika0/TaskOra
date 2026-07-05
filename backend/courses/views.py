@@ -31,14 +31,23 @@ class CourseListCreateView(generics.ListCreateAPIView):
         return Course.objects.none()
 
     def perform_create(self, serializer):
-        if self.request.user.role != 'teacher':
+        user = self.request.user
+        if user.role == 'teacher':
+            # Unchanged behavior: a teacher always owns the course they create,
+            # regardless of anything sent in the request.
+            serializer.save(teacher=user)
+        elif user.role == 'admin':
+            # Admin may optionally assign a teacher via teacher_id; if omitted
+            # the course is created unassigned (teacher=None).
+            serializer.save()
+        else:
             from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("Only teachers can create courses.")
-        serializer.save(teacher=self.request.user)
+            raise PermissionDenied("Only teachers or admins can create courses.")
 
 
 class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
-    # Teacher can edit/delete their own courses. Admin can do anything
+    # Teacher can edit/delete their own courses. Admin can do anything,
+    # including assigning, changing, or removing the course's teacher.
     permission_classes = [IsAuthenticated]
     serializer_class = CourseWriteSerializer
 
@@ -49,6 +58,14 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
         if user.role == 'teacher':
             return Course.objects.filter(teacher=user)
         return Course.objects.none()
+
+    def perform_update(self, serializer):
+        # Only admins may (re)assign, change, or remove a course's teacher.
+        # A teacher editing their own course (title/description/dates) never
+        # touches the teacher field, so this only strips it if somehow present.
+        if self.request.user.role != 'admin':
+            serializer.validated_data.pop('teacher', None)
+        serializer.save()
 
 
 class JoinCourseView(APIView):
@@ -123,10 +140,12 @@ class MyCoursesView(generics.ListAPIView):
 
 
 class CourseStudentsView(generics.ListAPIView):
-    # Teacher sees all students enrolled in their course
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         course_id = self.kwargs['pk']
-        return Enrollment.objects.filter(course_id=course_id, course__teacher=self.request.user)
+        user = self.request.user
+        if user.role == 'admin':
+            return Enrollment.objects.filter(course_id=course_id)
+        return Enrollment.objects.filter(course_id=course_id, course__teacher=user)
