@@ -108,16 +108,34 @@
         )
     }
 
-    // ── Assignment creation modal ─────────────────────────────────────────────────
-    function NewAssignmentModal({ courses, onClose, onSave }) {
+// ── Dashboard Assignment Modal (Updated to match image_1c6b1d.png) ───────────
+function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved }) {
+    const isEdit = Boolean(assignment)
+    const toast  = useToast()
+    
+    const ALLOWED_TYPES = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    const ALLOWED_EXT   = '.pdf,.doc,.docx'
+
+    // Form states updated with task_type, priority, and estimated_hours
     const [form, setForm] = useState({
-        title:'', course:'', due_date:'', submission_time:'23:59', description:'',
+        title:           assignment?.title || '',
+        description:     assignment?.description || '',
+        course:          assignment?.course ?? (courses[0]?.id ?? ''),
+        due_date:        assignment?.due_date || '',
+        submission_time: assignment?.submission_time || '23:59',
+        task_type:       assignment?.task_type || 'assignment', // Added default
+        priority:        assignment?.priority ?? 3,              // IntegerField 1-5 in models.py
+        estimated_hours: assignment?.estimated_hours ?? 1,      // Added default
     })
-    const [file,   setFile]   = useState(null)
+    
+    const [file, setFile] = useState(null)
     const [saving, setSaving] = useState(false)
     const [errors, setErrors] = useState({})
 
-    function set(k, v) { setForm(f => ({...f,[k]:v})); setErrors(e => ({...e,[k]:null})) }
+    function update(field, value) { 
+        setForm(p => ({ ...p, [field]: value }))
+        setErrors(e => ({ ...e, [field]: null }))
+    }
 
     function handleFile(e) {
         const f = e.target.files?.[0]
@@ -129,19 +147,37 @@
 
     async function handleSubmit() {
         const errs = {}
-        if (!form.title.trim())  errs.title   = 'Title is required'
-        if (!form.course)        errs.course  = 'Please select a course'
+        if (!form.title.trim())  errs.title  = 'Title is required'
+        if (!form.course)        errs.course = 'Please select a course'
         if (!form.due_date)      errs.due_date = 'Due date is required'
         if (Object.keys(errs).length) { setErrors(errs); return }
+        
         setSaving(true)
         try {
-        const fd = new FormData()
-        Object.entries(form).forEach(([k,v]) => { if(v) fd.append(k, v) })
-        if (file) fd.append('file', file)
-        await onSave(fd)
-        onClose()
-        } catch(err) {
-        setErrors({ _: err?.response?.data?.detail || 'Failed to create assignment' })
+            const fd = new FormData()
+            fd.append('title', form.title.trim())
+            fd.append('description', form.description.trim())
+            fd.append('course', Number(form.course))
+            fd.append('due_date', form.due_date)
+            fd.append('submission_time', form.submission_time)
+            
+            // 1. Included new fields in the API payload
+            fd.append('task_type', form.task_type)
+            fd.append('priority', Number(form.priority))
+            if (form.estimated_hours !== '') {
+                fd.append('estimated_hours', Number(form.estimated_hours))
+            }
+            
+            if (file) fd.append('file', file)
+
+            const saved = isEdit
+                ? await tasksService.updateAssignment(assignment.id, fd)
+                : await tasksService.createAssignment(fd)
+                
+            toast.success(isEdit ? 'Assignment updated' : 'Assignment created')
+            onSaved(saved)
+        } catch (err) {
+            setErrors({ _ : apiError(err) })
         } finally { setSaving(false) }
     }
 
@@ -149,88 +185,126 @@
     const lbl = { fontSize:11, fontWeight:600, color:'#5a5060', display:'block', marginBottom:5 }
 
     return (
-        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:'16px' }}>
-        <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:520, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 16px 48px rgba(0,0,0,0.22)' }}>
+        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:16 }}
+            className="anim-fade-in" onClick={onClose}>
+            <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:520, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 16px 48px rgba(0,0,0,0.22)' }}
+                className="anim-scale-in" onClick={e => e.stopPropagation()}>
 
-            {/* Header */}
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 22px', borderBottom:'1px solid #ece7df' }}>
-            <div>
-                <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:0 }}>New Assignment</h3>
-                <p style={{ fontSize:11, color:'#a09080', margin:'2px 0 0' }}>Create an assignment for your students</p>
-            </div>
-            <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, borderRadius:8, color:'#8a7e6e', display:'flex' }}><X size={16}/></button>
-            </div>
-
-            {/* Body */}
-            <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
-            {errors._ && <p style={{ fontSize:12, color:'#e05252', background:'#fde8e8', padding:'8px 12px', borderRadius:8, margin:0 }}>{errors._}</p>}
-
-            <div>
-                <label style={lbl}>Assignment Title *</label>
-                <input style={inp} value={form.title} onChange={e => set('title',e.target.value)} placeholder="e.g. Database Normalization Assignment"/>
-                {errors.title && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.title}</p>}
-            </div>
-
-            <div>
-                <label style={lbl}>Course *</label>
-                <select style={inp} value={form.course} onChange={e => set('course',e.target.value)}>
-                <option value="">Select a course…</option>
-                {courses.map(c => <option key={c.id} value={c.id}>{c.title || c.name}</option>)}
-                </select>
-                {errors.course && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.course}</p>}
-            </div>
-
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                <div>
-                <label style={lbl}><Calendar size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Due Date *</label>
-                <input type="date" style={inp} value={form.due_date} onChange={e => set('due_date',e.target.value)} min={new Date().toISOString().split('T')[0]}/>
-                {errors.due_date && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.due_date}</p>}
-                </div>
-                <div>
-                <label style={lbl}><Clock size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Submission Time</label>
-                <input type="time" style={inp} value={form.submission_time} onChange={e => set('submission_time',e.target.value)}/>
-                </div>
-            </div>
-
-            <div>
-                <label style={lbl}>Description (optional)</label>
-                <textarea style={{ ...inp, resize:'vertical', minHeight:70 }} rows={3} value={form.description} onChange={e => set('description',e.target.value)} placeholder="Assignment instructions, requirements…"/>
-            </div>
-
-            <div>
-                <label style={lbl}><Paperclip size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Upload Assignment File (PDF / DOC / DOCX)</label>
-                <div style={{ border:'2px dashed #e2dbd0', borderRadius:10, padding:'16px', textAlign:'center', background:'#faf8f5', cursor:'pointer', position:'relative' }}
-                onClick={() => document.getElementById('asgn-file-input').click()}>
-                <input id="asgn-file-input" type="file" accept={ALLOWED_EXT} onChange={handleFile} style={{ display:'none' }}/>
-                {file ? (
-                    <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center' }}>
-                    <FileText size={16} style={{ color:'#3b6fd4' }}/>
-                    <span style={{ fontSize:13, color:'#1a1f35', fontWeight:600 }}>{file.name}</span>
-                    <button type="button" onClick={e => { e.stopPropagation(); setFile(null) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#e05252', padding:2 }}><X size={12}/></button>
+                {/* Header */}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 22px', borderBottom:'1px solid #ece7df' }}>
+                    <div>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:0 }}>
+                            {isEdit ? 'Edit Assignment' : 'New Assignment'}
+                        </h3>
+                        <p style={{ fontSize:11, color:'#a09080', margin:'2px 0 0' }}>
+                            Create an assignment for your students
+                        </p>
                     </div>
-                ) : (
-                    <>
-                    <Upload size={20} style={{ color:'#c0b8ae', margin:'0 auto 6px', display:'block' }}/>
-                    <p style={{ fontSize:12, color:'#8a7e6e', margin:0 }}>Click to upload or drag & drop</p>
-                    <p style={{ fontSize:11, color:'#b0a898', margin:'3px 0 0' }}>PDF, DOC, DOCX · Max 20 MB</p>
-                    </>
-                )}
+                    <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, borderRadius:8, color:'#8a7e6e', display:'flex' }}><X size={16}/></button>
                 </div>
-                {errors.file && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.file}</p>}
-            </div>
-            </div>
 
-            {/* Footer */}
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid #ece7df' }}>
-            <button onClick={onClose} className="btn-secondary">Cancel</button>
-            <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
-                {saving ? 'Creating…' : 'Create Assignment'}
-            </button>
+                {/* Body */}
+                <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+                    {errors._ && (
+                        <p style={{ fontSize:12, color:'#e05252', background:'#fde8e8', padding:'8px 12px', borderRadius:8, margin:0 }}>{errors._}</p>
+                    )}
+
+                    <div>
+                        <label style={lbl}>Assignment Title *</label>
+                        <input style={inp} value={form.title} onChange={e => update('title', e.target.value)} placeholder="e.g. Database Normalization Assignment"/>
+                        {errors.title && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.title}</p>}
+                    </div>
+
+                    <div>
+                        <label style={lbl}>Course *</label>
+                        <select style={inp} value={form.course} onChange={e => update('course', e.target.value)}>
+                            <option value="">Select a course…</option>
+                            {courses.map(c => <option key={c.id} value={c.id}>{c.title || c.name}</option>)}
+                        </select>
+                        {errors.course && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.course}</p>}
+                    </div>
+
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                        <div>
+                            <label style={lbl}><Calendar size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Due Date *</label>
+                            <input type="date" style={inp} value={form.due_date} onChange={e => update('due_date', e.target.value)}/>
+                            {errors.due_date && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.due_date}</p>}
+                        </div>
+                        <div>
+                            <label style={lbl}><Clock size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Submission Time</label>
+                            <input type="time" style={inp} value={form.submission_time} onChange={e => update('submission_time', e.target.value)}/>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style={lbl}>Description (optional)</label>
+                        <textarea style={{ ...inp, resize:'vertical', minHeight:70 }} rows={3} value={form.description} onChange={e => update('description', e.target.value)} placeholder="Assignment instructions, requirements…"/>
+                    </div>
+
+                    {/* 2. Added the Metadata Settings Grid layout from image_1c6b1d.png */}
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
+                        <div>
+                            <label style={lbl}>Type</label>
+                            <select style={inp} value={form.task_type} onChange={e => update('task_type', e.target.value)}>
+                                <option value="assignment">Assignment</option>
+                                <option value="homework">Homework</option>
+                                <option value="project">Project</option>
+                                <option value="exam">Exam</option>
+                                <option value="quiz">Quiz</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={lbl}>Priority</label>
+                            <select style={inp} value={form.priority} onChange={e => update('priority', Number(e.target.value))}>
+                                <option value={1}>Low</option>
+                                <option value={2}>Medium-Low</option>
+                                <option value={3}>Medium</option>
+                                <option value={4}>Medium-High</option>
+                                <option value={5}>High</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style={lbl}>Est. hours</label>
+                            <input type="number" min="0" step="0.5" style={inp} value={form.estimated_hours} onChange={e => update('estimated_hours', e.target.value)}/>
+                        </div>
+                    </div>
+
+                    {/* File Dropzone Input Field */}
+                    <div>
+                        <label style={lbl}><Paperclip size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Upload Assignment File (PDF / DOC / DOCX)</label>
+                        <div style={{ border:'2px dashed #e2dbd0', borderRadius:10, padding:'16px', textAlign:'center', background:'#faf8f5', cursor:'pointer', position:'relative' }}
+                             onClick={() => document.getElementById('dash-asgn-file-input').click()}>
+                            <input id="dash-asgn-file-input" type="file" accept={ALLOWED_EXT} onChange={handleFile} style={{ display:'none' }}/>
+                            {file ? (
+                                <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center' }}>
+                                    <FileText size={16} style={{ color:'#3b6fd4' }}/>
+                                    <span style={{ fontSize:13, color:'#1a1f35', fontWeight:600 }}>{file.name}</span>
+                                    <button type="button" onClick={e => { e.stopPropagation(); setFile(null) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#e05252', padding:2 }}><X size={12}/></button>
+                                </div>
+                            ) : (
+                                <>
+                                    <Upload size={20} style={{ color:'#c0b8ae', margin:'0 auto 6px', display:'block' }}/>
+                                    <p style={{ fontSize:12, color:'#8a7e6e', margin:0 }}>Click to upload or drag & drop</p>
+                                    <p style={{ fontSize:11, color:'#b0a898', margin:'3px 0 0' }}>PDF, DOC, DOCX · Max 20 MB</p>
+                                </>
+                            )}
+                        </div>
+                        {errors.file && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.file}</p>}
+                    </div>
+                </div>
+
+                {/* Footer Controls */}
+                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid #ece7df' }}>
+                    <button onClick={onClose} className="btn-secondary">Cancel</button>
+                    <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
+                        {saving ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Assignment')}
+                    </button>
+                </div>
             </div>
-        </div>
         </div>
     )
-    }
+}
 
 
 // ============================================================================
@@ -721,10 +795,9 @@ function SubmissionPreviewModal({
 
     useEffect(() => { loadData() }, [loadData])
 
-    async function handleCreateAssignment(formData) {
-        const created = await tasksService.createAssignment(formData)
+    function handleAssignmentSaved(created) {
         setAssignments(prev => [created, ...prev])
-        toast.success('Assignment created')
+        setShowNewModal(false)
     }
 
     async function handleDeleteAssignment(id) {
@@ -1388,7 +1461,7 @@ function SubmissionPreviewModal({
         <DashboardFooter/>
 
         {showNewModal && (
-            <NewAssignmentModal courses={courses} onClose={() => setShowNewModal(false)} onSave={handleCreateAssignment}/>
+            <DashboardAssignmentFormModal courses={courses} onClose={() => setShowNewModal(false)} onSaved={handleAssignmentSaved}/>
         )}
         {selectedAssignment && (
             <StudentSubmissionWorkspace
