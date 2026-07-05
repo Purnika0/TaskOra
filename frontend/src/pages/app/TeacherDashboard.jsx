@@ -36,58 +36,76 @@
     const ALLOWED_TYPES = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document']
     const ALLOWED_EXT   = '.pdf,.doc,.docx'
 
-    // ── BS Calendar mini ──────────────────────────────────────────────────────────
+// ── BS Calendar widget ────────────────────────────────────────────────────────
     function BSCalWidget() {
-    const { today: todayData } = useToday()
-    const todayBS = useMemo(() => {
-        if (todayData?.today_bs) return todayData.today_bs
-        const t = adToBS(new Date()); return { year:t.year, month:t.month, day:t.day }
-    }, [todayData])
-    const [cur, setCur] = useState(() => { const t=adToBS(new Date()); return {y:t.year,m:t.month} })
-    useEffect(() => { if(todayBS?.year&&todayBS?.month) setCur({y:todayBS.year,m:todayBS.month}) }, [todayBS?.year,todayBS?.month])
-    const prev = () => setCur(c => c.m===1  ? {y:c.y-1,m:12} : {y:c.y,m:c.m-1})
-    const next = () => setCur(c => c.m===12 ? {y:c.y+1,m:1 } : {y:c.y,m:c.m+1})
-    const days        = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
-    const firstDow    = days.length ? days[0].dow : 0
-    const bsMonthName = BS_MONTH_NAMES[cur.m - 1]
-
-    return (
-        <div className="cal-card" style={{ display:'flex', flexDirection:'column' }}>
-        <div className="cal-header">
-            <button className="cal-nav" onClick={prev} aria-label="Previous month"><ChevronLeft size={12}/></button>
-            <div style={{ textAlign:'center' }}>
-            <div className="cal-month-title">{bsMonthName?.en} {cur.y}</div>
-            <div style={{ fontSize:9, color:'rgba(255,255,255,0.30)', marginBottom:6 }}>{bsMonthName?.ne} · BS</div>
+        const { today: todayData } = useToday()
+        const todayBS = useMemo(() => {
+            if (todayData?.today_bs) return todayData.today_bs
+            const t = adToBS(new Date()); return { year:t.year, month:t.month, day:t.day }
+        }, [todayData])
+        const [cur, setCur] = useState(() => { const t = adToBS(new Date()); return { y:t.year, m:t.month } })
+    
+        // Render-time adjustment (React's recommended pattern) instead of a useEffect,
+        // comparing primitive values so it stays correct regardless of upstream memoization.
+        const todayKey = todayBS?.year && todayBS?.month ? `${todayBS.year}-${todayBS.month}` : null
+        const [syncedKey, setSyncedKey] = useState(todayKey)
+        if (todayKey && todayKey !== syncedKey) {
+            setSyncedKey(todayKey)
+            setCur({ y:todayBS.year, m:todayBS.month })
+        }
+    
+        const prev = () => setCur(c => c.m === 1  ? { y:c.y-1, m:12 } : { y:c.y, m:c.m-1 })
+        const next = () => setCur(c => c.m === 12 ? { y:c.y+1, m:1  } : { y:c.y, m:c.m+1 })
+        const days        = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
+        const firstDow    = days.length ? days[0].dow : 0
+        const bsMonthName = BS_MONTH_NAMES[cur.m - 1]
+    
+        return (
+            <div className="cal-card" style={{ display:'flex', flexDirection:'column' }}>
+                <div className="cal-header">
+                    <button className="cal-nav" onClick={prev} aria-label="Previous month"><ChevronLeft size={12}/></button>
+                    <div style={{ textAlign:'center' }}>
+                        <div className="cal-month-title">{bsMonthName?.en} {cur.y}</div>
+                        <div style={{ fontSize:9, color:'rgba(255,255,255,0.30)', marginBottom:6 }}>{bsMonthName?.ne} · BS</div>
+                    </div>
+                    <button className="cal-nav" onClick={next} aria-label="Next month"><ChevronRight size={12}/></button>
+                </div>
+                <div className="cal-grid">
+                    {DOW_LABELS.map((d,i) => (
+                        <div key={i} className="cal-dow" style={{ color: i===6?RED_DIM:i===0?SUN_DIM:undefined }}>{d}</div>
+                    ))}
+                    {Array(firstDow).fill(null).map((_,i) => <div key={`b${i}`}/>)}
+                    {days.map(day => {
+                        const isToday = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
+                        
+                        let cls = 'cal-day'
+                        if (isToday)                    cls += ' today'
+                        if (day.isHoliday || day.isSun) cls += ' holiday'
+                        if (day.isSat && !day.isHoliday) cls += ' saturday'
+                        
+                        // Unified tooltip matching 'Weekend' terminology
+                        const hTitle   = day.holidayTitle || (day.isSat || day.isSun ? 'Weekend' : null)
+                        
+                        // Color overrides: Sunday now groups with holidays/Saturdays
+                        const numColor = (day.isHoliday || day.isSun) ? RED_DIM : undefined
+                        
+                        return (
+                            <div key={day.bsKey} className="cal-day-cell" title={hTitle||undefined}>
+                                <div className={cls} style={{ flexDirection:'column', gap:0, height:30, width:30, color: isToday?undefined:numColor }}>
+                                    <span style={{ fontSize:11, lineHeight:1, fontWeight: day.isHoliday||day.isSat||day.isSun?700:400 }}>{day.bsDay}</span>
+                                    <span style={{ fontSize:7, lineHeight:1, marginTop:1, opacity: isToday?0.6:0.30 }}>{day.adDate.getDate()}</span>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+                {/* Updated Legend with fixed 'Today' blue dot & terminology */}
+                <div className="cal-legend" style={{ marginTop:'auto', flexWrap:'wrap', gap:'5px 12px' }}>
+                    <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:RED }}/>Holiday/Weekend</div>
+                    <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background: 'BLUE' }}/>Today</div>
+                </div>
             </div>
-            <button className="cal-nav" onClick={next} aria-label="Next month"><ChevronRight size={12}/></button>
-        </div>
-        <div className="cal-grid">
-            {DOW_LABELS.map((d,i) => <div key={i} className="cal-dow" style={{ color: i===6?RED_DIM:i===0?SUN_DIM:undefined }}>{d}</div>)}
-            {Array(firstDow).fill(null).map((_,i)=><div key={`b${i}`}/>)}
-            {days.map(day => {
-            const isToday = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
-            let cls = 'cal-day'
-            if (isToday) cls += ' today'
-            if (day.isHoliday) cls += ' holiday'
-            if (day.isSat && !day.isHoliday) cls += ' saturday'
-            const hTitle   = day.holidayTitle || (day.isSat ? 'Saturday — Holiday' : null)
-            const numColor = day.isHoliday ? RED_DIM : day.isSun ? SUN_DIM : undefined
-            return (
-                <div key={day.bsKey} className="cal-day-cell" title={hTitle||undefined}>
-                <div className={cls} style={{ flexDirection:'column', gap:0, height:30, width:30, color: isToday?undefined:numColor }}>
-                    <span style={{ fontSize:11, lineHeight:1, fontWeight: day.isHoliday||day.isSat?700:400 }}>{day.bsDay}</span>
-                    <span style={{ fontSize:7, lineHeight:1, marginTop:1, opacity: isToday?0.6:0.30 }}>{day.adDate.getDate()}</span>
-                </div>
-                </div>
-            )
-            })}
-        </div>
-        <div className="cal-legend" style={{ marginTop:'auto', flexWrap:'wrap', gap:'5px 12px' }}>
-            <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:RED }}/>Holiday/Sat</div>
-            <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:'transparent', border:'1.5px solid rgba(255,255,255,0.55)', borderRadius:'50%' }}/>Today</div>
-        </div>
-        </div>
-    )
+        )
     }
 
     // ── Assignment creation modal ─────────────────────────────────────────────────

@@ -94,22 +94,23 @@
                 cur.m       === todayBS.month &&
                 cur.y       === todayBS.year
 
+            // 1. Force Sunday to also trigger the holiday styling
             let cls = 'cal-day'
             if (isToday)       cls += ' today'
-            if (day.isHoliday) cls += ' holiday'   // Saturday also gets holiday class
+            if (day.isHoliday || day.isSun) cls += ' holiday'   // Saturday also gets holiday class
 
-            const numColor =
-                day.isHoliday ? undefined           // .holiday CSS handles red
-                : day.isSun   ? SUN
-                :               undefined
+            // 2. Update the tooltip to reflect Sunday holidays
+            const holidayTooltip = day.holidayTitle 
+                || (day.isSat || day.isSun ? 'Weekend' : undefined)
 
             return (
                 <div key={day.bsKey} className="cal-day-cell">
                 <div
                     className={cls}
-                    title={day.holidayTitle || (day.isSat ? 'Saturday — Holiday' : undefined)}
+                    title={holidayTooltip}
                     style={{
-                    color: isToday ? undefined : numColor,
+                    // Remove numColor override for Sundays so the .holiday CSS takes over
+                    color: isToday ? undefined : (day.isHoliday || day.isSun ? undefined : undefined),
                     flexDirection: 'column',
                     gap: 0,
                     height: 28,
@@ -142,16 +143,13 @@
             Holiday
             </div>
             <div className="cal-legend-item">
-            <span className="cal-legend-dot" style={{
-                background:'transparent',
-                border:'1.5px solid rgba(255,255,255,0.55)',
-                borderRadius:'50%',
-            }}/>
+            {/* Updated to a solid blue dot */}
+            <span className="cal-legend-dot" style={{ background:'var(--color-blue)' }}/>
             Today
             </div>
             <div className="cal-legend-item">
-            <span className="cal-legend-dot" style={{ background:RED }}/>
-            Sat
+            <span className="cal-legend-dot" style={{ background: RED }}/>
+            Weekend
             </div>
         </div>
         </div>
