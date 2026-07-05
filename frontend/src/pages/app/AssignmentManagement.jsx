@@ -3,7 +3,11 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
     Search, RefreshCw, Upload, X, FileText, Send, MessageSquare,
     Paperclip, ChevronDown, Plus, Pencil, Trash2, ClipboardList, Users, Calendar,
+<<<<<<< HEAD
     BookOpen,
+=======
+    Clock, 
+>>>>>>> 2bf1ebc24f7a358fba17c83263361634e1b21802
 } from 'lucide-react'
 import { useTasks, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { useAuth }         from '../../hooks/useAuth.js'
@@ -14,11 +18,18 @@ import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import { getTaskTitle, getTaskDueDate, daysUntil, apiError } from '../../utils/helpers.js'
 
-// Guessed choice values for Assignment.task_type / priority — adjust these
-// to match whatever choices actually exist on the Django model if the
-// create/edit form throws a validation error for these fields.
-const TASK_TYPES = ['assignment', 'quiz', 'project', 'exam', 'lab']
-const PRIORITIES = ['low', 'medium', 'high']
+// Matches Assignment.TaskType choices in models.py
+const TASK_TYPES = ['assignment', 'exam', 'project', 'homework', 'quiz', 'other']
+
+// Assignment.priority is an IntegerField (1 low – 5 high) in models.py,
+// so the form must submit a number, not the label string.
+const PRIORITIES = [
+    { value: 1, label: 'Low' },
+    { value: 2, label: 'Medium-Low' },
+    { value: 3, label: 'Medium' },
+    { value: 4, label: 'Medium-High' },
+    { value: 5, label: 'High' },
+]
 
 const TABS = [
     { key:'all',       label:'All'       },
@@ -169,113 +180,179 @@ function SubmitModal({ task, onClose, onSubmitted }) {
 function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
     const isEdit = Boolean(assignment)
     const toast  = useToast()
+    
+    // Allowed file configurations matching the dashboard settings
+    const ALLOWED_TYPES = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    const ALLOWED_EXT   = '.pdf,.doc,.docx'
+
     const [form, setForm] = useState({
         title:           assignment?.title || '',
         description:     assignment?.description || '',
         course:          assignment?.course ?? (courses[0]?.id ?? ''),
         due_date:        assignment?.due_date || '',
+        submission_time: assignment?.submission_time || '23:59',
         task_type:       assignment?.task_type || TASK_TYPES[0],
-        priority:        assignment?.priority || PRIORITIES[1],
+        priority:        assignment?.priority ?? 3,
         estimated_hours: assignment?.estimated_hours ?? 1,
     })
+    
+    const [file, setFile] = useState(null)
     const [saving, setSaving] = useState(false)
-    const [error,  setError]  = useState('')
+    const [errors, setErrors] = useState({})
 
-    function update(field, value) { setForm(p => ({ ...p, [field]: value })) }
+    function update(field, value) { 
+        setForm(p => ({ ...p, [field]: value }))
+        setErrors(e => ({ ...e, [field]: null }))
+    }
+
+    function handleFile(e) {
+        const f = e.target.files?.[0]
+        if (!f) return
+        if (!ALLOWED_TYPES.includes(f.type)) { setErrors(er => ({...er, file:'Only PDF, DOC, DOCX allowed'})); return }
+        if (f.size > 20 * 1024 * 1024)       { setErrors(er => ({...er, file:'File must be under 20 MB'})); return }
+        setFile(f); setErrors(er => ({...er, file:null}))
+    }
 
     async function handleSubmit() {
-        if (!form.title.trim())  { setError('Title is required.');  return }
-        if (!form.course)        { setError('Please select a course.'); return }
-        if (!form.due_date)      { setError('Due date is required.'); return }
+        const errs = {}
+        if (!form.title.trim())  errs.title  = 'Title is required'
+        if (!form.course)        errs.course = 'Please select a course'
+        if (!form.due_date)      errs.due_date = 'Due date is required'
+        if (Object.keys(errs).length) { setErrors(errs); return }
+        
         setSaving(true)
-        setError('')
         try {
-            const payload = {
-                title:           form.title.trim(),
-                description:     form.description.trim(),
-                course:          Number(form.course),
-                due_date:        form.due_date,
-                task_type:       form.task_type,
-                priority:        form.priority,
-                estimated_hours: form.estimated_hours === '' ? null : Number(form.estimated_hours),
+            // Use FormData payload strategy matching the dashboard
+            const fd = new FormData()
+            fd.append('title', form.title.trim())
+            fd.append('description', form.description.trim())
+            fd.append('course', Number(form.course))
+            fd.append('due_date', form.due_date)
+            fd.append('submission_time', form.submission_time)
+            fd.append('task_type', form.task_type)
+            fd.append('priority', Number(form.priority))
+            if (form.estimated_hours !== '') {
+                fd.append('estimated_hours', Number(form.estimated_hours))
             }
+            if (file) fd.append('file', file)
+
             const saved = isEdit
-                ? await tasksService.updateAssignment(assignment.id, payload)
-                : await tasksService.createAssignment(payload)
+                ? await tasksService.updateAssignment(assignment.id, fd)
+                : await tasksService.createAssignment(fd)
+                
             toast.success(isEdit ? 'Assignment updated' : 'Assignment created')
             onSaved(saved)
         } catch (err) {
-            setError(apiError(err))
+            setErrors({ _ : apiError(err) })
         } finally { setSaving(false) }
     }
+
+    const inp = { border:'1.5px solid #e2dbd0', borderRadius:8, padding:'9px 12px', fontSize:13, fontFamily:'var(--font-body)', color:'#1a1f35', background:'#faf8f5', outline:'none', width:'100%', boxSizing:'border-box' }
+    const lbl = { fontSize:11, fontWeight:600, color:'#5a5060', display:'block', marginBottom:5 }
 
     return (
         <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:16 }}
             className="anim-fade-in" onClick={onClose}>
-            <div style={{ background:'var(--color-surface)', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'0 16px 48px rgba(0,0,0,0.22)', overflow:'hidden' }}
+            <div style={{ background:'#fff', borderRadius:16, width:'100%', maxWidth:520, maxHeight:'90vh', overflowY:'auto', boxShadow:'0 16px 48px rgba(0,0,0,0.22)' }}
                 className="anim-scale-in" onClick={e => e.stopPropagation()}>
 
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid var(--color-border)' }}>
-                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'var(--color-text)', margin:0 }}>
-                        {isEdit ? 'Edit Assignment' : 'New Assignment'}
-                    </h3>
-                    <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, color:'var(--color-text-secondary)', display:'flex' }}><X size={16}/></button>
+                {/* Header */}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 22px', borderBottom:'1px solid #ece7df' }}>
+                    <div>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:0 }}>
+                            {isEdit ? 'Edit Assignment' : 'New Assignment'}
+                        </h3>
+                        <p style={{ fontSize:11, color:'#a09080', margin:'2px 0 0' }}>
+                            {isEdit ? 'Modify your assignment details' : 'Create an assignment for your students'}
+                        </p>
+                    </div>
+                    <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, borderRadius:8, color:'#8a7e6e', display:'flex' }}><X size={16}/></button>
                 </div>
 
-                <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:12, maxHeight:'65vh', overflowY:'auto' }}>
-                    {error && (
-                        <p style={{ fontSize:12, color:'var(--color-red)', background:'var(--color-red-light)', padding:'8px 12px', borderRadius:8, margin:0 }}>{error}</p>
+                {/* Body */}
+                <div style={{ padding:'20px 22px', display:'flex', flexDirection:'column', gap:14 }}>
+                    {errors._ && (
+                        <p style={{ fontSize:12, color:'#e05252', background:'#fde8e8', padding:'8px 12px', borderRadius:8, margin:0 }}>{errors._}</p>
                     )}
 
                     <div>
-                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Title *</label>
-                        <input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Assignment title"
-                            style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'9px 12px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
+                        <label style={lbl}>Assignment Title *</label>
+                        <input style={inp} value={form.title} onChange={e => update('title', e.target.value)} placeholder="e.g. Database Normalization Assignment"/>
+                        {errors.title && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.title}</p>}
                     </div>
 
                     <div>
-                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Description</label>
-                        <textarea value={form.description} onChange={e => update('description', e.target.value)} rows={3} placeholder="What should students do?"
-                            style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'9px 12px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', resize:'vertical', boxSizing:'border-box' }}/>
+                        <label style={lbl}>Course *</label>
+                        <select style={inp} value={form.course} onChange={e => update('course', e.target.value)}>
+                            <option value="">Select a course…</option>
+                            {courses.map(c => <option key={c.id} value={c.id}>{c.title || c.name}</option>)}
+                        </select>
+                        {errors.course && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.course}</p>}
                     </div>
 
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                         <div>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Course *</label>
-                            <select value={form.course} onChange={e => update('course', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {courses.length === 0 && <option value="">No courses yet</option>}
-                                {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                            </select>
+                            <label style={lbl}><Calendar size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Due Date *</label>
+                            <input type="date" style={inp} value={form.due_date} onChange={e => update('due_date', e.target.value)}/>
+                            {errors.due_date && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.due_date}</p>}
                         </div>
                         <div>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Due date *</label>
-                            <input type="date" value={form.due_date} onChange={e => update('due_date', e.target.value)}
-                                style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'8px 10px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
+                            <label style={lbl}><Clock size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Submission Time</label>
+                            <input type="time" style={inp} value={form.submission_time} onChange={e => update('submission_time', e.target.value)}/>
                         </div>
                     </div>
 
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+                    <div>
+                        <label style={lbl}>Description (optional)</label>
+                        <textarea style={{ ...inp, resize:'vertical', minHeight:70 }} rows={3} value={form.description} onChange={e => update('description', e.target.value)} placeholder="Assignment instructions, requirements…"/>
+                    </div>
+
+                    {/* Metadata Settings Grid */}
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:12 }}>
                         <div>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Type</label>
-                            <select value={form.task_type} onChange={e => update('task_type', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
+                            <label style={lbl}>Type</label>
+                            <select style={inp} value={form.task_type} onChange={e => update('task_type', e.target.value)}>
                                 {TASK_TYPES.map(t => <option key={t} value={t}>{t[0].toUpperCase()+t.slice(1)}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Priority</label>
-                            <select value={form.priority} onChange={e => update('priority', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {PRIORITIES.map(p => <option key={p} value={p}>{p[0].toUpperCase()+p.slice(1)}</option>)}
+                            <label style={lbl}>Priority</label>
+                            <select style={inp} value={form.priority} onChange={e => update('priority', Number(e.target.value))}>
+                                {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Est. hours</label>
-                            <input type="number" min="0" step="0.5" value={form.estimated_hours} onChange={e => update('estimated_hours', e.target.value)}
-                                style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'8px 10px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
+                            <label style={lbl}>Est. hours</label>
+                            <input type="number" min="0" step="0.5" style={inp} value={form.estimated_hours} onChange={e => update('estimated_hours', e.target.value)}/>
                         </div>
+                    </div>
+
+                    {/* File Dropzone Input Field */}
+                    <div>
+                        <label style={lbl}><Paperclip size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Upload Assignment File (PDF / DOC / DOCX)</label>
+                        <div style={{ border:'2px dashed #e2dbd0', borderRadius:10, padding:'16px', textAlign:'center', background:'#faf8f5', cursor:'pointer', position:'relative' }}
+                             onClick={() => document.getElementById('asgn-file-input').click()}>
+                            <input id="asgn-file-input" type="file" accept={ALLOWED_EXT} onChange={handleFile} style={{ display:'none' }}/>
+                            {file ? (
+                                <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center' }}>
+                                    <FileText size={16} style={{ color:'#3b6fd4' }}/>
+                                    <span style={{ fontSize:13, color:'#1a1f35', fontWeight:600 }}>{file.name}</span>
+                                    <button type="button" onClick={e => { e.stopPropagation(); setFile(null) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#e05252', padding:2 }}><X size={12}/></button>
+                                </div>
+                            ) : (
+                                <>
+                                    <Upload size={20} style={{ color:'#c0b8ae', margin:'0 auto 6px', display:'block' }}/>
+                                    <p style={{ fontSize:12, color:'#8a7e6e', margin:0 }}>Click to upload or drag & drop</p>
+                                    <p style={{ fontSize:11, color:'#b0a898', margin:'3px 0 0' }}>PDF, DOC, DOCX · Max 20 MB</p>
+                                </>
+                            )}
+                        </div>
+                        {errors.file && <p style={{ fontSize:11, color:'#e05252', margin:'4px 0 0' }}>{errors.file}</p>}
                     </div>
                 </div>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
+                {/* Footer Controls */}
+                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid #ece7df' }}>
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
                         {saving ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Assignment')}
@@ -716,7 +793,7 @@ function TeacherAssignments() {
                     </p>
                 </div>
                 <button onClick={openCreate} className="btn-primary">
-                    <Plus size={14} aria-hidden="true"/> Create Assignment
+                    <Plus size={14} aria-hidden="true"/> New Assignment
                 </button>
             </div>
 
