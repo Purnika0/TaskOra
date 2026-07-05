@@ -76,25 +76,32 @@ function BSCalWidget() {
                 {Array(firstDow).fill(null).map((_,i) => <div key={`b${i}`}/>)}
                 {days.map(day => {
                     const isToday = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
+                    
                     let cls = 'cal-day'
-                    if (isToday)       cls += ' today'
-                    if (day.isHoliday) cls += ' holiday'
+                    if (isToday)                    cls += ' today'
+                    if (day.isHoliday || day.isSun) cls += ' holiday'
                     if (day.isSat && !day.isHoliday) cls += ' saturday'
-                    const hTitle   = day.holidayTitle || (day.isSat ? 'Saturday — Holiday' : null)
-                    const numColor = day.isHoliday ? RED_DIM : day.isSun ? SUN_DIM : undefined
+                    
+                    // Unified tooltip matching 'Weekend' terminology
+                    const hTitle   = day.holidayTitle || (day.isSat || day.isSun ? 'Weekend' : null)
+                    
+                    // Color overrides: Sunday now groups with holidays/Saturdays
+                    const numColor = (day.isHoliday || day.isSun) ? RED_DIM : undefined
+                    
                     return (
                         <div key={day.bsKey} className="cal-day-cell" title={hTitle||undefined}>
                             <div className={cls} style={{ flexDirection:'column', gap:0, height:30, width:30, color: isToday?undefined:numColor }}>
-                                <span style={{ fontSize:11, lineHeight:1, fontWeight: day.isHoliday||day.isSat?700:400 }}>{day.bsDay}</span>
+                                <span style={{ fontSize:11, lineHeight:1, fontWeight: day.isHoliday||day.isSat||day.isSun?700:400 }}>{day.bsDay}</span>
                                 <span style={{ fontSize:7, lineHeight:1, marginTop:1, opacity: isToday?0.6:0.30 }}>{day.adDate.getDate()}</span>
                             </div>
                         </div>
                     )
                 })}
             </div>
+            {/* Updated Legend with fixed 'Today' blue dot & terminology */}
             <div className="cal-legend" style={{ marginTop:'auto', flexWrap:'wrap', gap:'5px 12px' }}>
-                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:RED }}/>Holiday/Sat</div>
-                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:'transparent', border:'1.5px solid rgba(255,255,255,0.55)', borderRadius:'50%' }}/>Today</div>
+                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:RED }}/>Holiday/Weekend</div>
+                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background: 'BLUE' }}/>Today</div>
             </div>
         </div>
     )
