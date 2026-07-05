@@ -1,17 +1,3 @@
-"""
-notifications/services.py
-==========================
-Small, explicit helper functions that create Notification rows for each of
-the six trigger events. These are called directly from the views/services
-that already handle the underlying action (assignment creation, submission,
-review, overdue sweep) — there are no Django signals involved, so every
-notification has a single, easy-to-find call site.
-
-Intentionally duck-typed: this module does NOT import Assignment/Task/Course
-classes, only the Notification model. That keeps the import graph one-way
-(tasks/courses → notifications) and avoids any circular-import risk.
-"""
-
 from django.utils import timezone
 from .models import Notification
 
@@ -19,10 +5,6 @@ from .models import Notification
 def _display_name(user):
     return user.full_name or user.username
 
-
-# ---------------------------------------------------------------------------
-# 1. Student — new assignment posted for an enrolled course
-# ---------------------------------------------------------------------------
 def notify_new_assignment(assignment, students):
     """
     students: iterable of User (the enrolled students the assignment was
@@ -46,20 +28,18 @@ def notify_new_assignment(assignment, students):
         Notification.objects.bulk_create(notifications)
 
 
-# ---------------------------------------------------------------------------
-# 2. Teacher — student submits or resubmits an assignment
-# ---------------------------------------------------------------------------
-def notify_new_submission(task, is_resubmission=False):
+def notify_new_submission(task, is_resubmission=False, is_edit=False):
     teacher = task.assignment.created_by
     student_name = _display_name(task.student)
     submitted_at = timezone.localtime(task.submitted_at) if task.submitted_at else timezone.localtime()
-    verb = 'resubmitted' if is_resubmission else 'submitted'
+    verb = 'updated their submission for' if is_edit else ('resubmitted' if is_resubmission else 'submitted')
+    title_verb = 'updated a submission for' if is_edit else ('resubmitted' if is_resubmission else 'submitted')
 
     Notification.objects.create(
         recipient=teacher,
         actor=task.student,
         notif_type=Notification.Type.NEW_SUBMISSION,
-        title=f"{student_name} {verb} an assignment",
+        title=f"{student_name} {title_verb} an assignment",
         message=f"{student_name} {verb} \"{task.assignment.title}\" "
                 f"at {submitted_at.strftime('%d %b %Y, %I:%M %p')}.",
         course=task.assignment.course,
@@ -68,9 +48,6 @@ def notify_new_submission(task, is_resubmission=False):
     )
 
 
-# ---------------------------------------------------------------------------
-# 3. Student — submission reviewed by teacher (approved or rejected)
-# ---------------------------------------------------------------------------
 def notify_submission_reviewed(task, approved):
     assignment_title = task.assignment.title
 
@@ -105,10 +82,6 @@ def notify_submission_reviewed(task, approved):
             task=task,
         )
 
-
-# ---------------------------------------------------------------------------
-# 4. Student — deadline reminder (e.g. 24h before due)
-# ---------------------------------------------------------------------------
 def notify_deadline_reminder(task):
     # Avoid duplicate reminders for the same task.
     already_sent = Notification.objects.filter(
@@ -133,9 +106,6 @@ def notify_deadline_reminder(task):
     return True
 
 
-# ---------------------------------------------------------------------------
-# 5. Student — assignment becomes overdue
-# ---------------------------------------------------------------------------
 def notify_overdue(task):
     assignment = task.assignment
     Notification.objects.create(

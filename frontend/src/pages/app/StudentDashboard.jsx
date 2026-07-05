@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import {
     Star, BookOpen, Clock, CheckCircle2, ClipboardList, XCircle,
     ChevronLeft, ChevronRight, ChevronDown, Upload, AlertCircle, Send,
-    X, FileText, MessageSquare, Paperclip, Pencil,
+    X, FileText, MessageSquare, Paperclip, Pencil, Layers,
 } from 'lucide-react'
 import { useAuth }                         from '../../hooks/useAuth.js'
 import { useTasks, isPending, isOverdue, isRejected, statusLabel, statusBg, statusColor } from '../../hooks/useTasks.js'
@@ -134,7 +134,7 @@ function HolidaysWidget() {
                 </div>
             </div>
             {loading ? <LoadingBlock rows={2}/> : upcoming.length === 0
-                ? <p style={{ fontSize:12, color:'var(--color-text-placeholder)' }}>No holidays this month.</p>
+                ? <p style={{ fontSize:12, color:'var(--color-text-placeholder)' }}>No holidays.</p>
                 : <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                     {upcoming.map(h => {
                         const d = daysUntil(h.date)
@@ -362,6 +362,7 @@ function getCourseId(t) {
 function AssignmentTable({ tasks, onSubmit }) {
     const [tab, setTab]                   = useState('all')
     const [courseFocus, setCourseFocus]   = useState('all')
+    const [sortBy, setSortBy]             = useState('due')
     const [expandedId, setExpanded]       = useState(null)
 
     const courses = useMemo(() => {
@@ -376,8 +377,17 @@ function AssignmentTable({ tasks, onSubmit }) {
     const filtered = useMemo(() => {
         let base = tab === 'all' ? tasks : tasks.filter(t => t.status === tab)
         if (courseFocus !== 'all') base = base.filter(t => String(getCourseId(t)) === String(courseFocus))
+
+        base = [...base]
+        if (sortBy === 'due') {
+            base.sort((a, b) => (getTaskDueDate(a) || '9999-99-99').localeCompare(getTaskDueDate(b) || '9999-99-99'))
+        } else if (sortBy === 'due-desc') {
+            base.sort((a, b) => (getTaskDueDate(b) || '0000-00-00').localeCompare(getTaskDueDate(a) || '0000-00-00'))
+        } else if (sortBy === 'title') {
+            base.sort((a, b) => getTaskTitle(a).localeCompare(getTaskTitle(b)))
+        }
         return base
-    }, [tasks, tab, courseFocus])
+    }, [tasks, tab, courseFocus, sortBy])
 
     function count(key) {
         if (key === 'all') return tasks.length
@@ -387,7 +397,11 @@ function AssignmentTable({ tasks, onSubmit }) {
     return (
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
             <style>{`
-                .at-row-grid { display:grid; grid-template-columns:minmax(0,2.2fr) 160px 130px 100px 140px; align-items:center; gap:14px; }
+                .at-row-grid {
+                    display:grid;
+                    grid-template-columns:minmax(180px,1fr) minmax(160px,0.5fr) 150px 100px 120px;
+                    align-items:center; column-gap:20px; row-gap:8px;
+                }
                 .at-row-head span { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-placeholder); }
                 @media (max-width:900px) { .at-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .at-row-head { display:none; } }
             `}</style>
@@ -404,12 +418,19 @@ function AssignmentTable({ tasks, onSubmit }) {
                         </button>
                     ))}
                 </div>
-                {courses.length > 0 && (
-                    <select value={courseFocus} onChange={e => setCourseFocus(e.target.value)} style={courseSelStyle}>
-                        <option value="all">All Subjects</option>
-                        {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={courseSelStyle} aria-label="Sort assignments">
+                        <option value="due">Due Date: Earliest First</option>
+                        <option value="due-desc">Due Date: Latest First</option>
+                        <option value="title">Title (A–Z)</option>
                     </select>
-                )}
+                    {courses.length > 0 && (
+                        <select value={courseFocus} onChange={e => setCourseFocus(e.target.value)} style={courseSelStyle}>
+                            <option value="all">All Subjects</option>
+                            {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                        </select>
+                    )}
+                </div>
             </div>
 
             <div style={{ background:'var(--color-surface)', borderRadius:14, border:'1px solid var(--color-cream-border)', overflow:'hidden' }}>
@@ -420,7 +441,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                     </div>
                 ) : (
                     <div style={{ display:'flex', flexDirection:'column' }}>
-                        <div className="at-row-grid at-row-head" style={{ padding:'12px 16px', background:'var(--color-surface-subtle)', borderBottom:'1px solid var(--color-cream-border)' }}>
+                        <div className="at-row-grid at-row-head" style={{ padding:'12px 20px', background:'var(--color-surface-subtle)', borderBottom:'1px solid var(--color-cream-border)' }}>
                             <span>Assignment</span>
                             <span>Course</span>
                             <span>Due Date</span>
@@ -442,7 +463,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                             const courseName = getCourseName(t)
 
                             return (
-                                <div key={t.id} style={{ padding:'12px 16px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-cream-border)' }}>
+                                <div key={t.id} style={{ padding:'14px 20px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-cream-border)' }}>
                                     <div className="at-row-grid">
                                         <div
                                             onClick={() => hasDetails && setExpanded(isOpen ? null : t.id)}
@@ -534,6 +555,7 @@ export default function StudentDashboard({ user: propUser }) {
 
     // Use summary from API if available, else fall back to computed stats
     const displayStats = {
+        total:     stats.total,
         completed: summary?.completed ?? stats.completed,
         submitted: summary?.submitted ?? stats.submitted,
         pending:   summary?.pending   ?? stats.pending,
@@ -562,8 +584,9 @@ export default function StudentDashboard({ user: propUser }) {
                 </div>
             </div>
 
-            {/* Assignment status stats */}
+            {/* Assignment status stats — Total first, Rejected before Overdue */}
             <div className="stat-grid stagger">
+                <StatCard label="Total"      value={displayStats.total}     icon={<Layers/>}       accent="#6d4fc2"/>
                 <StatCard label="Completed"  value={displayStats.completed} icon={<CheckCircle2/>}  accent="#3cb87a"/>
                 <StatCard label="Submitted"  value={displayStats.submitted} icon={<Send/>}          accent="#3b6fd4"/>
                 <StatCard label="Pending"    value={displayStats.pending}   icon={<Clock/>}         accent="#d4a93c"/>

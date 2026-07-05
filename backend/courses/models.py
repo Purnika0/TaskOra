@@ -6,7 +6,6 @@ from datetime import date
 
 
 def generate_join_code():
-    # Generate a unique 8-character alphanumeric join code
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
 
 
@@ -14,7 +13,7 @@ class Course(models.Model):
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses', null=True, blank=True)
-    join_code = models.CharField(max_length=8, unique=False, default=generate_join_code)
+    join_code = models.CharField(max_length=8, unique=True, default=generate_join_code)
     start_date = models.DateField(default=date.today)
     end_date = models.DateField(null=True, blank=True) 
     created_at = models.DateTimeField(auto_now_add=True)

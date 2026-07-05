@@ -8,10 +8,6 @@ class AssignmentSerializer(serializers.ModelSerializer):
     due_date_bs = serializers.SerializerMethodField()
     course_name  = serializers.SerializerMethodField()
 
-    # Per-assignment task counts for the teacher dashboard's analytics cards.
-    # Populated via annotate() on the queryset (see views.py) when available,
-    # falling back to a live count so this serializer is also safe to use
-    # on a single, non-annotated instance (e.g. after create/update).
     submission_count     = serializers.SerializerMethodField()
     pending_review_count = serializers.SerializerMethodField()
     approved_count        = serializers.SerializerMethodField()
@@ -127,12 +123,13 @@ class TaskSubmitSerializer(serializers.ModelSerializer):
         return attrs
 
     def update(self, instance, validated_data):
-        # A task can be (re)submitted while PENDING (first submission),
-        # OVERDUE (late first submission) or REJECTED (resubmission after
-        # the teacher sent it back for revision).
-        if instance.status not in (Task.Status.PENDING, Task.Status.OVERDUE, Task.Status.REJECTED):
+
+        if instance.status not in (
+            Task.Status.PENDING, Task.Status.OVERDUE,
+            Task.Status.REJECTED, Task.Status.SUBMITTED,
+        ):
             raise serializers.ValidationError(
-                "This task has already been submitted."
+                "This task has already been reviewed and can no longer be edited."
             )
         instance.submission_file = validated_data.get('submission_file', instance.submission_file)
         instance.submission_text = validated_data.get('submission_text', instance.submission_text)

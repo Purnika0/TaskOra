@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
     Search, RefreshCw, Upload, X, FileText, Send, MessageSquare,
     Paperclip, ChevronDown, Plus, Pencil, Trash2, ClipboardList, Users, Calendar,
+    Layers, CheckCircle2, Clock, XCircle, AlertCircle,
 } from 'lucide-react'
 import { useTasks, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { useAuth }         from '../../hooks/useAuth.js'
@@ -19,6 +20,8 @@ import { getTaskTitle, getTaskDueDate, daysUntil, apiError } from '../../utils/h
 const TASK_TYPES = ['assignment', 'quiz', 'project', 'exam', 'lab']
 const PRIORITIES = ['low', 'medium', 'high']
 
+// Rejected is listed before Overdue everywhere in the UI (tabs, stat cards)
+// so the ordering matches the Student Dashboard.
 const TABS = [
     { key:'all',       label:'All'       },
     { key:'pending',   label:'Pending'   },
@@ -37,6 +40,21 @@ const selStyle = {
 
 function getCourseName(t) {
     return t.assignment?.course_name || t.course_name || 'Uncategorized'
+}
+
+// ── Stat card — same icon-badge style used on the Student Dashboard ────────
+function StatCard({ label, value, icon, accent }) {
+    return (
+        <div className="stat-box" style={{ borderTop:`3px solid ${accent}` }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                <span className="stat-label" style={{ marginBottom:0 }}>{label}</span>
+                <div style={{ width:32, height:32, borderRadius:8, background:`color-mix(in srgb, ${accent} 14%, white)`, display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    {React.cloneElement(icon, { size:15, style:{ color:accent } })}
+                </div>
+            </div>
+            <p className="stat-value">{value ?? 0}</p>
+        </div>
+    )
 }
 
 // ── Submit / Edit Assignment modal (student-only) ──────────────────────────────
@@ -323,6 +341,7 @@ function StudentAssignments() {
 
     const [activeTab, setActiveTab]   = useState('all')
     const [search,    setSearch]      = useState('')
+    const [sortBy,    setSortBy]      = useState('due')
     const [submitTask, setSubmitTask] = useState(null)
     const [expandedId, setExpandedId] = useState(null)
 
@@ -356,8 +375,17 @@ function StudentAssignments() {
             )
         }
 
+        if (sortBy === 'due') {
+            // Soonest due date first; tasks with no due date sink to the bottom.
+            list.sort((a, b) => (getTaskDueDate(a) || '9999-99-99').localeCompare(getTaskDueDate(b) || '9999-99-99'))
+        } else if (sortBy === 'due-desc') {
+            list.sort((a, b) => (getTaskDueDate(b) || '0000-00-00').localeCompare(getTaskDueDate(a) || '0000-00-00'))
+        } else if (sortBy === 'title') {
+            list.sort((a, b) => getTaskTitle(a).localeCompare(getTaskTitle(b)))
+        }
+
         return list
-    }, [tasks, activeTab, search, courseFilter])
+    }, [tasks, activeTab, search, courseFilter, sortBy])
 
     function count(key) {
         if (key === 'all') return tasks.length
@@ -371,7 +399,11 @@ function StudentAssignments() {
                 .am-tabs   { display:flex; gap:4px; overflow-x:auto; padding-bottom:2px; scrollbar-width:none; }
                 .am-tabs::-webkit-scrollbar { display:none; }
                 .am-view-btn { transition:var(--transition-fast); }
-                .am-row-grid { display:grid; grid-template-columns:minmax(0,2.2fr) 160px 130px 100px 140px; align-items:center; gap:14px; }
+                .am-row-grid {
+                    display:grid;
+                    grid-template-columns:minmax(180px,1fr) minmax(160px,0.5fr) 150px 100px 120px;
+                    align-items:center; column-gap:20px; row-gap:8px;
+                }
                 .am-row-head span { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-placeholder); }
                 @media (max-width:900px) { .am-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .am-row-head { display:none; } }
             `}</style>
@@ -387,20 +419,14 @@ function StudentAssignments() {
                 </div>
             </div>
 
-            {/* Stats strip */}
-            <div className="stat-grid">
-                {[
-                    { label:'Completed', value:stats.completed, color:'#3cb87a' },
-                    { label:'Submitted', value:stats.submitted, color:'#3b6fd4' },
-                    { label:'Pending',   value:stats.pending,   color:'#d4a93c' },
-                    { label:'Overdue',   value:stats.overdue,   color:'#e05252' },
-                    { label:'Rejected',  value:stats.rejected,  color:'#e05252' },
-                ].map(s => (
-                    <div key={s.label} className="stat-box" style={{ borderTop:`3px solid ${s.color}`, padding:'13px 16px' }}>
-                        <p className="stat-label">{s.label}</p>
-                        <p className="stat-value" style={{ fontSize:26, color:s.color }}>{s.value}</p>
-                    </div>
-                ))}
+            {/* Stats strip — Total first, Rejected before Overdue, matching the Dashboard */}
+            <div className="stat-grid stagger">
+                <StatCard label="Total"     value={stats.total}     icon={<Layers/>}       accent="#6d4fc2"/>
+                <StatCard label="Completed" value={stats.completed} icon={<CheckCircle2/>} accent="#3cb87a"/>
+                <StatCard label="Submitted" value={stats.submitted} icon={<Send/>}         accent="#3b6fd4"/>
+                <StatCard label="Pending"   value={stats.pending}   icon={<Clock/>}        accent="#d4a93c"/>
+                <StatCard label="Rejected"  value={stats.rejected}  icon={<XCircle/>}      accent="#e05252"/>
+                <StatCard label="Overdue"   value={stats.overdue}   icon={<AlertCircle/>}  accent="#e05252"/>
             </div>
 
             {/* Filter bar */}
@@ -417,6 +443,11 @@ function StudentAssignments() {
                         {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                 )}
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selStyle} aria-label="Sort assignments">
+                    <option value="due">Due Date: Earliest First</option>
+                    <option value="due-desc">Due Date: Latest First</option>
+                    <option value="title">Title (A–Z)</option>
+                </select>
                 <button onClick={refetch} className="btn-secondary" style={{ padding:'7px 10px' }}>
                     <RefreshCw size={12}/>
                 </button>
@@ -427,19 +458,11 @@ function StudentAssignments() {
                 {TABS.map(t => {
                     const active = activeTab === t.key
                     return (
-                        <button key={t.key} onClick={() => setActiveTab(t.key)}
-                            style={{ padding:'7px 13px', borderRadius:8, border:'1.5px solid',
-                                borderColor: active?'var(--color-text)':'var(--color-border)',
-                                background:  active?'var(--color-text)':'var(--color-surface)',
-                                color:       active?'var(--color-white)':'var(--color-text-secondary)',
-                                fontSize:12, fontWeight: active?600:400,
-                                cursor:'pointer', whiteSpace:'nowrap', transition:'var(--transition-fast)',
-                                display:'flex', alignItems:'center', gap:5,
-                            }}>
+                        <button key={t.key} className={`tab-btn${active ? ' active' : ''}`}
+                            onClick={() => setActiveTab(t.key)}>
                             {t.label}
-                            <span style={{ fontSize:10, fontWeight:600, padding:'1px 5px', borderRadius:99,
-                                background: active?'rgba(255,255,255,0.18)':'var(--color-surface-subtle)',
-                                color: active?'var(--color-white)':'var(--color-text-secondary)' }}>
+                            <span style={{ marginLeft:5, fontSize:11, fontWeight:600, padding:'1px 6px', borderRadius:99,
+                                background: active?'rgba(26,31,53,0.1)':'rgba(255,255,255,0.15)', color:'inherit' }}>
                                 {count(t.key)}
                             </span>
                         </button>
@@ -464,7 +487,7 @@ function StudentAssignments() {
             {/* Flat assignment list — aligned table columns, one row per assignment */}
             {!loading && !error && filtered.length > 0 && (
                 <div className="white-card overflow-hidden">
-                    <div className="am-row-grid am-row-head" style={{ padding:'12px 16px', background:'var(--color-surface-subtle)', borderBottom:'1px solid var(--color-border)' }}>
+                    <div className="am-row-grid am-row-head" style={{ padding:'12px 20px', background:'var(--color-surface-subtle)', borderBottom:'1px solid var(--color-border)' }}>
                         <span>Assignment</span>
                         <span>Course</span>
                         <span>Due Date</span>
@@ -487,12 +510,12 @@ function StudentAssignments() {
                             const courseName = getCourseName(t)
 
                             return (
-                                <div key={t.id} style={{ padding:'12px 16px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-border)' }}>
+                                <div key={t.id} style={{ padding:'14px 20px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-border)' }}>
                                     <div className="am-row-grid">
                                         <div
                                             onClick={() => hasDetails && setExpandedId(isOpen ? null : t.id)}
                                             style={{ display:'flex', alignItems:'center', gap:6, cursor: hasDetails ? 'pointer' : 'default', minWidth:0 }}>
-                                            <p style={{ fontSize:12.5, fontWeight:700, color:'var(--color-text)', margin:0, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                            <p title={getTaskTitle(t)} style={{ fontSize:12.5, fontWeight:700, color:'var(--color-text)', margin:0, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                                 {getTaskTitle(t)}
                                             </p>
                                             {hasDetails && (
@@ -541,17 +564,29 @@ function StudentAssignments() {
                                     )}
 
                                     {isOpen && hasDetails && (
-                                        <div style={{ marginTop:8, padding:'8px 10px', background:'var(--color-surface)', borderRadius:8 }}>
+                                        <div style={{ marginTop:8, padding:'10px 12px', background:'var(--color-surface)', borderRadius:8 }}>
+                                            <p style={{ fontSize:12.5, fontWeight:700, color:'var(--color-text)', margin:'0 0 6px', lineHeight:1.4 }}>
+                                                {getTaskTitle(t)}
+                                            </p>
                                             {desc && (
                                                 <p style={{ fontSize:11.5, color:'var(--color-text-secondary)', margin:0, lineHeight:1.5, whiteSpace:'pre-wrap' }}>
                                                     {desc}
                                                 </p>
                                             )}
                                             {docFile && (
-                                                <a href={docFile} target="_blank" rel="noreferrer" download
-                                                    style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop: desc?8:0, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
-                                                    <Paperclip size={12}/> Download {docName}
-                                                </a>
+                                                <div style={{ display:'flex', alignItems:'center', gap:14, marginTop: desc?10:0, flexWrap:'wrap' }}>
+                                                    <span style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:11.5, fontWeight:600, color:'var(--color-text-secondary)' }}>
+                                                        <FileText size={12}/> {docName}
+                                                    </span>
+                                                    <a href={docFile} target="_blank" rel="noreferrer"
+                                                        style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
+                                                        <FileText size={12}/> View
+                                                    </a>
+                                                    <a href={docFile} target="_blank" rel="noreferrer" download={docName}
+                                                        style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
+                                                        <Paperclip size={12}/> Download
+                                                    </a>
+                                                </div>
                                             )}
                                         </div>
                                     )}

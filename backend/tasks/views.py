@@ -21,11 +21,6 @@ from notifications.services import (
     notify_submission_reviewed,
 )
 
-
-# ---------------------------------------------------------------------------
-# Assignment views (Teacher)
-# ---------------------------------------------------------------------------
-
 class AssignmentListCreateView(generics.ListCreateAPIView):
     """Teacher lists their assignments or creates a new one."""
     serializer_class   = AssignmentSerializer
@@ -63,10 +58,6 @@ class AssignmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         return Assignment.objects.filter(created_by=self.request.user).select_related('course')
 
 
-# ---------------------------------------------------------------------------
-# Task views (Student)
-# ---------------------------------------------------------------------------
-
 class StudentTaskListView(generics.ListAPIView):
     """Student lists all their tasks."""
     serializer_class   = TaskSerializer
@@ -86,7 +77,7 @@ class SmartPriorityTaskView(generics.ListAPIView):
     permission_classes = [IsStudent]
 
     def get_queryset(self):
-        # Pending and overdue tasks ordered by urgency
+
         return Task.objects.filter(
             student=self.request.user,
             status__in=[Task.Status.PENDING, Task.Status.OVERDUE]
@@ -95,7 +86,8 @@ class SmartPriorityTaskView(generics.ListAPIView):
 
 class StudentSubmitTaskView(APIView):
     """
-    Student submits an assignment.
+    Student submits an assignment — and can also edit that submission
+    (same endpoint) as long as it hasn't been reviewed yet.
     PATCH /api/tasks/<pk>/submit/
     Accepts: submission_file (optional), submission_text (optional)
     At least one must be provided.
@@ -110,25 +102,18 @@ class StudentSubmitTaskView(APIView):
                 {"detail": "This task has already been marked as completed by your teacher."},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        if task.status == Task.Status.SUBMITTED:
-            return Response(
-                {"detail": "You have already submitted this task."},
-                status=status.HTTP_400_BAD_REQUEST
-            )
 
         is_resubmission = task.status == Task.Status.REJECTED
+        is_edit         = task.status == Task.Status.SUBMITTED
 
         serializer = TaskSubmitSerializer(task, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
-            notify_new_submission(task, is_resubmission=is_resubmission)
+            notify_new_submission(task, is_resubmission=is_resubmission, is_edit=is_edit)
             return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# ---------------------------------------------------------------------------
-# Task views (Teacher)
-# ---------------------------------------------------------------------------
 
 class TeacherAssignmentTaskListView(generics.ListAPIView):
     """
@@ -158,10 +143,10 @@ class TeacherSubmissionsInboxView(generics.ListAPIView):
 
     GET /api/tasks/teacher/submissions/
     Optional filters:
-      ?status=submitted        (task status — defaults to showing all statuses)
-      ?course_id=<id>          (restrict to one course)
-      ?assignment_id=<id>      (restrict to one assignment)
-      ?search=<text>           (matches student username or full name)
+        ?status=submitted        (task status — defaults to showing all statuses)
+        ?course_id=<id>          (restrict to one course)
+        ?assignment_id=<id>      (restrict to one assignment)
+        ?search=<text>           (matches student username or full name)
     Ordered newest-submitted-first so the most recent "to review" items
     surface at the top.
     """
@@ -222,10 +207,6 @@ class TeacherReviewTaskView(APIView):
             return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-
-# ---------------------------------------------------------------------------
-# Overdue task auto-marker utility view (can be called by a cron or manually)
-# ---------------------------------------------------------------------------
 
 class MarkOverdueTasksView(APIView):
     """

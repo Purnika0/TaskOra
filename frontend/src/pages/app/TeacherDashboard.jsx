@@ -37,7 +37,7 @@
     const ALLOWED_EXT   = '.pdf,.doc,.docx'
 
 // ── BS Calendar widget ────────────────────────────────────────────────────────
-    function BSCalWidget() {
+    function BSCalWidget({ assignments }) {
         const { today: todayData } = useToday()
         const todayBS = useMemo(() => {
             if (todayData?.today_bs) return todayData.today_bs
@@ -59,6 +59,16 @@
         const days        = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
         const firstDow    = days.length ? days[0].dow : 0
         const bsMonthName = BS_MONTH_NAMES[cur.m - 1]
+
+        // Assignment due dates → AD ISO date set, so the calendar can mark them
+        // (mirrors the student dashboard's mini calendar behaviour)
+        const dueDateSet = useMemo(() => {
+            const set = new Set()
+            ;(assignments || []).forEach(a => {
+                if (a.due_date) set.add(a.due_date.slice(0, 10))
+            })
+            return set
+        }, [assignments])
     
         return (
             <div className="cal-card" style={{ display:'flex', flexDirection:'column' }}>
@@ -77,21 +87,24 @@
                     {Array(firstDow).fill(null).map((_,i) => <div key={`b${i}`}/>)}
                     {days.map(day => {
                         const isToday = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
+                        const hasAssignment = dueDateSet.has(day.adISO)
                         
                         let cls = 'cal-day'
                         if (isToday)                    cls += ' today'
                         if (day.isHoliday || day.isSun) cls += ' holiday'
                         if (day.isSat && !day.isHoliday) cls += ' saturday'
+                        if (hasAssignment)               cls += ' has-assignment'
                         
                         // Unified tooltip matching 'Weekend' terminology
                         const hTitle   = day.holidayTitle || (day.isSat || day.isSun ? 'Weekend' : null)
+                        const label    = `${day.bsDay}${hTitle ? ' — ' + hTitle : ''}${hasAssignment ? ' — assignment due' : ''}`
                         
                         // Color overrides: Sunday now groups with holidays/Saturdays
                         const numColor = (day.isHoliday || day.isSun) ? RED_DIM : undefined
                         
                         return (
                             <div key={day.bsKey} className="cal-day-cell" title={hTitle||undefined}>
-                                <div className={cls} style={{ flexDirection:'column', gap:0, height:30, width:30, color: isToday?undefined:numColor }}>
+                                <div className={cls} style={{ flexDirection:'column', gap:0, height:30, width:30, color: isToday?undefined:numColor }} aria-label={label}>
                                     <span style={{ fontSize:11, lineHeight:1, fontWeight: day.isHoliday||day.isSat||day.isSun?700:400 }}>{day.bsDay}</span>
                                     <span style={{ fontSize:7, lineHeight:1, marginTop:1, opacity: isToday?0.6:0.30 }}>{day.adDate.getDate()}</span>
                                 </div>
@@ -102,7 +115,8 @@
                 {/* Updated Legend with fixed 'Today' blue dot & terminology */}
                 <div className="cal-legend" style={{ marginTop:'auto', flexWrap:'wrap', gap:'5px 12px' }}>
                     <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:RED }}/>Holiday/Weekend</div>
-                    <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background: 'BLUE' }}/>Today</div>
+                    <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:'var(--color-primary)' }}/>Today</div>
+                    <div className="cal-legend-item"><span className="cal-legend-dot" style={{ width:6, height:6, background:'var(--color-primary)' }}/>Assignment due</div>
                 </div>
             </div>
         )
@@ -888,17 +902,25 @@ function SubmissionPreviewModal({
             .calendar-wrapper {
                 flex: 0 0 260px;
                 width: 260px;
+                order: 1; /* Calendar on the left (desktop) */
+            }
+            .courses-board-wrapper {
+                order: 2; /* Courses on the right (desktop) */
             }
 
             /* Mobile & Tablet Breaks */
             @media (max-width: 900px) {
                 .courses-calendar-row {
-                    flex-direction: column; /* Fixed: Keeps Courses first, Calendar second */
+                    flex-direction: column; /* Keeps Courses first, Calendar second */
                     align-items: stretch !important;
                 }
                 .calendar-wrapper {
                     width: 100% !important;
                     flex: none !important;
+                    order: 2; /* Calendar back below Courses on mobile */
+                }
+                .courses-board-wrapper {
+                    order: 1; /* Courses on top on mobile */
                 }
                 .courses-grid-container {
                     grid-template-columns: 1fr; /* Stacks column cards comfortably on small screens */
@@ -907,7 +929,7 @@ function SubmissionPreviewModal({
         `}</style>
 
             {/* Courses Main Board Card (Spans across all remaining whitespace) */}
-            <div className="white-card overflow-hidden" style={{ flex: '1 1 auto', minWidth: 0, width: '100%' }}>
+            <div className="white-card overflow-hidden courses-board-wrapper" style={{ flex: '1 1 auto', minWidth: 0, width: '100%' }}>
                 {/* Card Header */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderBottom: '1px solid #f0ece4', gap: 10, flexWrap: 'wrap' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1048,7 +1070,7 @@ function SubmissionPreviewModal({
 
             {/* Calendar Column Card */}
             <div className="calendar-wrapper">
-                <BSCalWidget />
+                <BSCalWidget assignments={assignments}/>
             </div>
         </div>
         {/* Custom Delete Confirmation Modal Overlay */}
@@ -1208,9 +1230,6 @@ function SubmissionPreviewModal({
         {/* Student Groups */}
         <Section
             title="Student Groups"
-            tag="K-Means"
-            tagColor="#6d4fc2"
-            tagBg="#f0e8ff"
             icon={<Layers/>}
             loading={grL}
             error={grErr}
@@ -1359,10 +1378,7 @@ function SubmissionPreviewModal({
 
         {/* Outliers */}
         <Section
-        title="Outlier Students"
-        tag="Isolation Forest"
-        tagColor="#e05252"
-        tagBg="#fde8e8"
+        title="Students Needing Attention"
         icon={<AlertTriangle/>}
         loading={olL}
         error={olErr}
@@ -1381,14 +1397,25 @@ function SubmissionPreviewModal({
                     gap:10,
                 }}
             >
-                {outliers.outliers.map((o,i) => (
+                {outliers.outliers.map((o,i) => {
+                    const rate = typeof o.completion_rate === 'number'
+                        ? o.completion_rate
+                        : parseFloat(o.completion_rate) || 0
+                    const atRisk = rate < 30
+                    const bg      = atRisk ? '#fde8e8' : '#fffbeb'
+                    const border  = atRisk ? '#fecaca' : '#fde68a'
+                    const badgeBg = atRisk ? '#fca5a5' : '#fde68a'
+                    const badgeText = atRisk ? '#7f1d1d' : '#92400e'
+                    const badgeLabel = atRisk ? 'At Risk' : 'Needs Attention'
+
+                    return (
                     <div
                         key={i}
                         style={{
                             padding:'12px 14px',
-                            background:'#fde8e8',
+                            background:bg,
                             borderRadius:10,
-                            border:'1px solid #fecaca',
+                            border:`1px solid ${border}`,
                         }}
                     >
                         <div
@@ -1407,13 +1434,13 @@ function SubmissionPreviewModal({
                                 style={{
                                     fontSize:9,
                                     fontWeight:700,
-                                    background:'#fca5a5',
-                                    color:'#7f1d1d',
+                                    background:badgeBg,
+                                    color:badgeText,
                                     padding:'2px 6px',
                                     borderRadius:99,
                                 }}
                             >
-                                {o.flagged_by}
+                                {badgeLabel}
                             </span>
                         </div>
 
@@ -1453,7 +1480,8 @@ function SubmissionPreviewModal({
                             </span>
                         </div>
                     </div>
-                ))}
+                    )
+                })}
             </div>
         )}
         </Section>

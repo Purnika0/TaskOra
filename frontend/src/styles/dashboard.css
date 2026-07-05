@@ -193,8 +193,7 @@ CARDS
 /* ═══════════════════════════════════════════════════════════
 GRIDS
 ═══════════════════════════════════════════════════════════ */
-.stat-grid   { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
-@media(max-width:1024px) { .stat-grid { grid-template-columns:repeat(2,1fr); } }
+.stat-grid   { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:14px; }
 @media(max-width:480px)  { .stat-grid { grid-template-columns:1fr 1fr; gap:10px; } }
 
 .widget-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
