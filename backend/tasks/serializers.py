@@ -16,6 +16,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
     pending_review_count = serializers.SerializerMethodField()
     approved_count        = serializers.SerializerMethodField()
     rejected_count        = serializers.SerializerMethodField()
+    file_name             = serializers.SerializerMethodField()
 
     class Meta:
         model = Assignment
@@ -24,6 +25,7 @@ class AssignmentSerializer(serializers.ModelSerializer):
             'due_date', 'due_date_bs', 'task_type',
             'estimated_hours', 'priority', 'created_at',
             'submission_count', 'pending_review_count', 'approved_count', 'rejected_count',
+            'file', 'file_name',
         ]
         read_only_fields = ['created_by', 'created_at']
 
@@ -32,6 +34,11 @@ class AssignmentSerializer(serializers.ModelSerializer):
     
     def get_course_name(self, obj):
         return obj.course.title
+
+    def get_file_name(self, obj):
+        if obj.file:
+            return obj.file.name.split('/')[-1]
+        return None
 
     def get_submission_count(self, obj):
         # Annotated by the view's queryset when listing; fall back otherwise.

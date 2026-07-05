@@ -22,6 +22,10 @@ class Assignment(models.Model):
     priority = models.IntegerField(default=3)  # 1 (low) to 5 (high)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # Optional reference document the teacher attaches to the assignment
+    # (instructions, handout, rubric, etc.) — visible/downloadable by students.
+    file = models.FileField(upload_to='assignments/', null=True, blank=True)
+
     def __str__(self):
         return f"{self.title} ({self.course.title})"
 

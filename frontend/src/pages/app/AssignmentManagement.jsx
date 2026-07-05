@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
-    Search, LayoutGrid, List, RefreshCw, Upload, X, FileText, Send, MessageSquare,
+    Search, RefreshCw, Upload, X, FileText, Send, MessageSquare,
     Paperclip, ChevronDown, Plus, Pencil, Trash2, ClipboardList, Users, Calendar,
+    BookOpen,
 } from 'lucide-react'
 import { useTasks, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { useAuth }         from '../../hooks/useAuth.js'
@@ -24,8 +25,8 @@ const TABS = [
     { key:'pending',   label:'Pending'   },
     { key:'submitted', label:'Submitted' },
     { key:'completed', label:'Completed' },
-    { key:'overdue',   label:'Overdue'   },
     { key:'rejected',  label:'Rejected'  },
+    { key:'overdue',   label:'Overdue'   },
 ]
 
 const selStyle = {
@@ -39,13 +40,17 @@ function getCourseName(t) {
     return t.assignment?.course_name || t.course_name || 'Uncategorized'
 }
 
-// ── Submit Assignment modal (student-only) ─────────────────────────────────────
+// ── Submit / Edit Assignment modal (student-only) ──────────────────────────────
 function SubmitModal({ task, onClose, onSubmitted }) {
+    const isEdit = task.status === 'submitted'
     const [file,   setFile]   = useState(null)
-    const [text,   setText]   = useState('')
+    const [text,   setText]   = useState(isEdit ? (task.submission_text || '') : '')
     const [saving, setSaving] = useState(false)
     const [error,  setError]  = useState('')
     const toast = useToast()
+
+    const modalTitle  = isEdit ? 'Edit Submission' : task.status === 'rejected' ? 'Resubmit Assignment' : 'Submit Assignment'
+    const actionLabel = isEdit ? 'Save Changes' : task.status === 'rejected' ? 'Resubmit' : 'Submit'
 
     async function handleSubmit() {
         if (!file && !text.trim()) {
@@ -58,8 +63,8 @@ function SubmitModal({ task, onClose, onSubmitted }) {
             const fd = new FormData()
             if (file) fd.append('submission_file', file)
             if (text.trim()) fd.append('submission_text', text.trim())
-            const updated = await onSubmitted(task.id, fd)
-            toast.success('Assignment submitted successfully')
+            await onSubmitted(task.id, fd)
+            toast.success(isEdit ? 'Submission updated successfully' : 'Assignment submitted successfully')
             onClose()
         } catch (err) {
             setError(apiError(err))
@@ -75,7 +80,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid var(--color-border)' }}>
                     <div>
                         <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'var(--color-text)', margin:0 }}>
-                            {task.status === 'rejected' ? 'Resubmit Assignment' : 'Submit Assignment'}
+                            {modalTitle}
                         </h3>
                         <p style={{ fontSize:11, color:'var(--color-text-secondary)', margin:'2px 0 0' }}>{getTaskTitle(task)}</p>
                     </div>
@@ -94,9 +99,23 @@ function SubmitModal({ task, onClose, onSubmitted }) {
                         <p style={{ fontSize:12, color:'var(--color-red)', background:'var(--color-red-light)', padding:'8px 12px', borderRadius:8, margin:0 }}>{error}</p>
                     )}
 
+                    {task.assignment?.file && (
+                        <a href={task.assignment.file} target="_blank" rel="noreferrer" download
+                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'#6d4fc2', background:'#f0e8ff', padding:'8px 10px', borderRadius:8, textDecoration:'none' }}>
+                            <Paperclip size={12}/> Download assignment document: {task.assignment.file_name || 'file'}
+                        </a>
+                    )}
+
+                    {isEdit && task.submission_file && !file && (
+                        <a href={task.submission_file} target="_blank" rel="noreferrer"
+                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
+                            <Paperclip size={12}/> Current file: {task.file_name || 'view attachment'}
+                        </a>
+                    )}
+
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>
-                            Upload Solution (PDF, DOCX, DOC, Images)
+                            {isEdit ? 'Replace File (optional)' : 'Upload Solution (PDF, DOCX, DOC, Images)'}
                         </label>
                         <div style={{ border:'2px dashed var(--color-border)', borderRadius:10, padding:'14px', textAlign:'center', background:'var(--color-surface-subtle)', cursor:'pointer' }}
                             onClick={() => document.getElementById('am-sub-file').click()}>
@@ -138,7 +157,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
                 <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
-                        {saving ? 'Submitting…' : <><Send size={13}/> {task.status === 'rejected' ? 'Resubmit' : 'Submit'}</>}
+                        {saving ? 'Saving…' : <><Send size={13}/> {actionLabel}</>}
                     </button>
                 </div>
             </div>
@@ -300,21 +319,35 @@ function StudentAssignments() {
     const { tasks, loading, error, stats, refetch, submitAssignment, setTasks } = useTasks()
     const isStudent = true // this component only ever renders for students; kept so existing JSX below is untouched
 
-    const [searchParams] = useSearchParams()
-    const courseFilter = searchParams.get('course')
+    const [searchParams, setSearchParams] = useSearchParams()
+    const courseFilter = searchParams.get('course') || 'all'
 
     const [activeTab, setActiveTab]   = useState('all')
     const [search,    setSearch]      = useState('')
-    const [sortBy,    setSortBy]      = useState('due')
-    const [viewMode,  setViewMode]    = useState('table')
     const [submitTask, setSubmitTask] = useState(null)
     const [expandedId, setExpandedId] = useState(null)
+
+    // Courses derived from the student's own assignments (no extra API call needed)
+    const courses = useMemo(() => {
+        const map = new Map()
+        tasks.forEach(t => {
+            const id = t.assignment?.course
+            if (id != null && !map.has(id)) map.set(id, getCourseName(t))
+        })
+        return Array.from(map, ([id, name]) => ({ id, name })).sort((a,b) => a.name.localeCompare(b.name))
+    }, [tasks])
+
+    function handleCourseFilterChange(value) {
+        const next = new URLSearchParams(searchParams)
+        if (value === 'all') next.delete('course'); else next.set('course', value)
+        setSearchParams(next, { replace:true })
+    }
 
     const filtered = useMemo(() => {
         let list = [...tasks]
         if (activeTab !== 'all') list = list.filter(t => t.status === activeTab)
 
-        if (courseFilter) list = list.filter(t => String(t.assignment?.course) === String(courseFilter))
+        if (courseFilter !== 'all') list = list.filter(t => String(t.assignment?.course) === String(courseFilter))
 
         if (search.trim()) {
             const q = search.toLowerCase()
@@ -324,11 +357,19 @@ function StudentAssignments() {
             )
         }
 
-        if (sortBy === 'due')    list.sort((a,b) => (getTaskDueDate(a)||'9').localeCompare(getTaskDueDate(b)||'9'))
-        if (sortBy === 'title')  list.sort((a,b) => getTaskTitle(a).localeCompare(getTaskTitle(b)))
-        if (sortBy === 'status') list.sort((a,b) => (a.status||'').localeCompare(b.status||''))
         return list
-    }, [tasks, activeTab, search, sortBy, courseFilter])
+    }, [tasks, activeTab, search, courseFilter])
+
+    // Group into one column per course/subject — mirrors the teacher's course board
+    const grouped = useMemo(() => {
+        const map = new Map()
+        filtered.forEach(t => {
+            const id = t.assignment?.course ?? 'uncategorized'
+            if (!map.has(id)) map.set(id, { course: { id, name: getCourseName(t) }, items: [] })
+            map.get(id).items.push(t)
+        })
+        return Array.from(map.values()).sort((a,b) => a.course.name.localeCompare(b.course.name))
+    }, [filtered])
 
     function count(key) {
         if (key === 'all') return tasks.length
@@ -379,26 +420,12 @@ function StudentAssignments() {
                         placeholder="Search assignments…"
                         style={{ ...selStyle, paddingLeft:28, width:'100%', boxSizing:'border-box' }}/>
                 </div>
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selStyle}>
-                    <option value="due">Sort by Due Date</option>
-                    <option value="title">Sort by Title</option>
-                    <option value="status">Sort by Status</option>
-                </select>
-                <div style={{ display:'flex', gap:3, padding:3, background:'var(--color-surface-subtle)', borderRadius:8 }}>
-                    {[
-                        { mode:'table', icon:<List size={13}/> },
-                        { mode:'card',  icon:<LayoutGrid size={13}/> },
-                    ].map(({ mode, icon }) => (
-                        <button key={mode} onClick={() => setViewMode(mode)} className="am-view-btn"
-                            style={{ width:28, height:28, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:6, border:'none', cursor:'pointer',
-                                background: viewMode===mode?'var(--color-surface)':'transparent',
-                                color:      viewMode===mode?'var(--color-text)':'var(--color-text-placeholder)',
-                                boxShadow:  viewMode===mode?'0 1px 3px rgba(0,0,0,0.08)':'none',
-                            }}>
-                            {icon}
-                        </button>
-                    ))}
-                </div>
+                {courses.length > 0 && (
+                    <select value={courseFilter} onChange={e => handleCourseFilterChange(e.target.value)} style={selStyle}>
+                        <option value="all">All Subjects</option>
+                        {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                )}
                 <button onClick={refetch} className="btn-secondary" style={{ padding:'7px 10px' }}>
                     <RefreshCw size={12}/>
                 </button>
@@ -443,200 +470,108 @@ function StudentAssignments() {
                 </div>
             )}
 
-            {!loading && !error && filtered.length > 0 && viewMode === 'table' && (
+            {/* Subject board — one column per course, mirrors the teacher's course board */}
+            {!loading && !error && filtered.length > 0 && (
                 <div className="white-card overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="task-table">
-                            <thead>
-                                <tr>
-                                    <th style={{ paddingLeft:18, width:32 }}>#</th>
-                                    <th>Assignment</th>
-                                    <th className="hide-sm">Course</th>
-                                    <th className="hide-sm">Due Date</th>
-                                    <th>Status</th>
-                                    {isStudent && <th style={{ width:100 }}>Action</th>}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {filtered.map((t, i) => {
-                                    const due    = getTaskDueDate(t)
-                                    const d      = daysUntil(due)
-                                    const sb     = { label: statusLabel(t), color: statusColor(t), bg: statusBg(t) }
-                                    const canSub = isStudent && (t.status === 'pending' || t.status === 'overdue' || t.status === 'rejected')
-                                    const urgent = t.status === 'overdue' || t.status === 'rejected'
-                                    const isOpen = expandedId === t.id
-                                    const desc   = t.assignment?.description?.trim()
-                                    // Attachment support isn't wired up on the backend yet — this renders
-                                    // automatically once `assignment.attachment_url` (or similar) is added.
-                                    const attachment = t.assignment?.attachment_url || t.assignment?.attachment
-                                    const hasDetails = Boolean(desc) || Boolean(attachment)
-
-                                    return (
-                                        <React.Fragment key={t.id}>
-                                            <tr>
-                                                <td style={{ paddingLeft:18, color:'var(--color-text-placeholder)', fontSize:12 }}>{i+1}</td>
-                                                <td>
-                                                    <div
-                                                        onClick={() => hasDetails && setExpandedId(isOpen ? null : t.id)}
-                                                        style={{ display:'flex', alignItems:'flex-start', gap:6, cursor: hasDetails ? 'pointer' : 'default' }}>
-                                                        <div style={{ minWidth:0 }}>
-                                                            <p style={{ fontSize:13, fontWeight:600, color:'var(--color-text)', margin:0 }}>
-                                                                {getTaskTitle(t)}
-                                                            </p>
-                                                            {t.teacher_feedback && (
-                                                                <div style={{ display:'flex', alignItems:'flex-start', gap:5, marginTop:4, padding:'5px 8px', background:statusBg(t), borderRadius:7, maxWidth:340 }}>
-                                                                    <MessageSquare size={11} style={{ color:statusColor(t), marginTop:1, flexShrink:0 }}/>
-                                                                    <p style={{ fontSize:11, color:statusColor(t), margin:0, lineHeight:1.35 }}>{t.teacher_feedback}</p>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                        {hasDetails && (
-                                                            <ChevronDown size={13} style={{ color:'var(--color-text-placeholder)', marginTop:3, flexShrink:0, transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.15s' }}/>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="hide-sm" style={{ fontSize:12, color:'var(--color-text-secondary)' }}>
-                                                    {getCourseName(t)}
-                                                </td>
-                                                <td className="hide-sm" style={{ fontSize:12, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400 }}>
-                                                    {due||'—'}
-                                                    {d !== null && d < 0 && <span style={{ marginLeft:4, fontSize:10, color:'var(--color-red)' }}>({Math.abs(d)}d late)</span>}
-                                                </td>
-                                                <td>
-                                                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:sb.bg, color:sb.color, whiteSpace:'nowrap' }}>
-                                                        {sb.label}
-                                                    </span>
-                                                </td>
-                                                {isStudent && (
-                                                    <td>
-                                                        {canSub && (
-                                                            <button
-                                                                style={{ display:'flex', alignItems:'center', gap:4, padding:'5px 9px', fontSize:11, fontWeight:600,
-                                                                    background: t.status==='rejected' ? 'var(--color-red-light)' : 'var(--color-primary-light)',
-                                                                    color:      t.status==='rejected' ? 'var(--color-red)'       : 'var(--color-primary)',
-                                                                    border: `1px solid ${t.status==='rejected' ? 'var(--color-red)' : 'var(--color-primary)'}`,
-                                                                    borderRadius:7, cursor:'pointer' }}
-                                                                onClick={() => setSubmitTask(t)}>
-                                                                <Upload size={11}/> {t.status === 'rejected' ? 'Resubmit' : 'Submit'}
-                                                            </button>
-                                                        )}
-                                                        {t.status === 'submitted' && (
-                                                            <span style={{ fontSize:11, color:'var(--color-text-secondary)', fontStyle:'italic' }}>Awaiting review</span>
-                                                        )}
-                                                    </td>
-                                                )}
-                                            </tr>
-                                            {isOpen && hasDetails && (
-                                                <tr>
-                                                    <td colSpan={isStudent ? 6 : 5} style={{ background:'var(--color-surface-subtle)', padding:'12px 18px 16px 48px', borderTop:'1px solid var(--color-border)' }}>
-                                                        {desc && (
-                                                            <div style={{ marginBottom: attachment ? 10 : 0 }}>
-                                                                <p style={{ fontSize:10.5, fontWeight:700, color:'var(--color-text-placeholder)', textTransform:'uppercase', letterSpacing:'0.03em', margin:'0 0 4px' }}>
-                                                                    Description
-                                                                </p>
-                                                                <p style={{ fontSize:12.5, color:'var(--color-text-secondary)', margin:0, lineHeight:1.5, whiteSpace:'pre-wrap' }}>
-                                                                    {desc}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                        {attachment && (
-                                                            <a href={attachment} target="_blank" rel="noreferrer"
-                                                                style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
-                                                                <Paperclip size={12}/> View attachment
-                                                            </a>
-                                                        )}
-                                                    </td>
-                                                </tr>
-                                            )}
-                                        </React.Fragment>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
-                    <div style={{ padding:'7px 18px', borderTop:'1px solid var(--color-border)', background:'var(--color-surface-subtle)' }}>
-                        <p style={{ fontSize:11, color:'var(--color-text-placeholder)', margin:0 }}>
-                            {filtered.length} of {tasks.length} assignments
-                        </p>
-                    </div>
-                </div>
-            )}
-
-            {!loading && !error && filtered.length > 0 && viewMode === 'card' && (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
-                    {filtered.map(t => {
-                        const due    = getTaskDueDate(t)
-                        const d      = daysUntil(due)
-                        const sb     = { label: statusLabel(t), color: statusColor(t), bg: statusBg(t) }
-                        const urgent = t.status === 'overdue' || t.status === 'rejected'
-                        const canSub = isStudent && (t.status === 'pending' || t.status === 'overdue' || t.status === 'rejected')
-                        const isOpen = expandedId === t.id
-                        const desc   = t.assignment?.description?.trim()
-                        const attachment = t.assignment?.attachment_url || t.assignment?.attachment
-                        const hasDetails = Boolean(desc) || Boolean(attachment)
-
-                        return (
-                            <div key={t.id} style={{ background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:12, padding:16 }}>
-                                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:8, marginBottom:8 }}>
-                                    <p style={{ fontSize:13, fontWeight:700, color:'var(--color-text)', margin:0, flex:1, lineHeight:1.35 }}>
-                                        {getTaskTitle(t)}
-                                    </p>
-                                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:sb.bg, color:sb.color, whiteSpace:'nowrap', flexShrink:0 }}>
-                                        {sb.label}
+                    <div className="subject-board-grid" style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:14, padding:14 }}>
+                        {grouped.map(({ course, items }) => (
+                            <div key={course.id} style={{ background:'var(--color-surface-subtle)', border:'1px solid var(--color-border)', borderRadius:12, overflow:'hidden', display:'flex', flexDirection:'column', minWidth:0 }}>
+                                <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 12px', borderBottom:'2px solid var(--color-border)', background:'var(--color-surface)' }}>
+                                    <BookOpen size={13} style={{ color:'var(--color-primary)', flexShrink:0 }}/>
+                                    <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12.5, color:'var(--color-text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                        {course.name}
+                                    </h4>
+                                    <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px', background:'var(--color-primary-light)', color:'var(--color-primary)', borderRadius:99, marginLeft:'auto', flexShrink:0 }}>
+                                        {items.length}
                                     </span>
                                 </div>
-                                <p style={{ fontSize:12, color:'var(--color-text-secondary)', margin:'0 0 6px' }}>
-                                    {getCourseName(t)}
-                                </p>
-                                {due && (
-                                    <p style={{ fontSize:11, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, margin:0 }}>
-                                        Due: {due} {d!==null&&d<0&&`(${Math.abs(d)}d late)`}
-                                    </p>
-                                )}
-                                {t.teacher_feedback && (
-                                    <div style={{ display:'flex', alignItems:'flex-start', gap:5, marginTop:8, padding:'6px 8px', background:sb.bg, borderRadius:7 }}>
-                                        <MessageSquare size={11} style={{ color:sb.color, marginTop:1, flexShrink:0 }}/>
-                                        <p style={{ fontSize:11, color:sb.color, margin:0, lineHeight:1.35 }}>{t.teacher_feedback}</p>
-                                    </div>
-                                )}
-                                {hasDetails && (
-                                    <button onClick={() => setExpandedId(isOpen ? null : t.id)}
-                                        style={{ display:'flex', alignItems:'center', gap:4, marginTop:8, padding:0, background:'none', border:'none', cursor:'pointer', fontSize:11.5, fontWeight:600, color:'var(--color-primary)' }}>
-                                        {isOpen ? 'Hide details' : 'View details'}
-                                        <ChevronDown size={12} style={{ transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.15s' }}/>
-                                    </button>
-                                )}
-                                {isOpen && hasDetails && (
-                                    <div style={{ marginTop:8, padding:'10px 12px', background:'var(--color-surface-subtle)', borderRadius:8 }}>
-                                        {desc && (
-                                            <p style={{ fontSize:12, color:'var(--color-text-secondary)', margin:0, lineHeight:1.5, whiteSpace:'pre-wrap' }}>
-                                                {desc}
-                                            </p>
-                                        )}
-                                        {attachment && (
-                                            <a href={attachment} target="_blank" rel="noreferrer"
-                                                style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop: desc?8:0, fontSize:12, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
-                                                <Paperclip size={12}/> View attachment
-                                            </a>
-                                        )}
-                                    </div>
-                                )}
-                                {canSub && (
-                                    <button onClick={() => setSubmitTask(t)}
-                                        style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, marginTop:10, width:'100%', padding:'7px 10px', fontSize:12, fontWeight:600,
-                                            background: t.status==='rejected' ? 'var(--color-red-light)' : 'var(--color-primary-light)',
-                                            color:      t.status==='rejected' ? 'var(--color-red)'       : 'var(--color-primary)',
-                                            border: `1px solid ${t.status==='rejected' ? 'var(--color-red)' : 'var(--color-primary)'}`,
-                                            borderRadius:8, cursor:'pointer' }}>
-                                        <Upload size={12}/> {t.status === 'rejected' ? 'Resubmit' : 'Submit'}
-                                    </button>
-                                )}
-                                {isStudent && t.status === 'submitted' && (
-                                    <p style={{ fontSize:11, color:'var(--color-text-secondary)', fontStyle:'italic', margin:'10px 0 0', textAlign:'center' }}>Awaiting review</p>
-                                )}
+
+                                <div style={{ display:'flex', flexDirection:'column', gap:8, padding:10, maxHeight:480, overflowY:'auto' }}>
+                                    {items.map(t => {
+                                        const due    = getTaskDueDate(t)
+                                        const d      = daysUntil(due)
+                                        const sb     = { label: statusLabel(t), color: statusColor(t), bg: statusBg(t) }
+                                        const urgent = t.status === 'overdue' || t.status === 'rejected'
+                                        const canSub = t.status === 'pending' || t.status === 'overdue' || t.status === 'rejected'
+                                        const canEdit = t.status === 'submitted'
+                                        const isOpen = expandedId === t.id
+                                        const desc   = t.assignment?.description?.trim()
+                                        const docFile = t.assignment?.file
+                                        const docName = t.assignment?.file_name || 'Document'
+                                        const hasDetails = Boolean(desc) || Boolean(docFile)
+
+                                        return (
+                                            <div key={t.id} style={{ padding:'11px 12px', background:'var(--color-surface)', borderRadius:10, border:'1px solid var(--color-border)' }}>
+                                                <div
+                                                    onClick={() => hasDetails && setExpandedId(isOpen ? null : t.id)}
+                                                    style={{ display:'flex', alignItems:'flex-start', gap:6, cursor: hasDetails ? 'pointer' : 'default', marginBottom:6 }}>
+                                                    <p style={{ fontSize:12.5, fontWeight:700, color:'var(--color-text)', margin:0, lineHeight:1.35, flex:1, minWidth:0 }}>
+                                                        {getTaskTitle(t)}
+                                                    </p>
+                                                    <span style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:99, background:sb.bg, color:sb.color, whiteSpace:'nowrap', flexShrink:0 }}>
+                                                        {sb.label}
+                                                    </span>
+                                                    {hasDetails && (
+                                                        <ChevronDown size={12} style={{ color:'var(--color-text-placeholder)', marginTop:2, flexShrink:0, transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.15s' }}/>
+                                                    )}
+                                                </div>
+
+                                                {docFile && (
+                                                    <span style={{ fontSize:10, color:'#6d4fc2', background:'#f0e8ff', padding:'1px 6px', borderRadius:99, display:'inline-flex', alignItems:'center', gap:3, marginBottom:6 }}>
+                                                        <Paperclip size={9}/> Document attached
+                                                    </span>
+                                                )}
+
+                                                {t.teacher_feedback && (
+                                                    <div style={{ display:'flex', alignItems:'flex-start', gap:5, marginBottom:6, padding:'5px 8px', background:sb.bg, borderRadius:7 }}>
+                                                        <MessageSquare size={11} style={{ color:sb.color, marginTop:1, flexShrink:0 }}/>
+                                                        <p style={{ fontSize:11, color:sb.color, margin:0, lineHeight:1.35 }}>{t.teacher_feedback}</p>
+                                                    </div>
+                                                )}
+
+                                                {due && (
+                                                    <p style={{ fontSize:10.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, margin:'0 0 8px', display:'flex', alignItems:'center', gap:4 }}>
+                                                        Due {due}
+                                                        {urgent && d !== null && d < 0 && <span>({Math.abs(d)}d late)</span>}
+                                                    </p>
+                                                )}
+
+                                                {isOpen && hasDetails && (
+                                                    <div style={{ marginBottom:8, padding:'8px 10px', background:'var(--color-surface-subtle)', borderRadius:8 }}>
+                                                        {desc && (
+                                                            <p style={{ fontSize:11.5, color:'var(--color-text-secondary)', margin:0, lineHeight:1.5, whiteSpace:'pre-wrap' }}>
+                                                                {desc}
+                                                            </p>
+                                                        )}
+                                                        {docFile && (
+                                                            <a href={docFile} target="_blank" rel="noreferrer" download
+                                                                style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop: desc?8:0, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
+                                                                <Paperclip size={12}/> Download {docName}
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                )}
+
+                                                {isStudent && (canSub || canEdit) && (
+                                                    <button onClick={() => setSubmitTask(t)}
+                                                        style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, width:'100%', padding:'6px 10px', fontSize:11, fontWeight:600,
+                                                            background: t.status==='rejected' ? 'var(--color-red-light)' : 'var(--color-primary-light)',
+                                                            color:      t.status==='rejected' ? 'var(--color-red)'       : 'var(--color-primary)',
+                                                            border: `1px solid ${t.status==='rejected' ? 'var(--color-red)' : 'var(--color-primary)'}`,
+                                                            borderRadius:7, cursor:'pointer' }}>
+                                                        {canEdit ? <><Pencil size={11}/> Edit Submission</> : <><Upload size={11}/> {t.status === 'rejected' ? 'Resubmit' : 'Submit'}</>}
+                                                    </button>
+                                                )}
+                                                {t.status === 'completed' && (
+                                                    <p style={{ fontSize:11, color:'var(--color-green)', margin:0, textAlign:'center' }}>✓ Approved</p>
+                                                )}
+                                            </div>
+                                        )
+                                    })}
+                                </div>
                             </div>
-                        )
-                    })}
+                        ))}
+                    </div>
                 </div>
             )}
 
