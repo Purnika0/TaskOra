@@ -55,7 +55,7 @@ export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
                 {!collapsed && (
                     <div style={{ overflow:'hidden' }}>
                         <p style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:14, color:'#fff', letterSpacing:'-0.01em', lineHeight:1, margin:0 }}>TaskOra</p>
-                        <p style={{ fontSize:9, color:'rgba(255,255,255,0.30)', textTransform:'uppercase', letterSpacing:'0.12em', margin:'2px 0 0' }}>Academic Tracker</p>
+                        <p style={{ fontSize:9, color:'rgba(255,255,255,0.55)', textTransform:'uppercase', letterSpacing:'0.12em', margin:'2px 0 0' }}>Academic Tracker</p>
                     </div>
                 )}
             </div>
@@ -99,14 +99,14 @@ export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
                         </div>
                         <div style={{ flex:1, minWidth:0 }}>
                             <p style={{ fontSize:12, fontWeight:600, color:'#fff', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', margin:0 }}>{name}</p>
-                            <p style={{ fontSize:10, color:'rgba(255,255,255,0.30)', margin:0, textTransform:'capitalize' }}>{user?.role}</p>
+                            <p style={{ fontSize:10, color:'rgba(255,255,255,0.55)', margin:0, textTransform:'capitalize' }}>{user?.role}</p>
                         </div>
                     </div>
                 )}
                 <button onClick={onLogout} className="nav-item"
-                    style={{ color:'rgba(255,255,255,0.55)', width:'100%', border:'none', background:'none', textAlign:'left', cursor:'pointer' }}>
+                    style={{ color:'rgba(255,255,255,0.85)', width:'100%', border:'none', background:'none', textAlign:'left', cursor:'pointer' }}>
                     <LogOut size={14} style={{ flexShrink:0 }}/>
-                    {!collapsed && <span style={{ fontSize:13, marginLeft:8 }}>Logout</span>}
+                    {!collapsed && <span style={{ fontSize:13, marginLeft:8 }}>Sign Out</span>}
                 </button>
             </div>
         </aside>

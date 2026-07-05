@@ -45,7 +45,7 @@ export function SiteFooter() {
                 }
                 .ft-col-title {
                     font-size: 10px; font-weight: 700;
-                    color: rgba(255,255,255,0.45); text-transform: uppercase;
+                    color: rgba(255,255,255,0.80); text-transform: uppercase;
                     letter-spacing: 0.10em; margin-bottom: 12px;
                     font-family: var(--font-display);
                 }
@@ -77,11 +77,11 @@ export function SiteFooter() {
                     <FtLink to="/">Home</FtLink>
                     <FtLink to="/about">About</FtLink>
                     <FtLink to="/contact">Contact Us</FtLink>
-                    <FtLink to="/legal">Legal</FtLink>
+                    <FtLink to="/legal">Privacy & Terms</FtLink>
                 </div>
 
                 <div>
-                    <p className="ft-col-title">App</p>
+                    <p className="ft-col-title">Portal</p>
                     {user ? (
                         <>
                             <FtLink to="/app">Dashboard</FtLink>
@@ -106,7 +106,7 @@ export function SiteFooter() {
             </div>
 
             <div className="ft-bar">
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.50)', margin:0 }}>
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.60)', margin:0 }}>
                     © {new Date().getFullYear()} TaskOra · Academic Task Management System
                 </p>
             </div>
