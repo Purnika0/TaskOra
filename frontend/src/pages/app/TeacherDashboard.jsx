@@ -14,7 +14,7 @@
     ChevronLeft, ChevronRight, FileText, Eye, Clock,
     CheckCircle2, X, Calendar, Upload, BookOpen,
     ClipboardList, BarChart3, ThumbsUp, ThumbsDown,
-    Paperclip, RefreshCw, XCircle, ArrowRight,
+    Paperclip, RefreshCw, XCircle, ArrowRight, Trash2
     } from 'lucide-react'
     import { useToday }       from '../../hooks/useHolidays.js'
     import { useCourseOverview, useStudentRanking, useStudentGroups, useOutliers } from '../../hooks/useAnalytics.js'
@@ -215,7 +215,7 @@
     }
 
 
-    // ============================================================================
+// ============================================================================
 // Submission Preview Modal
 // Place ABOVE SubmissionsModal()
 // ============================================================================
@@ -677,6 +677,18 @@ function SubmissionPreviewModal({
     const { data:groups,  loading:grL, error:grErr } = useStudentGroups()
     const { data:outliers,loading:olL, error:olErr  } = useOutliers()
 
+    const [deleteTarget, setDeleteTarget] = useState(null);
+    const [deletingId, setDeletingId] = useState(null); // tracking loading indicators
+
+    const cancelDelete = () => setDeleteTarget(null);
+    const confirmDelete = async () => {
+        if (!deleteTarget) return;
+        setDeletingId(deleteTarget.id);
+        await handleDeleteAssignment(deleteTarget.id);
+        setDeletingId(null);
+        setDeleteTarget(null);
+    };
+
     const loadData = useCallback(async () => {
         setLoadingAssign(true)
         try {
@@ -764,131 +776,234 @@ function SubmissionPreviewModal({
             <ACard label="Rejected"          value={totalRejected}       icon={XCircle}       color="#e05252"/>
         </div>
 
-        {/* Assignments grouped by course (side-by-side, scrollable) + Calendar */}
-        <div className="white-card overflow-hidden">
+        {/* Main Layout Container: Responsive wrapper layout */}
+        <div style={{ display: 'flex', gap: 16, alignItems: 'flex-start' }} className="courses-calendar-row">
             <style>{`
-                .assignment-columns-scroll{scrollbar-width:thin;scrollbar-color:#d8d0c4 transparent;}
-                .assignment-columns-scroll::-webkit-scrollbar{height:8px;width:8px;}
-                .assignment-columns-scroll::-webkit-scrollbar-thumb{background:#d8d0c4;border-radius:99px;}
-                .assignment-columns-scroll::-webkit-scrollbar-track{background:transparent;}
-            `}</style>
+            /* Custom Scrollbars */
+            .assignment-columns-scroll { scrollbar-width: thin; scrollbar-color: #d8d0c4 transparent; }
+            .assignment-columns-scroll::-webkit-scrollbar { height: 8px; width: 8px; }
+            .assignment-columns-scroll::-webkit-scrollbar-thumb { background: #d8d0c4; border-radius: 99px; }
+            .assignment-columns-scroll::-webkit-scrollbar-track { background: transparent; }
 
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid #f0ece4', gap:10, flexWrap:'wrap' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <ClipboardList size={14} style={{ color:'#3b6fd4' }}/>
-                <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#1a1f35', margin:0 }}>Assignments</h3>
-                <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99 }}>{assignments.length}</span>
-            </div>
-            <div style={{ display:'flex', gap:8 }}>
-                <button onClick={loadData} style={{ background:'none', border:'1px solid #e2dbd0', borderRadius:8, padding:'6px 10px', cursor:'pointer', color:'#6a6052', display:'flex', alignItems:'center', gap:5, fontSize:12 }}>
-                <RefreshCw size={12}/>
-                </button>
-                <button onClick={() => setShowNewModal(true)} className="btn-primary" style={{ padding:'7px 13px', fontSize:12 }}>
-                <Plus size={13}/> New Assignment
-                </button>
-            </div>
-            </div>
+            /* Responsive Layout Engine */
+            .courses-calendar-row {
+                flex-direction: row;
+            }
+            .courses-grid-container {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                width: 100%;
+            }
+            .calendar-wrapper {
+                flex: 0 0 260px;
+                width: 260px;
+            }
 
-            {loadingAssign ? (
-            <div style={{ padding:'14px 18px' }}><LoadingBlock/></div>
-            ) : assignments.length === 0 ? (
-            <div style={{ textAlign:'center', padding:'32px 20px' }}>
-                <ClipboardList size={24} style={{ color:'#d4cec6', margin:'0 auto 10px', display:'block' }}/>
-                <p style={{ fontSize:13, color:'#b0a898', margin:'0 0 14px' }}>No assignments yet. Create your first one!</p>
-                <button onClick={() => setShowNewModal(true)} className="btn-primary"><Plus size={13}/> New Assignment</button>
-            </div>
-            ) : (
-            <div className="assignment-columns-scroll" style={{ display:'flex', gap:14, overflowX:'auto', padding:'14px 18px', alignItems:'stretch' }}>
-                {grouped.map(({ course, items }) => (
-                <div key={course.id} style={{ flex:'0 0 300px', width:300, background:'#faf8f5', border:'1px solid #ece7df', borderRadius:12, overflow:'hidden', display:'flex', flexDirection:'column' }}>
-                    {/* Course column header */}
-                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 12px', borderBottom:'2px solid #f0ece4', background:'#fff' }}>
-                    <BookOpen size={13} style={{ color:'#3b6fd4', flexShrink:0 }}/>
-                    <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12.5, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                        {course.title || course.name}
-                    </h4>
-                    <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99, marginLeft:'auto', flexShrink:0 }}>
-                        {items.length}
-                    </span>
+            /* Mobile & Tablet Breaks */
+            @media (max-width: 900px) {
+                .courses-calendar-row {
+                    flex-direction: column; /* Fixed: Keeps Courses first, Calendar second */
+                    align-items: stretch !important;
+                }
+                .calendar-wrapper {
+                    width: 100% !important;
+                    flex: none !important;
+                }
+                .courses-grid-container {
+                    grid-template-columns: 1fr; /* Stacks column cards comfortably on small screens */
+                }
+            }
+        `}</style>
+
+            {/* Courses Main Board Card (Spans across all remaining whitespace) */}
+            <div className="white-card overflow-hidden" style={{ flex: '1 1 auto', minWidth: 0, width: '100%' }}>
+                {/* Card Header */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderBottom: '1px solid #f0ece4', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <BookOpen size={14} style={{ color: '#3b6fd4' }} />
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: '#1a1f35', margin: 0 }}>Courses</h3>
+                        <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 7px', background: '#eff3fd', color: '#1e40af', borderRadius: 99 }}>
+                            {courses.length}
+                        </span>
                     </div>
-
-                    {/* Assignments under this course */}
-                    <div style={{ display:'flex', flexDirection:'column', gap:8, padding:10, maxHeight:440, overflowY:'auto' }}>
-                    {items.map(a => {
-                        const due    = a.due_date
-                        const dDays  = due ? Math.ceil((new Date(due)-new Date()) / 86400000) : null
-                        const isLate = dDays !== null && dDays < 0
-                        return (
-                        <div key={a.id} style={{ padding:'11px 12px', background:'#fff', borderRadius:10, border:'1px solid #ece7df' }}>
-                            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5, flexWrap:'wrap' }}>
-                            <p style={{ fontSize:12.5, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%' }}>
-                                {a.title}
-                            </p>
-                            </div>
-                            {a.file && (
-                            <span style={{ fontSize:10, color:'#6d4fc2', background:'#f0e8ff', padding:'1px 6px', borderRadius:99, display:'inline-flex', alignItems:'center', gap:3, marginBottom:6 }}>
-                                <Paperclip size={9}/> File attached
-                            </span>
-                            )}
-                            {due && (
-                            <span style={{ fontSize:10, color: isLate?'#c0392b':'#8a7e6e', display:'flex', alignItems:'center', gap:3, marginBottom:8 }}>
-                                <Calendar size={9}/> {due}{isLate && ' (past)'}
-                            </span>
-                            )}
-                            {/* Same status pills as the Assignments page, for consistency */}
-                            <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
-                            <span style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#eff3fd', color:'#1e40af' }}>
-                                {a.pending_review_count ?? 0} to review
-                            </span>
-                            <span style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#e0f7ee', color:'#3cb87a' }}>
-                                {a.approved_count ?? 0} approved
-                            </span>
-                            {a.rejected_count > 0 && (
-                                <span style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#fde8e8', color:'#c0392b' }}>
-                                {a.rejected_count} rejected
-                                </span>
-                            )}
-                            </div>
-                            <div style={{ display:'flex', gap:6 }}>
-                            <button
-                                onClick={() => navigate(`/app/assignments/${a.id}/submissions`)}
-                                style={{
-                                    flex:1,
-                                    display:'flex',
-                                    alignItems:'center',
-                                    justifyContent:'center',
-                                    gap:4,
-                                    padding:'5px 9px',
-                                    fontSize:11,
-                                    fontWeight:600,
-                                    background:'#eff3fd',
-                                    color:'#1e40af',
-                                    border:'none',
-                                    borderRadius:7,
-                                    cursor:'pointer'
-                                }}
-                            >
-                                <ClipboardList size={11}/> Submissions
-                            </button>
-                            <button onClick={() => handleDeleteAssignment(a.id)}
-                                style={{ padding:'5px 8px', background:'#fde8e8', color:'#c0392b', border:'none', borderRadius:7, cursor:'pointer', display:'flex', alignItems:'center' }}>
-                                <X size={11}/>
-                            </button>
-                            </div>
-                        </div>
-                        )
-                    })}
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={loadData} style={{ background: 'none', border: '1px solid #e2dbd0', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', color: '#6a6052', display: 'flex', alignItems: 'center', gap: 5, fontSize: 12 }}>
+                            <RefreshCw size={12} />
+                        </button>
                     </div>
                 </div>
-                ))}
 
-                {/* Calendar — last column in the row */}
-                <div style={{ flex:'0 0 260px', width:260 }}>
-                <BSCalWidget/>
-                </div>
+                {/* Dynamic Content Body */}
+                {loadingAssign ? (
+                    <div style={{ padding: '14px 18px' }}><LoadingBlock /></div>
+                ) : assignments.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '32px 20px' }}>
+                        <ClipboardList size={24} style={{ color: '#d4cec6', margin: '0 auto 10px', display: 'block' }} />
+                        <p style={{ fontSize: 13, color: '#b0a898', margin: 0 }}>No assignments yet.</p>
+                    </div>
+                ) : (
+                    /* Auto-fit container layout: Stretches edge-to-edge eliminating dead right-side space */
+                    <div className="courses-grid-container assignment-columns-scroll" style={{ gap: 14, padding: '14px 18px', alignItems: 'stretch' }}>
+                        {grouped.map(({ course, items }) => (
+                            <div key={course.id} style={{ background: '#faf8f5', border: '1px solid #ece7df', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
+                                
+                                {/* Course Column Header */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 12px', borderBottom: '2px solid #f0ece4', background: '#fff' }}>
+                                    <BookOpen size={13} style={{ color: '#3b6fd4', flexShrink: 0 }} />
+                                    <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12.5, color: '#1a1f35', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                        {course.title || course.name}
+                                    </h4>
+                                    <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 7px', background: '#eff3fd', color: '#1e40af', borderRadius: 99, marginLeft: 'auto', flexShrink: 0 }}>
+                                        {items.length}
+                                    </span>
+                                </div>
+
+                                {/* Assignments List Container */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, maxHeight: 440, overflowY: 'auto' }}>
+                                    {items.map(a => {
+                                        const due = a.due_date;
+                                        const dDays = due ? Math.ceil((new Date(due) - new Date()) / 86400000) : null;
+                                        const isLate = dDays !== null && dDays < 0;
+                                        const subCount = a.submission_count || 0;
+
+                                        return (
+                                            <div key={a.id} style={{ padding: '11px 12px', background: '#fff', borderRadius: 10, border: '1px solid #ece7df' }}>
+                                                {/* Title */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+                                                    <p style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1f35', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                                                        {a.title}
+                                                    </p>
+                                                </div>
+
+                                                {/* File Badge */}
+                                                {a.file && (
+                                                    <span style={{ fontSize: 10, color: '#6d4fc2', background: '#f0e8ff', padding: '1px 6px', borderRadius: 99, display: 'inline-flex', alignItems: 'center', gap: 3, marginBottom: 6 }}>
+                                                        <Paperclip size={9} /> File attached
+                                                    </span>
+                                                )}
+
+                                                {/* Combined Metadata */}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
+                                                    {due && (
+                                                        <span style={{ fontSize: 10, color: isLate ? '#c0392b' : '#8a7e6e', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                            <Calendar size={9} /> {due}{isLate && ' (past)'}
+                                                        </span>
+                                                    )}
+                                                    {a.submission_time && (
+                                                        <span style={{ fontSize: 10, color: '#8a7e6e', display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                            <Clock size={9} /> by {a.submission_time}
+                                                        </span>
+                                                    )}
+                                                    <span style={{ fontSize: 10, color: '#3b6fd4', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 3 }}>
+                                                        <Users size={9} /> {subCount} Student{subCount !== 1 ? 's' : ''} Submitted
+                                                    </span>
+                                                </div>
+
+                                                {/* Review Status Pills */}
+                                                <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+                                                    <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: '#eff3fd', color: '#1e40af' }}>
+                                                        {a.pending_review_count ?? 0} to review
+                                                    </span>
+                                                    <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: '#e0f7ee', color: '#3cb87a' }}>
+                                                        {a.approved_count ?? 0} approved
+                                                    </span>
+                                                    {a.rejected_count > 0 && (
+                                                        <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: '#fde8e8', color: '#c0392b' }}>
+                                                            {a.rejected_count} rejected
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Card Action Buttons */}
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <button
+                                                        onClick={() => {
+                                                            // Direct Router Navigation instead of setting a modal state pop-up
+                                                            navigate(`/app/assignments/${a.id}/submissions`);
+                                                        }}
+                                                        style={{
+                                                            flex: 1,
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justify: 'center',
+                                                            gap: 4,
+                                                            padding: '5px 9px',
+                                                            fontSize: 11,
+                                                            fontWeight: 600,
+                                                            background: '#eff3fd',
+                                                            color: '#1e40af',
+                                                            border: 'none',
+                                                            borderRadius: 7,
+                                                            cursor: 'pointer'
+                                                        }}
+                                                    >
+                                                        <ClipboardList size={11} /> Submissions
+                                                    </button>
+                                                    {/* Delete Icon Trigger */}
+                                                    <button onClick={() => setDeleteTarget(a)}
+                                                        style={{ padding: '5px 8px', background: '#fde8e8', color: '#c0392b', border: 'none', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                                                        <X size={11} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
-            )}
+
+            {/* Calendar Column Card */}
+            <div className="calendar-wrapper">
+                <BSCalWidget />
+            </div>
         </div>
+        {/* Custom Delete Confirmation Modal Overlay */}
+        {deleteTarget && (
+            <div
+                onClick={cancelDelete}
+                style={{
+                    position: 'fixed', inset: 0, background: 'rgba(26,31,53,0.45)', backdropFilter: 'blur(2px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: 20,
+                }}
+            >
+                <div
+                    onClick={e => e.stopPropagation()}
+                    className="white-card anim-fade-in"
+                    style={{ width: '100%', maxWidth: 400, padding: '26px 26px 22px', boxShadow: '0 12px 40px rgba(26,31,53,0.25)' }}
+                >
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', background: '#fbeceb', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14 }} aria-hidden="true">
+                        <Trash2 size={19} style={{ color: '#c0392b' }} />
+                    </div>
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#1a1f35', margin: '0 0 8px' }}>
+                        Delete assignment?
+                    </h3>
+                    <p style={{ fontSize: 13, color: '#7a7060', lineHeight: 1.55, margin: '0 0 22px' }}>
+                        This will permanently delete <strong style={{ color: '#1a1f35' }}>"{deleteTarget.title}"</strong>. This action cannot be undone.
+                    </p>
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                        <button
+                            onClick={cancelDelete}
+                            disabled={!!deletingId}
+                            className="btn-primary"
+                            style={{ background: '#f0ece5', color: '#7a7060', cursor: deletingId ? 'default' : 'pointer', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600 }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            disabled={!!deletingId}
+                            className="btn-primary"
+                            style={{ background: '#c0392b', color: '#fff', cursor: deletingId ? 'default' : 'pointer', opacity: deletingId ? 0.75 : 1, border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 12, fontWeight: 600 }}
+                        >
+                            {deletingId ? 'Deleting…' : 'Delete Assignment'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Analytics row */}
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }} className="grid-2">
