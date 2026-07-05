@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Course, Enrollment
 from users.serializers import UserSerializer
+from users.models import User
 
 
 class CourseSerializer(serializers.ModelSerializer):
@@ -13,14 +14,14 @@ class CourseSerializer(serializers.ModelSerializer):
 
 
 class CourseWriteSerializer(serializers.ModelSerializer):
-    # Used for creating/updating — teacher is set from request, not user input
+    teacher_id = serializers.PrimaryKeyRelatedField(
+        source='teacher', queryset=User.objects.filter(role='teacher'),
+        required=False, allow_null=True,
+    )
+
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'start_date', 'end_date']
-
-    def create(self, validated_data):
-        validated_data['teacher'] = self.context['request'].user
-        return super().create(validated_data)
+        fields = ['id', 'title', 'description', 'start_date', 'end_date', 'teacher_id']
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):
