@@ -17,6 +17,8 @@ import StudentDashboard         from '../pages/app/StudentDashboard.jsx'
 import TeacherDashboard         from '../pages/app/TeacherDashboard.jsx'
 import AdminDashboard           from '../pages/app/AdminDashboard.jsx'
 import AssignmentManagement     from '../pages/app/AssignmentManagement.jsx'
+import AssignmentSubmissions    from '../pages/app/AssignmentSubmissions.jsx'
+import SubmissionsInboxPage     from '../pages/app/SubmissionsInboxPage.jsx'
 import CalendarPage             from '../pages/app/CalendarPage.jsx'
 import AnalyticsPage            from '../pages/app/AnalyticsPage.jsx'
 import CoursesPage              from '../pages/app/CoursesPage.jsx'
@@ -91,8 +93,11 @@ export default function AppRoutes() {
                 <Route path="teacher" element={
                     <ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard/></ProtectedRoute>
                 }/>
+                {/* Cross-course "To Review" inbox — every submission from every
+                    assignment in one place, so a teacher doesn't have to open
+                    each assignment individually. */}
                 <Route path="submissions" element={
-                    <ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard initialView="submissions"/></ProtectedRoute>
+                    <ProtectedRoute allowedRoles={['teacher']}><SubmissionsInboxPage/></ProtectedRoute>
                 }/>
 
                 <Route path="dashboard" element={
@@ -107,6 +112,9 @@ export default function AppRoutes() {
                 }/>
                 <Route path="assignments" element={
                     <ProtectedRoute allowedRoles={['student','teacher']}><AssignmentManagement/></ProtectedRoute>
+                }/>
+                <Route path="assignments/:id/submissions" element={
+                    <ProtectedRoute allowedRoles={['teacher']}><AssignmentSubmissions/></ProtectedRoute>
                 }/>
                 <Route path="calendar" element={
                     <ProtectedRoute allowedRoles={['student','teacher']}><CalendarPage/></ProtectedRoute>

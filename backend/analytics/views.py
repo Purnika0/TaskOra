@@ -190,13 +190,17 @@ class TeacherStudentRankingView(APIView):
             total     = tasks.count()
             completed = tasks.filter(status=Task.Status.COMPLETED).count()
             submitted = tasks.filter(status=Task.Status.SUBMITTED).count()
+            pending   = tasks.filter(status=Task.Status.PENDING).count()
             overdue   = tasks.filter(status=Task.Status.OVERDUE).count()
+            rejected  = tasks.filter(status=Task.Status.REJECTED).count()
 
             data.append({
                 "student":         student.full_name or student.username,
                 "completed":       completed,
                 "submitted":       submitted,
+                "pending":         pending,
                 "overdue":         overdue,
+                "rejected":        rejected,
                 "total":           total,
                 "completion_rate": round((completed / total) * 100, 1) if total else 0,
             })

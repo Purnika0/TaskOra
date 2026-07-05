@@ -13,5 +13,6 @@ urlpatterns = [
     path('<int:pk>/submit/', views.StudentSubmitTaskView.as_view(),         name='task-submit'),
     path('<int:pk>/review/', views.TeacherReviewTaskView.as_view(),         name='task-review'),
     path('assignment/<int:assignment_pk>/submissions/', views.TeacherAssignmentTaskListView.as_view(), name='assignment-submissions'),
+    path('teacher/submissions/', views.TeacherSubmissionsInboxView.as_view(), name='teacher-submissions-inbox'),
     path('mark-overdue/', views.MarkOverdueTasksView.as_view(),          name='mark-overdue'),
 ]

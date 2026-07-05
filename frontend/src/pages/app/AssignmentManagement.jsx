@@ -1,11 +1,23 @@
-import React, { useState, useMemo } from 'react'
-import { Search, LayoutGrid, List, RefreshCw, Upload, X, FileText, Send, MessageSquare, Paperclip, ChevronDown } from 'lucide-react'
+import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import {
+    Search, LayoutGrid, List, RefreshCw, Upload, X, FileText, Send, MessageSquare,
+    Paperclip, ChevronDown, Plus, Pencil, Trash2, ClipboardList, Users, Calendar,
+} from 'lucide-react'
 import { useTasks, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { useAuth }         from '../../hooks/useAuth.js'
 import { useToast }        from '../../context/ToastContext.jsx'
+import tasksService        from '../../services/tasks.service.js'
+import coursesService      from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import { getTaskTitle, getTaskDueDate, daysUntil, apiError } from '../../utils/helpers.js'
+
+// Guessed choice values for Assignment.task_type / priority — adjust these
+// to match whatever choices actually exist on the Django model if the
+// create/edit form throws a validation error for these fields.
+const TASK_TYPES = ['assignment', 'quiz', 'project', 'exam', 'lab']
+const PRIORITIES = ['low', 'medium', 'high']
 
 const TABS = [
     { key:'all',       label:'All'       },
@@ -134,10 +146,162 @@ function SubmitModal({ task, onClose, onSubmitted }) {
     )
 }
 
-export default function AssignmentManagement() {
+// ── Create / Edit Assignment modal (teacher-only) ───────────────────────────
+function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
+    const isEdit = Boolean(assignment)
+    const toast  = useToast()
+    const [form, setForm] = useState({
+        title:           assignment?.title || '',
+        description:     assignment?.description || '',
+        course:          assignment?.course ?? (courses[0]?.id ?? ''),
+        due_date:        assignment?.due_date || '',
+        task_type:       assignment?.task_type || TASK_TYPES[0],
+        priority:        assignment?.priority || PRIORITIES[1],
+        estimated_hours: assignment?.estimated_hours ?? 1,
+    })
+    const [saving, setSaving] = useState(false)
+    const [error,  setError]  = useState('')
+
+    function update(field, value) { setForm(p => ({ ...p, [field]: value })) }
+
+    async function handleSubmit() {
+        if (!form.title.trim())  { setError('Title is required.');  return }
+        if (!form.course)        { setError('Please select a course.'); return }
+        if (!form.due_date)      { setError('Due date is required.'); return }
+        setSaving(true)
+        setError('')
+        try {
+            const payload = {
+                title:           form.title.trim(),
+                description:     form.description.trim(),
+                course:          Number(form.course),
+                due_date:        form.due_date,
+                task_type:       form.task_type,
+                priority:        form.priority,
+                estimated_hours: form.estimated_hours === '' ? null : Number(form.estimated_hours),
+            }
+            const saved = isEdit
+                ? await tasksService.updateAssignment(assignment.id, payload)
+                : await tasksService.createAssignment(payload)
+            toast.success(isEdit ? 'Assignment updated' : 'Assignment created')
+            onSaved(saved)
+        } catch (err) {
+            setError(apiError(err))
+        } finally { setSaving(false) }
+    }
+
+    return (
+        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:16 }}
+            className="anim-fade-in" onClick={onClose}>
+            <div style={{ background:'var(--color-surface)', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'0 16px 48px rgba(0,0,0,0.22)', overflow:'hidden' }}
+                className="anim-scale-in" onClick={e => e.stopPropagation()}>
+
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid var(--color-border)' }}>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'var(--color-text)', margin:0 }}>
+                        {isEdit ? 'Edit Assignment' : 'New Assignment'}
+                    </h3>
+                    <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, color:'var(--color-text-secondary)', display:'flex' }}><X size={16}/></button>
+                </div>
+
+                <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:12, maxHeight:'65vh', overflowY:'auto' }}>
+                    {error && (
+                        <p style={{ fontSize:12, color:'var(--color-red)', background:'var(--color-red-light)', padding:'8px 12px', borderRadius:8, margin:0 }}>{error}</p>
+                    )}
+
+                    <div>
+                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Title *</label>
+                        <input value={form.title} onChange={e => update('title', e.target.value)} placeholder="Assignment title"
+                            style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'9px 12px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
+                    </div>
+
+                    <div>
+                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Description</label>
+                        <textarea value={form.description} onChange={e => update('description', e.target.value)} rows={3} placeholder="What should students do?"
+                            style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'9px 12px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', resize:'vertical', boxSizing:'border-box' }}/>
+                    </div>
+
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                        <div>
+                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Course *</label>
+                            <select value={form.course} onChange={e => update('course', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
+                                {courses.length === 0 && <option value="">No courses yet</option>}
+                                {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Due date *</label>
+                            <input type="date" value={form.due_date} onChange={e => update('due_date', e.target.value)}
+                                style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'8px 10px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
+                        </div>
+                    </div>
+
+                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+                        <div>
+                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Type</label>
+                            <select value={form.task_type} onChange={e => update('task_type', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
+                                {TASK_TYPES.map(t => <option key={t} value={t}>{t[0].toUpperCase()+t.slice(1)}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Priority</label>
+                            <select value={form.priority} onChange={e => update('priority', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
+                                {PRIORITIES.map(p => <option key={p} value={p}>{p[0].toUpperCase()+p.slice(1)}</option>)}
+                            </select>
+                        </div>
+                        <div>
+                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Est. hours</label>
+                            <input type="number" min="0" step="0.5" value={form.estimated_hours} onChange={e => update('estimated_hours', e.target.value)}
+                                style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'8px 10px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
+                    <button onClick={onClose} className="btn-secondary">Cancel</button>
+                    <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
+                        {saving ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Assignment')}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ── Delete Assignment confirm modal (teacher-only) ──────────────────────────
+function DeleteAssignmentModal({ assignment, deleting, onCancel, onConfirm }) {
+    return (
+        <div onClick={deleting ? undefined : onCancel}
+            style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+            className="anim-fade-in">
+            <div onClick={e => e.stopPropagation()} className="anim-scale-in"
+                style={{ background:'var(--color-surface)', borderRadius:16, width:'100%', maxWidth:400, padding:'24px 24px 20px', boxShadow:'0 16px 48px rgba(0,0,0,0.22)' }}>
+                <div style={{ width:44, height:44, borderRadius:'50%', background:'var(--color-red-light)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
+                    <Trash2 size={19} style={{ color:'var(--color-red)' }}/>
+                </div>
+                <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'var(--color-text)', margin:'0 0 8px' }}>
+                    Delete assignment?
+                </h3>
+                <p style={{ fontSize:13, color:'var(--color-text-secondary)', lineHeight:1.55, margin:'0 0 22px' }}>
+                    This will permanently delete <strong style={{ color:'var(--color-text)' }}>"{assignment.title}"</strong> and every student's submission for it. This action cannot be undone.
+                </p>
+                <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                    <button onClick={onCancel} disabled={deleting} className="btn-secondary">Cancel</button>
+                    <button onClick={onConfirm} disabled={deleting} className="btn-primary"
+                        style={{ background:'var(--color-red)', opacity:deleting?0.75:1 }}>
+                        {deleting ? 'Deleting…' : 'Delete Assignment'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+function StudentAssignments() {
     const { tasks, loading, error, stats, refetch, submitAssignment, setTasks } = useTasks()
-    const { user } = useAuth()
-    const isStudent = user?.role === 'student'
+    const isStudent = true // this component only ever renders for students; kept so existing JSX below is untouched
+
+    const [searchParams] = useSearchParams()
+    const courseFilter = searchParams.get('course')
 
     const [activeTab, setActiveTab]   = useState('all')
     const [search,    setSearch]      = useState('')
@@ -149,6 +313,8 @@ export default function AssignmentManagement() {
     const filtered = useMemo(() => {
         let list = [...tasks]
         if (activeTab !== 'all') list = list.filter(t => t.status === activeTab)
+
+        if (courseFilter) list = list.filter(t => String(t.assignment?.course) === String(courseFilter))
 
         if (search.trim()) {
             const q = search.toLowerCase()
@@ -162,7 +328,7 @@ export default function AssignmentManagement() {
         if (sortBy === 'title')  list.sort((a,b) => getTaskTitle(a).localeCompare(getTaskTitle(b)))
         if (sortBy === 'status') list.sort((a,b) => (a.status||'').localeCompare(b.status||''))
         return list
-    }, [tasks, activeTab, search, sortBy])
+    }, [tasks, activeTab, search, sortBy, courseFilter])
 
     function count(key) {
         if (key === 'all') return tasks.length
@@ -486,4 +652,271 @@ export default function AssignmentManagement() {
             )}
         </div>
     )
+}
+
+// ── Teacher: assignments list, filters, CRUD ────────────────────────────────
+function TeacherAssignments() {
+    const toast    = useToast()
+    const navigate = useNavigate()
+    const [searchParams, setSearchParams] = useSearchParams()
+
+    const [assignments,   setAssignments]   = useState([])
+    const [courses,       setCourses]       = useState([])
+    const [studentCounts, setStudentCounts] = useState({}) // courseId -> enrolled count
+    const [loading, setLoading] = useState(true)
+    const [error,   setError]   = useState(null)
+
+    const [search,       setSearch]       = useState('')
+    const [courseFilter, setCourseFilter] = useState(searchParams.get('course') || 'all')
+    const [dueFilter,    setDueFilter]    = useState('all') // all | overdue | today | week | upcoming
+    const [sortBy,       setSortBy]       = useState('due')
+
+    const [showForm,           setShowForm]           = useState(false)
+    const [editingAssignment,  setEditingAssignment]  = useState(null)
+    const [deleteTarget,       setDeleteTarget]       = useState(null)
+    const [deletingId,         setDeletingId]         = useState(null)
+
+    const load = useCallback(async () => {
+        setLoading(true); setError(null)
+        try {
+            const [a, c] = await Promise.all([
+                tasksService.getAssignments(),
+                coursesService.list(),
+            ])
+            setAssignments(Array.isArray(a) ? a : [])
+            setCourses(Array.isArray(c) ? c : [])
+        } catch (err) {
+            setError(apiError(err))
+        } finally { setLoading(false) }
+    }, [])
+
+    useEffect(() => { load() }, [load])
+
+    // Fetch enrolled-student counts per course once courses are loaded (one call per course, not per assignment)
+    useEffect(() => {
+        if (courses.length === 0) return
+        let cancelled = false
+        Promise.all(courses.map(c =>
+            coursesService.getStudents(c.id)
+                .then(list => [c.id, Array.isArray(list) ? list.length : null])
+                .catch(() => [c.id, null])
+        )).then(pairs => { if (!cancelled) setStudentCounts(Object.fromEntries(pairs)) })
+        return () => { cancelled = true }
+    }, [courses])
+
+    // Keep the course filter in sync if the URL's ?course= changes (e.g. navigated here again from CoursesPage)
+    useEffect(() => {
+        const fromUrl = searchParams.get('course')
+        if (fromUrl && fromUrl !== courseFilter) setCourseFilter(fromUrl)
+    }, [searchParams]) // eslint-disable-line react-hooks/exhaustive-deps
+
+    function handleCourseFilterChange(value) {
+        setCourseFilter(value)
+        const next = new URLSearchParams(searchParams)
+        if (value === 'all') next.delete('course'); else next.set('course', value)
+        setSearchParams(next, { replace:true })
+    }
+
+    const filtered = useMemo(() => {
+        let list = [...assignments]
+        if (courseFilter !== 'all') list = list.filter(a => String(a.course) === String(courseFilter))
+        if (search.trim()) {
+            const q = search.toLowerCase()
+            list = list.filter(a => (a.title||'').toLowerCase().includes(q))
+        }
+        if (dueFilter !== 'all') {
+            list = list.filter(a => {
+                const d = daysUntil(a.due_date)
+                if (d === null) return false
+                if (dueFilter === 'overdue')  return d < 0
+                if (dueFilter === 'today')    return d === 0
+                if (dueFilter === 'week')     return d >= 0 && d <= 7
+                if (dueFilter === 'upcoming') return d > 7
+                return true
+            })
+        }
+        if (sortBy === 'due')    list.sort((a,b) => (a.due_date||'9').localeCompare(b.due_date||'9'))
+        if (sortBy === 'title')  list.sort((a,b) => (a.title||'').localeCompare(b.title||''))
+        if (sortBy === 'course') list.sort((a,b) => (a.course_name||'').localeCompare(b.course_name||''))
+        return list
+    }, [assignments, courseFilter, search, dueFilter, sortBy])
+
+    function openCreate() { setEditingAssignment(null); setShowForm(true) }
+    function openEdit(a)  { setEditingAssignment(a); setShowForm(true) }
+    function closeForm()  { setShowForm(false); setEditingAssignment(null) }
+
+    function handleSaved(saved) {
+        setAssignments(prev => {
+            const exists = prev.some(a => a.id === saved.id)
+            return exists ? prev.map(a => a.id === saved.id ? saved : a) : [saved, ...prev]
+        })
+        closeForm()
+    }
+
+    async function confirmDelete() {
+        if (!deleteTarget) return
+        setDeletingId(deleteTarget.id)
+        try {
+            await tasksService.deleteAssignment(deleteTarget.id)
+            setAssignments(prev => prev.filter(a => a.id !== deleteTarget.id))
+            toast.success('Assignment deleted')
+            setDeleteTarget(null)
+        } catch (err) {
+            toast.error(apiError(err))
+        } finally { setDeletingId(null) }
+    }
+
+    return (
+        <div style={{ display:'flex', flexDirection:'column', gap:16 }} className="anim-fade-in">
+            <style>{`
+                .am-filter { background:var(--color-surface); border:1px solid var(--color-border); border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+            `}</style>
+
+            {/* Header */}
+            <div className="page-header">
+                <div>
+                    <h2 className="page-title">Assignments</h2>
+                    <p className="page-subtitle">
+                        {assignments.length} assignment{assignments.length!==1?'s':''} across {courses.length} course{courses.length!==1?'s':''}
+                    </p>
+                </div>
+                <button onClick={openCreate} className="btn-primary">
+                    <Plus size={14} aria-hidden="true"/> Create Assignment
+                </button>
+            </div>
+
+            {/* Filter bar */}
+            <div className="am-filter">
+                <div style={{ position:'relative', flex:1, minWidth:180 }}>
+                    <Search size={12} style={{ position:'absolute', left:9, top:'50%', transform:'translateY(-50%)', color:'var(--color-text-placeholder)', pointerEvents:'none' }}/>
+                    <input type="search" value={search} onChange={e => setSearch(e.target.value)}
+                        placeholder="Search by title…"
+                        style={{ ...selStyle, paddingLeft:28, width:'100%', boxSizing:'border-box' }}/>
+                </div>
+                <select value={courseFilter} onChange={e => handleCourseFilterChange(e.target.value)} style={selStyle}>
+                    <option value="all">All Courses</option>
+                    {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
+                </select>
+                <select value={dueFilter} onChange={e => setDueFilter(e.target.value)} style={selStyle}>
+                    <option value="all">Any Due Date</option>
+                    <option value="overdue">Overdue</option>
+                    <option value="today">Due Today</option>
+                    <option value="week">Due This Week</option>
+                    <option value="upcoming">Upcoming</option>
+                </select>
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selStyle}>
+                    <option value="due">Sort by Due Date</option>
+                    <option value="title">Sort by Title</option>
+                    <option value="course">Sort by Course</option>
+                </select>
+            </div>
+
+            {loading && <div className="white-card" style={{ padding:28 }}><LoadingBlock/></div>}
+            {error   && <ErrorBlock message={error} onRetry={load}/>}
+
+            {!loading && !error && filtered.length === 0 && (
+                <div className="white-card" style={{ padding:'44px 24px', textAlign:'center' }}>
+                    <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'var(--color-text)', margin:'0 0 5px' }}>
+                        No assignments found
+                    </p>
+                    <p style={{ fontSize:12, color:'var(--color-text-placeholder)' }}>
+                        {assignments.length === 0 ? 'Create your first assignment above.' : 'Try adjusting your filters.'}
+                    </p>
+                </div>
+            )}
+
+            {!loading && !error && filtered.length > 0 && (
+                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(300px,1fr))', gap:12 }}>
+                    {filtered.map(a => {
+                        const d = daysUntil(a.due_date)
+                        const urgent = d !== null && d < 0
+                        const enrolledCount = studentCounts[a.course]
+
+                        return (
+                            <div key={a.id} className="white-card" style={{ padding:'18px 20px' }}>
+                                <p style={{ fontSize:14, fontWeight:700, color:'var(--color-text)', margin:'0 0 4px', lineHeight:1.3 }}>
+                                    {a.title}
+                                </p>
+                                <p style={{ fontSize:12, color:'var(--color-text-secondary)', margin:'0 0 8px' }}>
+                                    {a.course_name}
+                                </p>
+
+                                <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:10 }}>
+                                    <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                                        <Calendar size={11} style={{ color:'var(--color-text-placeholder)' }} aria-hidden="true"/>
+                                        <span style={{ fontSize:11.5, color: urgent ? 'var(--color-red)' : 'var(--color-text-secondary)', fontWeight: urgent?600:400 }}>
+                                            Due {a.due_date || '—'} {urgent && `(${Math.abs(d)}d late)`}
+                                        </span>
+                                    </div>
+                                    {enrolledCount != null && (
+                                        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                                            <Users size={11} style={{ color:'var(--color-text-placeholder)' }} aria-hidden="true"/>
+                                            <span style={{ fontSize:11.5, color:'var(--color-text-secondary)' }}>
+                                                {enrolledCount} student{enrolledCount!==1?'s':''} enrolled
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
+                                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:'var(--color-primary-light)', color:'var(--color-primary)' }}>
+                                        {a.pending_review_count ?? 0} to review
+                                    </span>
+                                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:'#e0f7ee', color:'#3cb87a' }}>
+                                        {a.approved_count ?? 0} approved
+                                    </span>
+                                    {a.rejected_count > 0 && (
+                                        <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:'var(--color-red-light)', color:'var(--color-red)' }}>
+                                            {a.rejected_count} rejected
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div style={{ display:'flex', gap:8, paddingTop:12, borderTop:'1px solid var(--color-border)' }}>
+                                    <button onClick={() => navigate(`/app/assignments/${a.id}/submissions`)}
+                                        style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', background:'var(--color-primary-light)', border:'none', borderRadius:7, padding:'7px 8px', cursor:'pointer' }}>
+                                        <ClipboardList size={12} aria-hidden="true"/> Submissions
+                                    </button>
+                                    <button onClick={() => openEdit(a)} aria-label={`Edit ${a.title}`}
+                                        style={{ display:'flex', alignItems:'center', justifyContent:'center', color:'var(--color-text-secondary)', background:'var(--color-surface-subtle)', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}>
+                                        <Pencil size={12} aria-hidden="true"/>
+                                    </button>
+                                    <button onClick={() => setDeleteTarget(a)} aria-label={`Delete ${a.title}`}
+                                        style={{ display:'flex', alignItems:'center', justifyContent:'center', color:'var(--color-red)', background:'var(--color-red-light)', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}>
+                                        <Trash2 size={12} aria-hidden="true"/>
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
+            <DashboardFooter/>
+
+            {showForm && (
+                <AssignmentFormModal
+                    assignment={editingAssignment}
+                    courses={courses}
+                    onClose={closeForm}
+                    onSaved={handleSaved}
+                />
+            )}
+
+            {deleteTarget && (
+                <DeleteAssignmentModal
+                    assignment={deleteTarget}
+                    deleting={deletingId === deleteTarget.id}
+                    onCancel={() => !deletingId && setDeleteTarget(null)}
+                    onConfirm={confirmDelete}
+                />
+            )}
+        </div>
+    )
+}
+
+export default function AssignmentManagement() {
+    const { user } = useAuth()
+    const isTeacher = user?.role === 'teacher'
+    return isTeacher ? <TeacherAssignments/> : <StudentAssignments/>
 }

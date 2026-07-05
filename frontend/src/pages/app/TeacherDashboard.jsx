@@ -764,8 +764,8 @@ function SubmissionPreviewModal({
             <ACard label="Rejected"          value={totalRejected}       icon={XCircle}       color="#e05252"/>
         </div>
 
-        {/* Courses (grouped assignments, side-by-side scrollable) + Calendar, side-by-side */}
-        <div style={{ display:'flex', gap:16, alignItems:'flex-start' }} className="courses-calendar-row">
+        {/* Assignments grouped by course (side-by-side, scrollable) + Calendar */}
+        <div className="white-card overflow-hidden">
             <style>{`
                 .assignment-columns-scroll{scrollbar-width:thin;scrollbar-color:#d8d0c4 transparent;}
                 .assignment-columns-scroll::-webkit-scrollbar{height:8px;width:8px;}
@@ -773,115 +773,121 @@ function SubmissionPreviewModal({
                 .assignment-columns-scroll::-webkit-scrollbar-track{background:transparent;}
             `}</style>
 
-            {/* Courses card */}
-            <div className="white-card overflow-hidden" style={{ flex:'1 1 auto', minWidth:0 }}>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid #f0ece4', gap:10, flexWrap:'wrap' }}>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    <BookOpen size={14} style={{ color:'#3b6fd4' }}/>
-                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#1a1f35', margin:0 }}>Courses</h3>
-                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99 }}>{courses.length}</span>
-                </div>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'13px 18px', borderBottom:'1px solid #f0ece4', gap:10, flexWrap:'wrap' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <ClipboardList size={14} style={{ color:'#3b6fd4' }}/>
+                <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:'#1a1f35', margin:0 }}>Assignments</h3>
+                <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99 }}>{assignments.length}</span>
+            </div>
+            <div style={{ display:'flex', gap:8 }}>
                 <button onClick={loadData} style={{ background:'none', border:'1px solid #e2dbd0', borderRadius:8, padding:'6px 10px', cursor:'pointer', color:'#6a6052', display:'flex', alignItems:'center', gap:5, fontSize:12 }}>
-                    <RefreshCw size={12}/>
+                <RefreshCw size={12}/>
                 </button>
-                </div>
+                <button onClick={() => setShowNewModal(true)} className="btn-primary" style={{ padding:'7px 13px', fontSize:12 }}>
+                <Plus size={13}/> New Assignment
+                </button>
+            </div>
+            </div>
 
-                {loadingAssign ? (
-                <div style={{ padding:'14px 18px' }}><LoadingBlock/></div>
-                ) : assignments.length === 0 ? (
-                <div style={{ textAlign:'center', padding:'32px 20px' }}>
-                    <ClipboardList size={24} style={{ color:'#d4cec6', margin:'0 auto 10px', display:'block' }}/>
-                    <p style={{ fontSize:13, color:'#b0a898', margin:0 }}>No assignments yet. Create your first one!</p>
-                </div>
-                ) : (
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(280px, 1fr))', gap:14, padding:'14px 18px', alignItems:'stretch' }}>
-                    {grouped.map(({ course, items }) => (
-                    <div key={course.id} style={{ minWidth:0, background:'#faf8f5', border:'1px solid #ece7df', borderRadius:12, overflow:'hidden', display:'flex', flexDirection:'column' }}>
-                        {/* Course column header */}
-                        <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 12px', borderBottom:'2px solid #f0ece4', background:'#fff' }}>
-                        <BookOpen size={13} style={{ color:'#3b6fd4', flexShrink:0 }}/>
-                        <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12.5, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-                            {course.title || course.name}
-                        </h4>
-                        <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99, marginLeft:'auto', flexShrink:0 }}>
-                            {items.length}
-                        </span>
-                        </div>
-
-                        {/* Assignments under this course */}
-                        <div style={{ display:'flex', flexDirection:'column', gap:8, padding:10, maxHeight:440, overflowY:'auto' }}>
-                        {items.map(a => {
-                            const due    = a.due_date
-                            const dDays  = due ? Math.ceil((new Date(due)-new Date()) / 86400000) : null
-                            const isLate = dDays !== null && dDays < 0
-                            const subCount = a.submission_count || 0
-                            return (
-                            <div key={a.id} style={{ padding:'11px 12px', background:'#fff', borderRadius:10, border:'1px solid #ece7df' }}>
-                                <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5, flexWrap:'wrap' }}>
-                                <p style={{ fontSize:12.5, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%' }}>
-                                    {a.title}
-                                </p>
-                                </div>
-                                {a.file && (
-                                <span style={{ fontSize:10, color:'#6d4fc2', background:'#f0e8ff', padding:'1px 6px', borderRadius:99, display:'inline-flex', alignItems:'center', gap:3, marginBottom:6 }}>
-                                    <Paperclip size={9}/> File attached
-                                </span>
-                                )}
-                                <div style={{ display:'flex', flexDirection:'column', gap:4, marginBottom:9 }}>
-                                {due && (
-                                    <span style={{ fontSize:10, color: isLate?'#c0392b':'#8a7e6e', display:'flex', alignItems:'center', gap:3 }}>
-                                    <Calendar size={9}/> {due}{isLate && ' (past)'}
-                                    </span>
-                                )}
-                                {a.submission_time && (
-                                    <span style={{ fontSize:10, color:'#8a7e6e', display:'flex', alignItems:'center', gap:3 }}>
-                                    <Clock size={9}/> by {a.submission_time}
-                                    </span>
-                                )}
-                                <span style={{ fontSize:10, color:'#3b6fd4', fontWeight:600, display:'flex', alignItems:'center', gap:3 }}>
-                                    <Users size={9}/> {subCount} Student{subCount !== 1 ? 's' : ''} Submitted
-                                </span>
-                                </div>
-                                <div style={{ display:'flex', gap:6 }}>
-                                <button
-                                    onClick={() => setSelectedAssignment(a)}
-                                    style={{
-                                        flex:1,
-                                        display:'flex',
-                                        alignItems:'center',
-                                        justifyContent:'center',
-                                        gap:4,
-                                        padding:'5px 9px',
-                                        fontSize:11,
-                                        fontWeight:600,
-                                        background:'#eff3fd',
-                                        color:'#1e40af',
-                                        border:'none',
-                                        borderRadius:7,
-                                        cursor:'pointer'
-                                    }}
-                                >
-                                    <Eye size={11}/> Submissions
-                                </button>
-                                <button onClick={() => handleDeleteAssignment(a.id)}
-                                    style={{ padding:'5px 8px', background:'#fde8e8', color:'#c0392b', border:'none', borderRadius:7, cursor:'pointer', display:'flex', alignItems:'center' }}>
-                                    <X size={11}/>
-                                </button>
-                                </div>
-                            </div>
-                            )
-                        })}
-                        </div>
+            {loadingAssign ? (
+            <div style={{ padding:'14px 18px' }}><LoadingBlock/></div>
+            ) : assignments.length === 0 ? (
+            <div style={{ textAlign:'center', padding:'32px 20px' }}>
+                <ClipboardList size={24} style={{ color:'#d4cec6', margin:'0 auto 10px', display:'block' }}/>
+                <p style={{ fontSize:13, color:'#b0a898', margin:'0 0 14px' }}>No assignments yet. Create your first one!</p>
+                <button onClick={() => setShowNewModal(true)} className="btn-primary"><Plus size={13}/> New Assignment</button>
+            </div>
+            ) : (
+            <div className="assignment-columns-scroll" style={{ display:'flex', gap:14, overflowX:'auto', padding:'14px 18px', alignItems:'stretch' }}>
+                {grouped.map(({ course, items }) => (
+                <div key={course.id} style={{ flex:'0 0 300px', width:300, background:'#faf8f5', border:'1px solid #ece7df', borderRadius:12, overflow:'hidden', display:'flex', flexDirection:'column' }}>
+                    {/* Course column header */}
+                    <div style={{ display:'flex', alignItems:'center', gap:7, padding:'10px 12px', borderBottom:'2px solid #f0ece4', background:'#fff' }}>
+                    <BookOpen size={13} style={{ color:'#3b6fd4', flexShrink:0 }}/>
+                    <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:12.5, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        {course.title || course.name}
+                    </h4>
+                    <span style={{ fontSize:10, fontWeight:600, padding:'2px 7px', background:'#eff3fd', color:'#1e40af', borderRadius:99, marginLeft:'auto', flexShrink:0 }}>
+                        {items.length}
+                    </span>
                     </div>
-                    ))}
-                </div>
-                )}
-            </div>
 
-            {/* Calendar card */}
-            <div style={{ flex:'0 0 260px', width:260 }}>
+                    {/* Assignments under this course */}
+                    <div style={{ display:'flex', flexDirection:'column', gap:8, padding:10, maxHeight:440, overflowY:'auto' }}>
+                    {items.map(a => {
+                        const due    = a.due_date
+                        const dDays  = due ? Math.ceil((new Date(due)-new Date()) / 86400000) : null
+                        const isLate = dDays !== null && dDays < 0
+                        return (
+                        <div key={a.id} style={{ padding:'11px 12px', background:'#fff', borderRadius:10, border:'1px solid #ece7df' }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:5, flexWrap:'wrap' }}>
+                            <p style={{ fontSize:12.5, fontWeight:600, color:'#1a1f35', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'100%' }}>
+                                {a.title}
+                            </p>
+                            </div>
+                            {a.file && (
+                            <span style={{ fontSize:10, color:'#6d4fc2', background:'#f0e8ff', padding:'1px 6px', borderRadius:99, display:'inline-flex', alignItems:'center', gap:3, marginBottom:6 }}>
+                                <Paperclip size={9}/> File attached
+                            </span>
+                            )}
+                            {due && (
+                            <span style={{ fontSize:10, color: isLate?'#c0392b':'#8a7e6e', display:'flex', alignItems:'center', gap:3, marginBottom:8 }}>
+                                <Calendar size={9}/> {due}{isLate && ' (past)'}
+                            </span>
+                            )}
+                            {/* Same status pills as the Assignments page, for consistency */}
+                            <div style={{ display:'flex', gap:5, flexWrap:'wrap', marginBottom:10 }}>
+                            <span style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#eff3fd', color:'#1e40af' }}>
+                                {a.pending_review_count ?? 0} to review
+                            </span>
+                            <span style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#e0f7ee', color:'#3cb87a' }}>
+                                {a.approved_count ?? 0} approved
+                            </span>
+                            {a.rejected_count > 0 && (
+                                <span style={{ fontSize:9.5, fontWeight:700, padding:'2px 7px', borderRadius:99, background:'#fde8e8', color:'#c0392b' }}>
+                                {a.rejected_count} rejected
+                                </span>
+                            )}
+                            </div>
+                            <div style={{ display:'flex', gap:6 }}>
+                            <button
+                                onClick={() => navigate(`/app/assignments/${a.id}/submissions`)}
+                                style={{
+                                    flex:1,
+                                    display:'flex',
+                                    alignItems:'center',
+                                    justifyContent:'center',
+                                    gap:4,
+                                    padding:'5px 9px',
+                                    fontSize:11,
+                                    fontWeight:600,
+                                    background:'#eff3fd',
+                                    color:'#1e40af',
+                                    border:'none',
+                                    borderRadius:7,
+                                    cursor:'pointer'
+                                }}
+                            >
+                                <ClipboardList size={11}/> Submissions
+                            </button>
+                            <button onClick={() => handleDeleteAssignment(a.id)}
+                                style={{ padding:'5px 8px', background:'#fde8e8', color:'#c0392b', border:'none', borderRadius:7, cursor:'pointer', display:'flex', alignItems:'center' }}>
+                                <X size={11}/>
+                            </button>
+                            </div>
+                        </div>
+                        )
+                    })}
+                    </div>
+                </div>
+                ))}
+
+                {/* Calendar — last column in the row */}
+                <div style={{ flex:'0 0 260px', width:260 }}>
                 <BSCalWidget/>
+                </div>
             </div>
+            )}
         </div>
 
         {/* Analytics row */}

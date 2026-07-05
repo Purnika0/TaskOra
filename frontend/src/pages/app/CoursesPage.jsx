@@ -1,7 +1,8 @@
 // src/pages/app/CoursesPage.jsx — pure CSS, no Tailwind classes
 
 import React, { useState, useEffect } from 'react'
-import { Plus, GraduationCap, Hash, BookOpen, Calendar, User } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Plus, GraduationCap, Hash, BookOpen, Calendar, User, Pencil, Trash2, ListChecks } from 'lucide-react'
 import { useAuth }        from '../../hooks/useAuth.js'
 import { useToast }       from '../../context/ToastContext.jsx'
 import coursesService     from '../../services/courses.service.js'
@@ -34,15 +35,19 @@ function FormInput({ placeholder, type='text', value, onChange, required, rows }
 export default function CoursesPage() {
     const { user }    = useAuth()
     const toast       = useToast()
+    const navigate    = useNavigate()
     const isTeacher   = user?.role === 'teacher'
 
-    const [courses,     setCourses]     = useState([])
-    const [loading,     setLoading]     = useState(true)
-    const [joinCode,    setJoinCode]    = useState('')
-    const [joining,     setJoining]     = useState(false)
-    const [showCreate,  setShowCreate]  = useState(false)
-    const [newCourse,   setNewCourse]   = useState({ title:'', description:'', start_date:'' })
-    const [creating,    setCreating]    = useState(false)
+    const [courses,        setCourses]        = useState([])
+    const [loading,        setLoading]        = useState(true)
+    const [joinCode,       setJoinCode]       = useState('')
+    const [joining,        setJoining]        = useState(false)
+    const [showCreate,     setShowCreate]     = useState(false)
+    const [editingCourse,  setEditingCourse]  = useState(null)   // course object being edited, or null when creating
+    const [newCourse,      setNewCourse]      = useState({ title:'', description:'', start_date:'' })
+    const [creating,       setCreating]       = useState(false)
+    const [deletingId,     setDeletingId]     = useState(null)
+    const [deleteTarget,   setDeleteTarget]   = useState(null)   // course pending delete confirmation
 
 async function load() {
         setLoading(true)
@@ -64,16 +69,67 @@ async function handleJoin(e) {
         finally { setJoining(false) }
 }
 
-async function handleCreate(e) {
+function resetForm() {
+        setShowCreate(false)
+        setEditingCourse(null)
+        setNewCourse({ title:'', description:'', start_date:'' })
+}
+
+function handleToggleCreate() {
+        if (showCreate) resetForm()
+        else { setEditingCourse(null); setNewCourse({ title:'', description:'', start_date:'' }); setShowCreate(true) }
+}
+
+function handleEditClick(course) {
+        setEditingCourse(course)
+        setNewCourse({
+        title: course.title || '',
+        description: course.description || '',
+        start_date: course.start_date || '',
+        })
+        setShowCreate(true)
+}
+
+async function handleSubmit(e) {
         e.preventDefault()
         if (!newCourse.title.trim()) return
         setCreating(true)
         try {
-        await coursesService.create(newCourse)
-        toast.success('Course created')
-        setShowCreate(false); setNewCourse({ title:'', description:'', start_date:'' }); load()
+        if (editingCourse) {
+                await coursesService.update(editingCourse.id, newCourse)
+                toast.success('Course updated')
+        } else {
+                await coursesService.create(newCourse)
+                toast.success('Course created')
+        }
+        resetForm(); load()
         } catch (err) { toast.error(apiError(err)) }
         finally { setCreating(false) }
+}
+
+function handleDeleteClick(course) {
+        setDeleteTarget(course)
+}
+
+function cancelDelete() {
+        if (deletingId) return // don't allow closing mid-request
+        setDeleteTarget(null)
+}
+
+async function confirmDelete() {
+        if (!deleteTarget) return
+        setDeletingId(deleteTarget.id)
+        try {
+        await coursesService.remove(deleteTarget.id)
+        toast.success('Course deleted')
+        setDeleteTarget(null)
+        load()
+        } catch (err) { toast.error(apiError(err)) }
+        finally { setDeletingId(null) }
+}
+
+function handleViewAssignments(course) {
+        navigate(`/app/assignments?course=${course.id}`)
 }
 
 return (
@@ -87,7 +143,7 @@ return (
             </div>
             {isTeacher && (
             <button
-                onClick={() => setShowCreate(v => !v)}
+                onClick={handleToggleCreate}
                 className="btn-primary"
             >
                 <Plus size={14} aria-hidden="true"/>
@@ -96,22 +152,30 @@ return (
             )}
         </div>
 
-        {/* Teacher: create form */}
+        {/* Teacher: create / edit form */}
         {isTeacher && showCreate && (
             <div className="white-card" style={{ padding:'20px 22px' }}>
             <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:'0 0 16px' }}>
-                New Course
+                {editingCourse ? 'Edit Course' : 'New Course'}
             </h3>
-            <form onSubmit={handleCreate} style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
                 <FormInput placeholder="Course title *" value={newCourse.title}
                 onChange={e => setNewCourse(p=>({...p,title:e.target.value}))} required/>
                 <FormInput placeholder="Description (optional)" rows={2} value={newCourse.description}
                 onChange={e => setNewCourse(p=>({...p,description:e.target.value}))}/>
                 <FormInput type="date" value={newCourse.start_date} placeholder="Start date"
                 onChange={e => setNewCourse(p=>({...p,start_date:e.target.value}))}/>
+                <div style={{ display:'flex', gap:10 }}>
                 <button type="submit" disabled={creating} className="btn-primary" style={{ alignSelf:'flex-start' }}>
-                {creating ? 'Creating…' : 'Create Course'}
+                    {creating ? (editingCourse ? 'Saving…' : 'Creating…') : (editingCourse ? 'Save Changes' : 'Create Course')}
                 </button>
+                {editingCourse && (
+                    <button type="button" onClick={resetForm} className="btn-primary"
+                    style={{ alignSelf:'flex-start', background:'#f0ece5', color:'#7a7060' }}>
+                    Cancel
+                    </button>
+                )}
+                </div>
             </form>
             </div>
 )}
@@ -194,11 +258,84 @@ return (
                         </div>
                     )}
                     </div>
+
+                    <div style={{ display:'flex', gap:8, marginTop:14, paddingTop:12, borderTop:'1px solid #eee7db' }}>
+                    <button
+                        onClick={() => handleViewAssignments(course)}
+                        style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#3b6fd4', background:'#eef2fc', border:'none', borderRadius:7, padding:'7px 8px', cursor:'pointer' }}
+                    >
+                        <ListChecks size={12} aria-hidden="true"/>
+                        Assignments
+                    </button>
+                    {isTeacher && (
+                        <>
+                        <button
+                            onClick={() => handleEditClick(course)}
+                            aria-label={`Edit ${course.title}`}
+                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#7a7060', background:'#f5f0e8', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                        >
+                            <Pencil size={12} aria-hidden="true"/>
+                        </button>
+                        <button
+                            onClick={() => handleDeleteClick(course)}
+                            aria-label={`Delete ${course.title}`}
+                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#c0392b', background:'#fbeceb', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                        >
+                            <Trash2 size={12} aria-hidden="true"/>
+                        </button>
+                        </>
+                    )}
+                    </div>
                 </div>
                 )
             })}
             </div>
 )}
+
+        {/* Delete confirmation modal */}
+        {deleteTarget && (
+            <div
+                onClick={cancelDelete}
+                style={{
+                    position:'fixed', inset:0, background:'rgba(26,31,53,0.45)', backdropFilter:'blur(2px)',
+                    display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:20,
+                }}
+            >
+                <div
+                    onClick={e => e.stopPropagation()}
+                    className="white-card anim-fade-in"
+                    style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)' }}
+                >
+                    <div style={{ width:44, height:44, borderRadius:'50%', background:'#fbeceb', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
+                        <Trash2 size={19} style={{ color:'#c0392b' }}/>
+                    </div>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:'0 0 8px' }}>
+                        Delete course?
+                    </h3>
+                    <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
+                        This will permanently delete <strong style={{ color:'#1a1f35' }}>"{deleteTarget.title}"</strong> and all of its assignments. This action cannot be undone.
+                    </p>
+                    <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <button
+                            onClick={cancelDelete}
+                            disabled={!!deletingId}
+                            className="btn-primary"
+                            style={{ background:'#f0ece5', color:'#7a7060', cursor: deletingId ? 'default' : 'pointer' }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmDelete}
+                            disabled={!!deletingId}
+                            className="btn-primary"
+                            style={{ background:'#c0392b', color:'#fff', cursor: deletingId ? 'default' : 'pointer', opacity: deletingId ? 0.75 : 1 }}
+                        >
+                            {deletingId ? 'Deleting…' : 'Delete Course'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
 
         <DashboardFooter/>
         </div>

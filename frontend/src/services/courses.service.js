@@ -4,6 +4,7 @@
 //   POST /api/courses/join/        → student joins a course with enrollment_code
 //   POST /api/courses/             → teacher creates a course
 //   DELETE /api/courses/<id>/      → admin or teacher deletes a course
+//   GET  /api/courses/<id>/students/ → teacher/admin: list of enrollments for a course
 
 import api from './api.js'
 
@@ -19,7 +20,7 @@ const coursesService = {
         const { data } = await api.get('/api/courses/my/')
         return data
     },
-    
+
     // GET single course
     async get(id) {
         const { data } = await api.get(`/api/courses/${id}/`)
@@ -27,10 +28,6 @@ const coursesService = {
     },
 
     // Student: join a course by enrollment code
-    // async join(enrollmentCode) {
-    //     const { data } = await api.post('/api/courses/join/', { enrollment_code: enrollmentCode })
-    //     return data
-    // },
     async join(joinCode) {
         const { data } = await api.post('/api/courses/join/', { join_code: joinCode })
         return data
@@ -38,7 +35,7 @@ const coursesService = {
 
     // Teacher: create a new course
     async create(payload) {
-        // payload: { name, description?, subject? }
+        // payload: { title, description?, start_date?, end_date? }
         const { data } = await api.post('/api/courses/', payload)
         return data
     },
@@ -54,7 +51,18 @@ const coursesService = {
         await api.delete(`/api/courses/${id}/`)
     },
 
-    // Get enrollment code for a course (teacher only)
+    // Teacher: list of enrollments (students) for one of their courses
+    // GET /api/courses/<id>/students/
+    async getStudents(id) {
+        const { data } = await api.get(`/api/courses/${id}/students/`)
+        return data
+    },
+
+    // NOTE: no matching backend route in courses/urls.py currently (only
+    // '', '<pk>/', 'join/', 'my/', '<pk>/students/' exist) — the join code
+    // is already returned on the course object itself via CourseSerializer.
+    // Kept here in case this becomes a real endpoint later; calling it as-is
+    // will 404 against the current backend.
     async getEnrollmentCode(id) {
         const { data } = await api.get(`/api/courses/${id}/enrollment-code/`)
         return data

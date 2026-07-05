@@ -151,6 +151,50 @@ class TeacherAssignmentTaskListView(generics.ListAPIView):
         return qs
 
 
+class TeacherSubmissionsInboxView(generics.ListAPIView):
+    """
+    Cross-course submissions inbox — every task belonging to any of the
+    teacher's assignments, across every course, in one list.
+
+    GET /api/tasks/teacher/submissions/
+    Optional filters:
+      ?status=submitted        (task status — defaults to showing all statuses)
+      ?course_id=<id>          (restrict to one course)
+      ?assignment_id=<id>      (restrict to one assignment)
+      ?search=<text>           (matches student username or full name)
+    Ordered newest-submitted-first so the most recent "to review" items
+    surface at the top.
+    """
+    serializer_class   = TaskSerializer
+    permission_classes = [IsTeacher]
+
+    def get_queryset(self):
+        qs = Task.objects.filter(assignment__created_by=self.request.user)\
+            .select_related('student', 'assignment', 'assignment__course')\
+            .order_by('-submitted_at', '-created_at')
+
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            qs = qs.filter(status=status_filter)
+
+        course_id = self.request.query_params.get('course_id')
+        if course_id:
+            qs = qs.filter(assignment__course_id=course_id)
+
+        assignment_id = self.request.query_params.get('assignment_id')
+        if assignment_id:
+            qs = qs.filter(assignment_id=assignment_id)
+
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(
+                Q(student__username__icontains=search) |
+                Q(student__full_name__icontains=search)
+            )
+
+        return qs
+
+
 class TeacherReviewTaskView(APIView):
     """
     Teacher marks a submitted task as completed with optional feedback.

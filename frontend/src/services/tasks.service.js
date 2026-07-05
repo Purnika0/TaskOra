@@ -67,6 +67,12 @@ const tasksService = {
         return data
     },
 
+    // GET single assignment (used by the submissions review page header)
+    async getAssignment(id) {
+        const { data } = await api.get(`/api/tasks/assignments/${id}/`)
+        return data
+    },
+
     async createAssignment(payload) {
         // payload may be FormData (has file) or plain object
         const isForm = payload instanceof FormData
@@ -83,6 +89,14 @@ const tasksService = {
 
     async deleteAssignment(id) {
         await api.delete(`/api/tasks/assignments/${id}/`)
+    },
+
+    // ── Teacher: cross-course submissions inbox ─────────────────────────────
+    // GET /api/tasks/teacher/submissions/
+    // filters: { status?, course_id?, assignment_id?, search? }
+    async getTeacherSubmissionsInbox(filters = {}) {
+        const { data } = await api.get('/api/tasks/teacher/submissions/', { params: filters })
+        return data
     },
 
     // ── Admin: mark all past-due pending tasks as overdue ───────────────────
