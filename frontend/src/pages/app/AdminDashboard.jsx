@@ -1,46 +1,12 @@
-// src/pages/app/AdminDashboard.jsx
-// Admin dashboard — light theme, single page with in-page tabs, built on the
-// shared design system (.admin-header, .tab-bar/.tab-btn, .stat-box/.stat-grid,
-// .task-table, .modal-backdrop/.modal-box, .form-input, .btn-primary/.btn-secondary,
-// .course-grid, .white-card) instead of one-off inline styles.
-//
-// Tabs: Overview · Teachers · Students · Courses · Analytics · Activity
-// The active tab is reflected in the URL (?tab=courses) so refreshing or
-// sharing a link keeps you on the right section — no separate routes needed.
-//
-//  • Full admin Course CRUD — create, edit, delete, and assign/change/remove
-//    a course's teacher (backend: courses/models.py, serializers.py, views.py
-//    + migration 0003).
-//  • Fixed a real bug: course cards read `course.enrollment_code`, but the
-//    backend has always returned `join_code`.
-//  • Fixed a real backend bug: CourseStudentsView filtered by
-//    course__teacher=request.user, so an admin calling it always got an
-//    empty list. Now admins can see any course's enrolled students.
-//  • Add Teacher modal: confirm-password field, show/hide toggle, a frontend-
-//    only Generate Password button, and a Copy Password button.
-//  • Charts (recharts, already an installed dependency): role distribution
-//    and active/suspended pie charts, a horizontal top-10 courses-per-teacher
-//    bar chart (readable regardless of teacher count), and a
-//    registrations-over-time line chart — all computed from real loaded data.
-//  • Teachers tab shows a real per-teacher course count; Analytics has a full
-//    "Courses by Teacher" breakdown; Students tab has a filter-by-course
-//    dropdown (uses the CourseStudentsView fix above).
-//  • Tab bar stretches to fill the full width, each tab getting equal space.
-//  • Activity tab now uses a History icon instead of the line-graph Activity
-//    icon (that shape reads as a chart, not an activity/log feed).
-//  • Removed the fabricated "Steady" trend tag on stat cards — there's no
-//    real historical baseline to compare against, so a trend indicator was
-//    always going to be misleading rather than informative.
-//  • No fabricated data anywhere — only fields the API actually returns.
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
     Users, RefreshCw, ShieldCheck, Trash2, Search,
     GraduationCap, BookOpen, Plus, X, LayoutDashboard, History,
-    BarChart2, UserCheck, UserX, Eye, EyeOff,
+    BarChart2, UserCheck, UserX,
     KeyRound, ClipboardList, Pencil, Copy, Wand2, Inbox,
-    Building2, Clock, Sparkles, Filter,
+    Building2, Clock, Sparkles, Filter, Mail, MailOpen, CheckCircle2, MessageSquareText,
+    Eye, EyeOff,
 } from 'lucide-react'
 import {
     PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
@@ -48,10 +14,12 @@ import {
 } from 'recharts'
 import authService    from '../../services/auth.service.js'
 import coursesService from '../../services/courses.service.js'
+import contactService from '../../services/contact.service.js'
 import { useToast }   from '../../context/ToastContext.jsx'
 import { useConfirm } from '../../context/ConfirmContext.jsx'
 import { useAuth }    from '../../hooks/useAuth.js'
 import { LoadingBlock } from '../../components/shared/Loader.jsx'
+import BSDatePicker   from '../../components/shared/BSDatePicker.jsx'
 import { apiError }   from '../../utils/helpers.js'
 
 // ── Small local palette for badges the shared .pill-* classes don't quite
@@ -90,6 +58,17 @@ function StatusBadge({ active }) {
     return active
         ? <span className="pill" style={{ background:A.greenBg, color:'#065F46' }}><UserCheck size={11}/> Active</span>
         : <span className="pill" style={{ background:A.amberBg, color:A.amber }}><UserX size={11}/> Suspended</span>
+}
+
+function MessageStatusBadge({ status }) {
+    const map = {
+        NEW:      { bg:A.blueBg,  color:'#1E40AF', label:'New',      icon:Mail },
+        READ:     { bg:A.amberBg, color:A.amber,   label:'Read',     icon:MailOpen },
+        RESOLVED: { bg:A.greenBg, color:'#065F46', label:'Resolved', icon:CheckCircle2 },
+    }
+    const s = map[status] || map.NEW
+    const Icon = s.icon
+    return <span className="pill" style={{ background:s.bg, color:s.color }}><Icon size={11}/> {s.label}</span>
 }
 
 function Avatar({ name, size=34 }) {
@@ -591,11 +570,11 @@ function CourseModal({ course, teachers, onClose, onSaved }) {
                     <div style={{ display:'flex', gap:10 }}>
                         <div style={{ flex:1 }}>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', display:'block', marginBottom:5 }}>Start date</label>
-                            <input type="date" value={form.start_date || ''} onChange={e => set('start_date', e.target.value)} className="form-input"/>
+                            <BSDatePicker value={form.start_date || ''} onChange={v => set('start_date', v)} placeholder="Select start date"/>
                         </div>
                         <div style={{ flex:1 }}>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', display:'block', marginBottom:5 }}>End date</label>
-                            <input type="date" value={form.end_date || ''} onChange={e => set('end_date', e.target.value)} className="form-input"/>
+                            <BSDatePicker value={form.end_date || ''} onChange={v => set('end_date', v)} placeholder="Select end date"/>
                         </div>
                     </div>
 
@@ -637,7 +616,7 @@ function CoursesTab({ courses, teachers, loading, reload }) {
     }, [courses, search])
 
     async function handleDelete(c) {
-        const ok = await confirm({ title:`Delete "${c.title}"?`, message:'All enrollments and assignments in this course will be removed. This cannot be undone.', danger:true, confirmLabel:'Delete' })
+        const ok = await confirm({ title:'Delete Course', message:'Are you sure you want to delete this course? This action cannot be undone.', danger:true, confirmLabel:'Delete' })
         if (!ok) return
         try {
             await coursesService.remove(c.id)
@@ -734,6 +713,135 @@ function CoursesTab({ courses, teachers, loading, reload }) {
 // each user's real date_joined to plot cumulative growth over time.
 const CHART_TOOLTIP_STYLE = { fontSize:12, borderRadius:8, border:'1px solid var(--color-border)', boxShadow:'var(--shadow-md)' }
 
+// ── View Message modal ───────────────────────────────────────────────────────
+function ViewMessageModal({ message, onClose, onMarkResolved }) {
+    return (
+        <div className="modal-backdrop">
+            <div className="modal-box" style={{ maxWidth:520 }}>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'18px 22px', borderBottom:'1px solid var(--color-border)', background:'var(--color-sidebar)' }}>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#fff', margin:0 }}>
+                        Contact Message
+                    </h3>
+                    <button onClick={onClose} aria-label="Close" style={{ background:'rgba(255,255,255,0.15)', border:'none', cursor:'pointer', padding:7, borderRadius:8, color:'#fff', display:'flex' }}><X size={16}/></button>
+                </div>
+
+                <div style={{ padding:22, display:'flex', flexDirection:'column', gap:14, maxHeight:'60vh', overflowY:'auto' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+                        <Avatar name={message.full_name} size={40}/>
+                        <div style={{ flex:1, minWidth:0 }}>
+                            <p style={{ fontSize:14, fontWeight:700, color:'var(--color-text)', margin:0 }}>{message.full_name}</p>
+                            <p style={{ fontSize:12.5, color:'var(--color-text-secondary)', margin:'2px 0 0', wordBreak:'break-all' }}>{message.email}</p>
+                        </div>
+                        <MessageStatusBadge status={message.status}/>
+                    </div>
+
+                    <div>
+                        <p style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.05em' }}>Subject</p>
+                        <p style={{ fontSize:13.5, color:'var(--color-text)', margin:0 }}>{message.subject || '(no subject)'}</p>
+                    </div>
+
+                    <div>
+                        <p style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.05em' }}>Message</p>
+                        <p style={{ fontSize:13.5, color:'var(--color-text)', margin:0, lineHeight:1.6, whiteSpace:'pre-wrap' }}>{message.message}</p>
+                    </div>
+
+                    <div>
+                        <p style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.05em' }}>Submitted</p>
+                        <p style={{ fontSize:12.5, color:'var(--color-text-secondary)', margin:0 }}>
+                            {new Date(message.submitted_at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                        </p>
+                    </div>
+                </div>
+
+                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid var(--color-border)' }}>
+                    <button onClick={onClose} className="btn-secondary">Close</button>
+                    {message.status !== 'RESOLVED' && (
+                        <button onClick={onMarkResolved} className="btn-primary">Mark Resolved</button>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
+// ── Contact Messages tab ─────────────────────────────────────────────────────
+function MessagesTab({ messages, loading, onView, onMarkRead, onMarkResolved, onDelete }) {
+    const [search, setSearch] = useState('')
+
+    const filtered = useMemo(() => {
+        if (!search.trim()) return messages
+        const q = search.toLowerCase()
+        return messages.filter(m => [m.full_name, m.email, m.subject || ''].some(v => v.toLowerCase().includes(q)))
+    }, [messages, search])
+
+    return (
+        <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
+            <div style={{ position:'relative', maxWidth:340 }}>
+                <Search size={14} style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', color:'var(--color-text-placeholder)', pointerEvents:'none' }}/>
+                <input type="search" value={search} onChange={e => setSearch(e.target.value)}
+                    placeholder="Search by name, email, or subject…"
+                    aria-label="Search"
+                    className="form-input" style={{ paddingLeft:32 }}/>
+            </div>
+
+            <div className="white-card" style={{ overflow:'hidden' }}>
+                {loading ? (
+                    <div style={{ padding:24 }}><LoadingBlock/></div>
+                ) : filtered.length === 0 ? (
+                    <EmptyState icon={search ? Search : Inbox}
+                        title={search ? 'No matches found' : 'No messages yet'}
+                        message={search ? `Nothing matches "${search}".` : 'Contact form submissions will show up here.'}/>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="task-table" style={{ minWidth:680 }}>
+                            <thead>
+                                <tr>
+                                    {['Name', 'Email', 'Subject', 'Status', 'Date', 'Actions'].map(h => (
+                                        <th key={h}>{h}</th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {filtered.map(m => (
+                                    <tr key={m.id}>
+                                        <td>
+                                            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                                                <Avatar name={m.full_name} size={32}/>
+                                                <p style={{ fontSize:13, fontWeight:600, color:'var(--color-text)', margin:0 }}>{m.full_name}</p>
+                                            </div>
+                                        </td>
+                                        <td style={{ color:'var(--color-text-secondary)' }}>{m.email}</td>
+                                        <td style={{ color:'var(--color-text-secondary)', maxWidth:220, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                            {m.subject || <span style={{ color:'var(--color-text-placeholder)' }}>(no subject)</span>}
+                                        </td>
+                                        <td><MessageStatusBadge status={m.status}/></td>
+                                        <td style={{ color:'var(--color-text-secondary)', whiteSpace:'nowrap' }}>
+                                            {new Date(m.submitted_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+                                        </td>
+                                        <td>
+                                            <div style={{ display:'flex', gap:6 }}>
+                                                <IconBtn icon={MessageSquareText} onClick={() => onView(m)} title="View message"/>
+                                                {m.status === 'NEW' && (
+                                                    <IconBtn icon={MailOpen} tone="warn" onClick={() => onMarkRead(m)} title="Mark as read"/>
+                                                )}
+                                                {m.status !== 'RESOLVED' && (
+                                                    <IconBtn icon={CheckCircle2} tone="good" onClick={() => onMarkResolved(m)} title="Mark as resolved"/>
+                                                )}
+                                                <IconBtn icon={Trash2} tone="danger" onClick={() => onDelete(m)} title="Delete message"/>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+            <p style={{ fontSize:11.5, color:'var(--color-text-muted)', margin:0 }}>{filtered.length} {filtered.length === 1 ? 'message' : 'messages'}</p>
+        </div>
+    )
+}
+
 function ChartCard({ title, children, empty, emptyMsg, height = 220 }) {
     return (
         <div className="white-card" style={{ padding:20 }}>
@@ -742,6 +850,34 @@ function ChartCard({ title, children, empty, emptyMsg, height = 220 }) {
                 ? <p style={{ fontSize:12.5, color:'var(--color-text-muted)', margin:0 }}>{emptyMsg}</p>
                 : <div style={{ width:'100%', height }}>{children}</div>}
         </div>
+    )
+}
+
+// Renders each slice's name + count directly on the donut chart (not just on
+// hover), matching the pattern used on the teacher-facing Analytics page.
+function renderDonutLabel({ cx, cy, midAngle, outerRadius, name, value }) {
+    const RADIAN = Math.PI / 180
+    const radius = outerRadius + 18
+    const x = cx + radius * Math.cos(-midAngle * RADIAN)
+    const y = cy + radius * Math.sin(-midAngle * RADIAN)
+    return (
+        <text x={x} y={y} fill="var(--color-text-secondary)" fontSize={11} fontWeight={600} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+            {`${name} (${value})`}
+        </text>
+    )
+}
+
+// Custom Y-axis tick for the horizontal "Courses per Teacher" bar chart —
+// keeps every teacher's name on a single, cleanly right-aligned line instead
+// of Recharts' default awkward two-line word-wrap for longer names.
+function TeacherNameTick({ x, y, payload }) {
+    const name = payload.value
+    const short = name.length > 16 ? `${name.slice(0, 15)}…` : name
+    return (
+        <text x={x} y={y} dy={4} textAnchor="end" fontSize={11.5} fontWeight={600} fontFamily="var(--font-body)" fill="var(--color-text-secondary)">
+            <title>{name}</title>
+            {short}
+        </text>
     )
 }
 
@@ -819,7 +955,8 @@ function AnalyticsTab({ users, courses, loading }) {
                 <ChartCard title="User Distribution" empty={users.length === 0} emptyMsg="No users yet.">
                     <ResponsiveContainer>
                         <PieChart>
-                            <Pie data={roleData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={3}>
+                            <Pie data={roleData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={3}
+                                label={renderDonutLabel} labelLine={{ stroke:'var(--color-border)' }}>
                                 {roleData.map(d => <Cell key={d.name} fill={d.color}/>)}
                             </Pie>
                             <Tooltip contentStyle={CHART_TOOLTIP_STYLE}/>
@@ -831,7 +968,8 @@ function AnalyticsTab({ users, courses, loading }) {
                 <ChartCard title="Account Status" empty={users.length === 0} emptyMsg="No users yet.">
                     <ResponsiveContainer>
                         <PieChart>
-                            <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={3}>
+                            <Pie data={statusData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={3}
+                                label={renderDonutLabel} labelLine={{ stroke:'var(--color-border)' }}>
                                 {statusData.map(d => <Cell key={d.name} fill={d.color}/>)}
                             </Pie>
                             <Tooltip contentStyle={CHART_TOOLTIP_STYLE}/>
@@ -847,15 +985,15 @@ function AnalyticsTab({ users, courses, loading }) {
                 title="Courses per Teacher"
                 empty={teacherCourseData.length === 0}
                 emptyMsg="No courses assigned to a teacher yet."
-                height={Math.max(180, topTeacherCourseData.length * 34)}
+                height={Math.max(160, topTeacherCourseData.length * 30)}
             >
                 <ResponsiveContainer>
-                    <BarChart data={topTeacherCourseData} layout="vertical" margin={{ left:10, right:24, top:4, bottom:4 }}>
+                    <BarChart data={topTeacherCourseData} layout="vertical" margin={{ left:10, right:24, top:4, bottom:4 }} barCategoryGap="28%">
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false}/>
                         <XAxis type="number" allowDecimals={false} tick={{ fontSize:11 }}/>
-                        <YAxis type="category" dataKey="name" width={120} tick={{ fontSize:11 }}/>
+                        <YAxis type="category" dataKey="name" width={130} tick={<TeacherNameTick/>} interval={0}/>
                         <Tooltip contentStyle={CHART_TOOLTIP_STYLE}/>
-                        <Bar dataKey="count" name="Courses" fill={A.blue} radius={[0, 6, 6, 0]} barSize={18}/>
+                        <Bar dataKey="count" name="Courses" fill={A.blue} radius={[0, 6, 6, 0]} barSize={16}/>
                     </BarChart>
                 </ResponsiveContainer>
             </ChartCard>
@@ -915,13 +1053,6 @@ function AnalyticsTab({ users, courses, loading }) {
                     </div>
                 )}
             </div>
-
-            <div className="white-card" style={{ padding:'32px 20px', textAlign:'center', border:'1.5px dashed var(--color-border)' }}>
-                <BarChart2 size={20} style={{ color:'var(--color-text-placeholder)', margin:'0 auto 8px', display:'block' }}/>
-                <p style={{ fontSize:12.5, color:'var(--color-text-muted)', margin:0 }}>
-                    Submission-rate and performance trend charts will appear here once that data is available.
-                </p>
-            </div>
         </div>
     )
 }
@@ -980,6 +1111,7 @@ const TABS = [
     { key:'teachers',  label:'Teachers',  icon:GraduationCap   },
     { key:'students',  label:'Students',  icon:BookOpen        },
     { key:'courses',   label:'Courses',   icon:ClipboardList   },
+    { key:'messages',  label:'Messages',  icon:Mail            },
     { key:'analytics', label:'Analytics', icon:BarChart2       },
     { key:'activity',  label:'Activity',  icon:History         },
 ]
@@ -1002,11 +1134,14 @@ export default function AdminDashboard({ initialTab }) {
         }, { replace: true })
     }
 
-    const [users,          setUsers]          = useState([])
-    const [courses,        setCourses]        = useState([])
-    const [loading,        setLoading]        = useState(true)
-    const [coursesLoading, setCoursesLoading] = useState(true)
-    const [showAdd,        setShowAdd]        = useState(false)
+    const [users,           setUsers]           = useState([])
+    const [courses,         setCourses]         = useState([])
+    const [messages,        setMessages]        = useState([])
+    const [loading,         setLoading]         = useState(true)
+    const [coursesLoading,  setCoursesLoading]  = useState(true)
+    const [messagesLoading, setMessagesLoading] = useState(true)
+    const [showAdd,         setShowAdd]         = useState(false)
+    const [viewingMessage,  setViewingMessage]  = useState(null)
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -1022,15 +1157,23 @@ export default function AdminDashboard({ initialTab }) {
         finally { setCoursesLoading(false) }
     }, [])
 
-    useEffect(() => { load(); loadCourses() }, [load, loadCourses])
+    const loadMessages = useCallback(async () => {
+        setMessagesLoading(true)
+        try { setMessages(await contactService.listMessages()) }
+        catch { toast.error('Failed to load contact messages') }
+        finally { setMessagesLoading(false) }
+    }, [])
 
-    function refreshAll() { load(); loadCourses() }
+    useEffect(() => { load(); loadCourses(); loadMessages() }, [load, loadCourses, loadMessages])
+
+    function refreshAll() { load(); loadCourses(); loadMessages() }
 
     const teachers = users.filter(u => u.role === 'teacher')
     const students = users.filter(u => u.role === 'student')
 
     async function handleDelete(u) {
-        const ok = await confirm({ title:`Delete "${u.full_name || u.username}"?`, message:'Permanently removes the user and all their data.', danger:true, confirmLabel:'Delete' })
+        const entity = u.role === 'teacher' ? 'Teacher' : u.role === 'student' ? 'Student' : 'User'
+        const ok = await confirm({ title:`Delete ${entity}`, message:`Are you sure you want to delete this ${entity.toLowerCase()}? This action cannot be undone.`, danger:true, confirmLabel:'Delete' })
         if (!ok) return
         try { await authService.deleteUser(u.id); toast.success('User deleted'); load() }
         catch (err) { toast.error(apiError(err)) }
@@ -1046,6 +1189,39 @@ export default function AdminDashboard({ initialTab }) {
             toast.success(`${u.username} ${next ? 'unsuspended' : 'suspended'}`)
             load()
         } catch { toast.error('Suspend requires backend is_active support.') }
+    }
+
+    function handleViewMessage(m) {
+        setViewingMessage(m)
+        if (m.status === 'NEW') handleMarkMessageRead(m, { silent: true })
+    }
+
+    async function handleMarkMessageRead(m, { silent = false } = {}) {
+        try {
+            const updated = await contactService.updateStatus(m.id, 'READ')
+            setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...updated } : x))
+            setViewingMessage(prev => prev && prev.id === m.id ? { ...prev, ...updated } : prev)
+            if (!silent) toast.success('Marked as read')
+        } catch (err) { if (!silent) toast.error(apiError(err)) }
+    }
+
+    async function handleMarkMessageResolved(m) {
+        try {
+            const updated = await contactService.updateStatus(m.id, 'RESOLVED')
+            setMessages(prev => prev.map(x => x.id === m.id ? { ...x, ...updated } : x))
+            setViewingMessage(prev => prev && prev.id === m.id ? { ...prev, ...updated } : prev)
+            toast.success('Marked as resolved')
+        } catch (err) { toast.error(apiError(err)) }
+    }
+
+    async function handleDeleteMessage(m) {
+        const ok = await confirm({ title:'Delete Message', message:'Are you sure you want to delete this message? This action cannot be undone.', danger:true, confirmLabel:'Delete' })
+        if (!ok) return
+        try {
+            await contactService.remove(m.id)
+            setMessages(prev => prev.filter(x => x.id !== m.id))
+            toast.success('Message deleted')
+        } catch (err) { toast.error(apiError(err)) }
     }
 
     return (
@@ -1116,6 +1292,11 @@ export default function AdminDashboard({ initialTab }) {
                 {tab === 'courses' && (
                     <CoursesTab courses={courses} teachers={teachers} loading={coursesLoading} reload={loadCourses}/>
                 )}
+                {tab === 'messages' && (
+                    <MessagesTab messages={messages} loading={messagesLoading}
+                        onView={handleViewMessage} onMarkRead={handleMarkMessageRead}
+                        onMarkResolved={handleMarkMessageResolved} onDelete={handleDeleteMessage}/>
+                )}
                 {tab === 'analytics' && (
                     <AnalyticsTab users={users} courses={courses} loading={loading || coursesLoading}/>
                 )}
@@ -1131,6 +1312,14 @@ export default function AdminDashboard({ initialTab }) {
                         setUsers(prev => [created, ...prev])
                         setTab('teachers')
                     }}
+                />
+            )}
+
+            {viewingMessage && (
+                <ViewMessageModal
+                    message={viewingMessage}
+                    onClose={() => setViewingMessage(null)}
+                    onMarkResolved={() => handleMarkMessageResolved(viewingMessage)}
                 />
             )}
         </div>

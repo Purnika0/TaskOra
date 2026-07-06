@@ -8,6 +8,7 @@ import { useToast }       from '../../context/ToastContext.jsx'
 import coursesService     from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock }   from '../../components/shared/Loader.jsx'
+import BSDatePicker       from '../../components/shared/BSDatePicker.jsx'
 import { apiError }       from '../../utils/helpers.js'
 
 const inpStyle = {
@@ -163,8 +164,8 @@ return (
                 onChange={e => setNewCourse(p=>({...p,title:e.target.value}))} required/>
                 <FormInput placeholder="Description (optional)" rows={2} value={newCourse.description}
                 onChange={e => setNewCourse(p=>({...p,description:e.target.value}))}/>
-                <FormInput type="date" value={newCourse.start_date} placeholder="Start date"
-                onChange={e => setNewCourse(p=>({...p,start_date:e.target.value}))}/>
+                <BSDatePicker value={newCourse.start_date} placeholder="Start date" background="#faf8f5"
+                onChange={v => setNewCourse(p=>({...p,start_date:v}))}/>
                 <div style={{ display:'flex', gap:10 }}>
                 <button type="submit" disabled={creating} className="btn-primary" style={{ alignSelf:'flex-start' }}>
                     {creating ? (editingCourse ? 'Saving…' : 'Creating…') : (editingCourse ? 'Save Changes' : 'Create Course')}
@@ -310,10 +311,10 @@ return (
                         <Trash2 size={19} style={{ color:'#c0392b' }}/>
                     </div>
                     <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:'0 0 8px' }}>
-                        Delete course?
+                        Delete Course
                     </h3>
                     <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
-                        This will permanently delete <strong style={{ color:'#1a1f35' }}>"{deleteTarget.title}"</strong> and all of its assignments. This action cannot be undone.
+                        Are you sure you want to delete this course? This action cannot be undone.
                     </p>
                     <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                         <button

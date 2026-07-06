@@ -2,7 +2,8 @@ from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from .models import ContactMessage
-from .serializers import ContactMessageSerializer
+from .serializers import ContactMessageSerializer, ContactMessageStatusUpdateSerializer
+from .utils import send_contact_notification_email
 from users.permissions import IsAdmin
 
 
@@ -18,7 +19,8 @@ class ContactMessageCreateView(generics.CreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
+            contact_message = serializer.save()
+            send_contact_notification_email(contact_message)
             return Response(
                 {
                     "detail": "Thank you for reaching out! We will get back to you within 24 hours.",
@@ -37,3 +39,19 @@ class ContactMessageListView(generics.ListAPIView):
     serializer_class   = ContactMessageSerializer
     permission_classes = [IsAdmin]
     queryset           = ContactMessage.objects.all()
+
+
+class ContactMessageDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """
+    Admin only — view, update status of, or delete a single contact message.
+    GET    /api/contact/messages/<id>/   → full message detail
+    PATCH  /api/contact/messages/<id>/   → update status (READ / RESOLVED)
+    DELETE /api/contact/messages/<id>/   → delete the message
+    """
+    permission_classes = [IsAdmin]
+    queryset           = ContactMessage.objects.all()
+
+    def get_serializer_class(self):
+        if self.request.method in ('PATCH', 'PUT'):
+            return ContactMessageStatusUpdateSerializer
+        return ContactMessageSerializer

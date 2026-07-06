@@ -231,7 +231,7 @@ function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved })
                         </div>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Due date *</label>
-                            <BSDatePicker value={form.due_date} onChange={v => update('due_date', v)} placeholder="Select due date"/>
+                            <BSDatePicker value={form.due_date} onChange={v => update('due_date', v)} placeholder="Select due date" background="var(--color-surface-subtle)" disablePast/>
                         </div>
                     </div>
 
@@ -1061,10 +1061,10 @@ function SubmissionPreviewModal({
                         <Trash2 size={19} style={{ color: '#c0392b' }} />
                     </div>
                     <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 16, color: '#1a1f35', margin: '0 0 8px' }}>
-                        Delete assignment?
+                        Delete Assignment
                     </h3>
                     <p style={{ fontSize: 13, color: '#7a7060', lineHeight: 1.55, margin: '0 0 22px' }}>
-                        This will permanently delete <strong style={{ color: '#1a1f35' }}>"{deleteTarget.title}"</strong>. This action cannot be undone.
+                        Are you sure you want to delete this assignment? This action cannot be undone.
                     </p>
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                         <button

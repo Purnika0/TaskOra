@@ -209,5 +209,8 @@ EMAIL_HOST_USER     = 'taskora2083@gmail.com'
 EMAIL_HOST_PASSWORD = 'dnex lnin hypa fdwr'
 DEFAULT_FROM_EMAIL  = 'TaskOra <taskora2083@gmail.com>'
 
+# Contact form submissions are emailed to this address (the admin's Gmail).
+ADMIN_NOTIFICATION_EMAIL = EMAIL_HOST_USER
+
 import socket
 socket.setdefaulttimeout(10)

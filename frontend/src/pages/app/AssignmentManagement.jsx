@@ -279,7 +279,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                         </div>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Due date *</label>
-                            <BSDatePicker value={form.due_date} onChange={v => update('due_date', v)} placeholder="Select due date"/>
+                            <BSDatePicker value={form.due_date} onChange={v => update('due_date', v)} placeholder="Select due date" background="var(--color-surface-subtle)" disablePast/>
                         </div>
                     </div>
 
@@ -362,10 +362,10 @@ function DeleteAssignmentModal({ assignment, deleting, onCancel, onConfirm }) {
                     <Trash2 size={19} style={{ color:'var(--color-red)' }}/>
                 </div>
                 <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'var(--color-text)', margin:'0 0 8px' }}>
-                    Delete assignment?
+                    Delete Assignment
                 </h3>
                 <p style={{ fontSize:13, color:'var(--color-text-secondary)', lineHeight:1.55, margin:'0 0 22px' }}>
-                    This will permanently delete <strong style={{ color:'var(--color-text)' }}>"{assignment.title}"</strong> and every student's submission for it. This action cannot be undone.
+                    Are you sure you want to delete this assignment? This action cannot be undone.
                 </p>
                 <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                     <button onClick={onCancel} disabled={deleting} className="btn-secondary">Cancel</button>
