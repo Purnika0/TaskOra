@@ -1,12 +1,4 @@
 // src/pages/app/TeacherDashboard.jsx
-    // CHANGES:
-    //  • "Task" → "Assignment" throughout
-    //  • Assignment creation form: title, course select, due date, description, file upload (PDF/DOC/DOCX)
-    //  • Assignments grouped by course
-    //  • Submission approval: Accept / Reject buttons per submission
-    //  • Analytics cards: Total Assignments, Total Courses, Submitted, Pending Reviews, Approved
-    //  • "X Students Submitted" count inside assignment details
-
     import React, { useState, useMemo, useEffect, useCallback } from 'react'
     import { useNavigate } from 'react-router-dom'
     import {
@@ -37,8 +29,6 @@
     const ALLOWED_TYPES = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document']
     const ALLOWED_EXT   = '.pdf,.doc,.docx'
 
-    // Same select styling used on the Assignment Management page, so the
-    // "New Assignment" box here looks identical to the one there.
     const selStyle = {
         padding:'8px 10px', fontSize:12,
         border:'1.5px solid var(--color-border)', borderRadius:8,
@@ -55,8 +45,6 @@
         }, [todayData])
         const [cur, setCur] = useState(() => { const t = adToBS(new Date()); return { y:t.year, m:t.month } })
     
-        // Render-time adjustment (React's recommended pattern) instead of a useEffect,
-        // comparing primitive values so it stays correct regardless of upstream memoization.
         const todayKey = todayBS?.year && todayBS?.month ? `${todayBS.year}-${todayBS.month}` : null
         const [syncedKey, setSyncedKey] = useState(todayKey)
         if (todayKey && todayKey !== syncedKey) {
@@ -132,8 +120,6 @@
         )
     }
 
-// ── Dashboard Assignment Modal — matches AssignmentFormModal from
-//    AssignmentManagement.jsx (same fields, same styling), just slightly larger. ────
 const TASK_TYPES = ['assignment', 'quiz', 'project', 'exam', 'lab']
 const PRIORITIES = ['low', 'medium', 'high']
 
@@ -260,7 +246,7 @@ function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved })
                             <Paperclip size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Assignment File (PDF / DOC / DOCX)
                         </label>
                         <div style={{ border:'2px dashed var(--color-border)', borderRadius:10, padding:'16px', textAlign:'center', background:'var(--color-surface-subtle)', cursor:'pointer' }}
-                             onClick={() => document.getElementById('dash-asgn-file-input').click()}>
+                            onClick={() => document.getElementById('dash-asgn-file-input').click()}>
                             <input id="dash-asgn-file-input" type="file" accept={ALLOWED_EXT} onChange={handleFile} style={{ display:'none' }}/>
                             {file ? (
                                 <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center' }}>
@@ -545,8 +531,8 @@ function SubmissionPreviewModal({
                                     Submitted{" "}
                                     {submission.submitted_at
                                         ? new Date(
-                                              submission.submitted_at
-                                          ).toLocaleString()
+                                            submission.submitted_at
+                                        ).toLocaleString()
                                         : ""}
                                 </p>
 
@@ -813,9 +799,9 @@ function SubmissionPreviewModal({
     const hour         = new Date().getHours()
     const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
     const GRP = {
-        'High Performer': { bg:'#e0f7ee', text:'#166534' },
-        'Average':        { bg:'#eff3fd', text:'#1e40af' },
-        'At-Risk':        { bg:'#fde8e8', text:'#991b1b' },
+        'High Performer': { bg:'#e0f7ee', text:'#166534', label:'High Performer' },
+        'Average':        { bg:'#eff3fd', text:'#1e40af', label:'Average'        },
+        'At-Risk':        { bg:'#fde8e8', text:'#991b1b', label:'Needs Support'  },
     }
 
     return (
@@ -823,14 +809,14 @@ function SubmissionPreviewModal({
 
         {/* Banner */}
         <div style={{ background:'var(--color-navy)', borderRadius:14, padding:'24px 28px', position:'relative', overflow:'hidden' }}>
-            <div style={{ position:'absolute', top:-30, right:-30, width:150, height:150, background:'rgba(255,255,255,0.03)', borderRadius:'50%' }}/>
+            <div style={{ position:'absolute', top:-30, right:-30, width:150, height:150, background:'rgba(255,255,255,0.05)', borderRadius:'50%' }}/>
             <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:14 }}>
             <div>
-                <p style={{ fontSize:12, color:'rgba(255,255,255,0.35)', margin:'0 0 3px' }}>{timeGreeting},</p>
+                <p style={{ fontSize:12, color:'rgba(255,255,255,0.60)', margin:'0 0 3px' }}>{timeGreeting},</p>
                 <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:22, color:'#fff', margin:'0 0 4px', letterSpacing:'-0.02em' }}>
                 {user?.full_name || user?.username} 🎓
                 </h2>
-                <p style={{ fontSize:11, color:'rgba(255,255,255,0.28)', margin:0 }}>
+                <p style={{ fontSize:11, color:'rgba(255,255,255,0.45)', margin:0 }}>
                 {courses.length} course{courses.length !== 1 ? 's' : ''} · {assignments.length} assignment{assignments.length !== 1 ? 's' : ''}
                 </p>
             </div>
@@ -863,6 +849,7 @@ function SubmissionPreviewModal({
             /* Responsive Layout Engine */
             .courses-calendar-row {
                 flex-direction: row;
+                gap: 24px;
             }
             .courses-grid-container {
                 display: grid;
@@ -870,12 +857,14 @@ function SubmissionPreviewModal({
                 width: 100%;
             }
             .calendar-wrapper {
-                flex: 0 0 260px;
-                width: 260px;
-                order: 1; /* Calendar on the left (desktop) */
+                flex: 0 0 320px;
+                width: 320px;
+                order: 1; 
             }
             .courses-board-wrapper {
-                order: 2; /* Courses on the right (desktop) */
+                order: 2;
+                flex: 1;
+                min-width: 0; /* prevents overflow */
             }
 
             /* Mobile & Tablet Breaks */
@@ -890,12 +879,14 @@ function SubmissionPreviewModal({
                     order: 2; /* Calendar back below Courses on mobile */
                 }
                 .courses-board-wrapper {
-                    order: 1; /* Courses on top on mobile */
+                    order: 1; 
+                    flex: 1 1 auto;
                 }
                 .courses-grid-container {
-                    grid-template-columns: 1fr; /* Stacks column cards comfortably on small screens */
+                    display: grid;
+                    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+                    width: 100%;
                 }
-            }
         `}</style>
 
             {/* Courses Main Board Card (Spans across all remaining whitespace) */}
@@ -953,7 +944,7 @@ function SubmissionPreviewModal({
                                             <div key={a.id} style={{ padding: '11px 12px', background: '#fff', borderRadius: 10, border: '1px solid #ece7df' }}>
                                                 {/* Title */}
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
-                                                    <p style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1f35', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>
+                                                    <p style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1f35', margin: 0, display:'-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',wordBreak: 'break-word', maxWidth: '100%' }}>
                                                         {a.title}
                                                     </p>
                                                 </div>
@@ -1025,7 +1016,7 @@ function SubmissionPreviewModal({
                                                     {/* Delete Icon Trigger */}
                                                     <button onClick={() => setDeleteTarget(a)}
                                                         style={{ padding: '5px 8px', background: '#fde8e8', color: '#c0392b', border: 'none', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                                                        <X size={11} />
+                                                        <Trash2 size={11} />
                                                     </button>
                                                 </div>
                                             </div>
@@ -1064,7 +1055,7 @@ function SubmissionPreviewModal({
                         Delete Assignment
                     </h3>
                     <p style={{ fontSize: 13, color: '#7a7060', lineHeight: 1.55, margin: '0 0 22px' }}>
-                        Are you sure you want to delete this assignment? This action cannot be undone.
+                        Are you sure you want to delete this assignment? 
                     </p>
                     <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                         <button
@@ -1253,7 +1244,7 @@ function SubmissionPreviewModal({
                                         opacity: groupFilter && !active ? 0.55 : 1,
                                     }}
                                 >
-                                    {label}: {count}
+                                    {style.label || label}: {count}
                                 </button>
                             )
                         })}
@@ -1313,7 +1304,7 @@ function SubmissionPreviewModal({
                                                 color:gStyle.text,
                                             }}
                                         >
-                                            {s.group}
+                                            {gStyle.label || s.group}
                                         </span>
                                     </div>
 
@@ -1348,14 +1339,14 @@ function SubmissionPreviewModal({
 
         {/* Outliers */}
         <Section
-        title="Students Needing Attention"
+        title="Student Outliers"
         icon={<AlertTriangle/>}
         loading={olL}
         error={olErr}
         >
         {outliers?.outliers && !outliers.outliers.length && (
             <p style={{ fontSize:12, color:'#b0a898' }}>
-                No outliers detected. Great class!
+                No outliers detected.
             </p>
         )}
 
@@ -1376,7 +1367,7 @@ function SubmissionPreviewModal({
                     const border  = atRisk ? '#fecaca' : '#fde68a'
                     const badgeBg = atRisk ? '#fca5a5' : '#fde68a'
                     const badgeText = atRisk ? '#7f1d1d' : '#92400e'
-                    const badgeLabel = atRisk ? 'At Risk' : 'Needs Attention'
+                    const badgeLabel = atRisk ? 'At Risk' : 'Needs Support'
 
                     return (
                     <div

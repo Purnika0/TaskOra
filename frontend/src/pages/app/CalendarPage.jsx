@@ -116,7 +116,7 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onDeleteTask, is
                     Select a date
                 </p>
                 <p style={{ fontSize:12, color:'#94A3B8' }}>
-                    Click any date to view upcoming course assignments
+                    View upcoming course assignments
                 </p>
             </div>
         </div>
@@ -224,8 +224,10 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onDeleteTask, is
             {/* Bottom info banner for everyone */}
             <div style={{ padding:'8px 12px', background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:8, flexShrink:0 }}>
                 <p style={{ fontSize:11, color:'#94A3B8', margin:0, textAlign:'center' }}>
-                    <Info size={10} style={{ marginRight:4, verticalAlign:'middle' }}/>
-                    View assigned course tasks above
+                    <button style={{display: 'inline-flex',alignItems: 'center',gap: 4,color: '#b91c1c',fontSize: 12,fontWeight: 500}}            >
+                        <Info size={12} />
+                            Upcoming Assigment dates
+                    </button>
                 </p>
             </div>
         </div>

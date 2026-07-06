@@ -22,12 +22,6 @@ import { LoadingBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker   from '../../components/shared/BSDatePicker.jsx'
 import { apiError }   from '../../utils/helpers.js'
 
-// ── Small local palette for badges the shared .pill-* classes don't quite
-// cover (dashboard.css's .pill-purple and .pill-blue currently alias to the
-// same blue, which would make Teacher/Student role badges indistinguishable
-// — that's a pre-existing quirk in the shared CSS used by every dashboard
-// page, so rather than touch shared styles here, we keep small local colors
-// for these specific badges). ──────────────────────────────────────────────
 const A = {
     blue:'#2563EB', blueBg:'#DBEAFE',
     green:'#059669', greenBg:'#D1FAE5',
@@ -145,7 +139,7 @@ function ModalField({ value, error, onChange, placeholder, type = 'text' }) {
 
 // ── Add Teacher modal ────────────────────────────────────────────────────────
 function AddTeacherModal({ onClose, onCreated }) {
-    const [form, setForm] = useState({ full_name:'', username:'', email:'', password:'', confirm:'', subject:'' })
+    const [form, setForm] = useState({ full_name:'', username:'', email:'', password:'', confirm:'' })
     const [showPw, setShowPw] = useState(false)
     const [showConfirm, setShowConfirm] = useState(false)
     const [saving, setSaving] = useState(false)
@@ -186,7 +180,6 @@ function AddTeacherModal({ onClose, onCreated }) {
             const created = await authService.createTeacher({
                 full_name: form.full_name, username: form.username,
                 email: form.email, password: form.password,
-                subject: form.subject, role: 'teacher',
             })
             toast.success(`Teacher account created for ${form.full_name}`)
             onCreated(created)
@@ -250,8 +243,6 @@ function AddTeacherModal({ onClose, onCreated }) {
                             <Copy size={13}/> Copy Password
                         </button>
                     </div>
-
-                    <ModalField value={form.subject} error={errors.subject} onChange={v => set('subject', v)} placeholder="Subject / Department (optional)"/>
 
                     <div style={{ background:'var(--color-amber-light)', border:'1px solid #FDE68A', borderRadius:8, padding:'10px 12px' }}>
                         <p style={{ fontSize:11.5, color:'#92400E', margin:0, lineHeight:1.5 }}>
@@ -616,7 +607,7 @@ function CoursesTab({ courses, teachers, loading, reload }) {
     }, [courses, search])
 
     async function handleDelete(c) {
-        const ok = await confirm({ title:'Delete Course', message:'Are you sure you want to delete this course? This action cannot be undone.', danger:true, confirmLabel:'Delete' })
+        const ok = await confirm({ title:'Delete Course', message:'Are you sure you want to delete this course? ', danger:true, confirmLabel:'Delete' })
         if (!ok) return
         try {
             await coursesService.remove(c.id)
@@ -1215,7 +1206,7 @@ export default function AdminDashboard({ initialTab }) {
     }
 
     async function handleDeleteMessage(m) {
-        const ok = await confirm({ title:'Delete Message', message:'Are you sure you want to delete this message? This action cannot be undone.', danger:true, confirmLabel:'Delete' })
+        const ok = await confirm({ title:'Delete Message', message:'Are you sure you want to delete this message? ', danger:true, confirmLabel:'Delete' })
         if (!ok) return
         try {
             await contactService.remove(m.id)
@@ -1252,6 +1243,7 @@ export default function AdminDashboard({ initialTab }) {
                             style={{ display:'flex', alignItems:'center', gap:6, background:'#fff', color:'var(--color-sidebar)', border:'none', borderRadius:9, padding:'9px 16px', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'var(--font-display)' }}>
                             <Plus size={13}/> Add Teacher
                         </button>
+                        
                         <button onClick={refreshAll} aria-label="Refresh dashboard data"
                             style={{ display:'flex', alignItems:'center', gap:5, background:'rgba(255,255,255,0.12)', color:'#fff', border:'1px solid rgba(255,255,255,0.20)', borderRadius:9, padding:'8px 14px', fontSize:12, fontWeight:600, cursor:'pointer' }}>
                             <RefreshCw size={12}/> Refresh

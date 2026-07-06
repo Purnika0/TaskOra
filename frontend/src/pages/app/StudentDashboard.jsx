@@ -571,13 +571,13 @@ export default function StudentDashboard({ user: propUser }) {
 
             {/* Banner */}
             <div style={{ background:'var(--color-navy)', borderRadius:14, padding:'22px 26px', position:'relative', overflow:'hidden' }}>
-                <div style={{ position:'absolute', top:-40, right:-40, width:160, height:160, background:'rgba(255,255,255,0.03)', borderRadius:'50%' }}/>
+                <div style={{ position:'absolute', top:-40, right:-40, width:160, height:160, background:'rgba(255,255,255,0.05)', borderRadius:'50%' }}/>
                 <div style={{ position:'relative' }}>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.35)', margin:'0 0 3px' }}>{greeting},</p>
+                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.60)', margin:'0 0 3px' }}>{greeting},</p>
                     <h2 style={{ color:'var(--color-white)', fontSize:22, fontWeight:800, fontFamily:'var(--font-display)', margin:'0 0 4px', letterSpacing:'-0.02em' }}>
-                        {user?.full_name || user?.username}
+                        {user?.full_name || user?.username} 👋
                     </h2>
-                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.35)', margin:0 }}>
+                    <p style={{ fontSize:12, color:'rgba(255,255,255,0.45)', margin:0 }}>
                         {displayStats.pending} pending · {displayStats.submitted} under review · {displayStats.completed} completed
                         {displayStats.rejected > 0 && <> · {displayStats.rejected} rejected</>}
                     </p>

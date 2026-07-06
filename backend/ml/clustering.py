@@ -123,21 +123,32 @@ def cluster_students(teacher):
 
     summary = df.groupby('group').size().to_dict()
 
+    students = df[
+        [
+            "student_id",
+            "student_name",
+            "group",
+            "completion_rate",
+            "submission_rate",
+            "avg_days_early",
+            "pending_count",
+            "overdue_count",
+            "rejected_count",
+        ]
+    ].to_dict('records')
+
+    # completion_rate / submission_rate come out of build_student_features()
+    # as raw 0-1 fractions (kept that way since detect_outliers() needs the
+    # raw values for its thresholds/z-score math). Convert to percentages
+    # here, only for this function's output, matching detect_outliers()'s
+    # own output convention.
+    for s in students:
+        s["completion_rate"] = round(s["completion_rate"] * 100, 1)
+        s["submission_rate"] = round(s["submission_rate"] * 100, 1)
+
     return {
         "summary": summary,
-        "students": df[
-            [
-                "student_id",
-                "student_name",
-                "group",
-                "completion_rate",
-                "submission_rate",
-                "avg_days_early",
-                "pending_count",
-                "overdue_count",
-                "rejected_count",
-            ]
-        ].to_dict('records')
+        "students": students
     }
 
 
