@@ -12,6 +12,7 @@ import tasksService        from '../../services/tasks.service.js'
 import coursesService      from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
+import BSDatePicker         from '../../components/shared/BSDatePicker.jsx'
 import { getTaskTitle, getTaskDueDate, daysUntil, apiError } from '../../utils/helpers.js'
 
 // Guessed choice values for Assignment.task_type / priority — adjust these
@@ -186,6 +187,8 @@ function SubmitModal({ task, onClose, onSubmitted }) {
 function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
     const isEdit = Boolean(assignment)
     const toast  = useToast()
+    const ALLOWED_TYPES = ['application/pdf','application/msword','application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+    const ALLOWED_EXT   = '.pdf,.doc,.docx'
     const [form, setForm] = useState({
         title:           assignment?.title || '',
         description:     assignment?.description || '',
@@ -195,10 +198,19 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
         priority:        assignment?.priority || PRIORITIES[1],
         estimated_hours: assignment?.estimated_hours ?? 1,
     })
+    const [file, setFile]     = useState(null)
     const [saving, setSaving] = useState(false)
     const [error,  setError]  = useState('')
 
     function update(field, value) { setForm(p => ({ ...p, [field]: value })) }
+
+    function handleFile(e) {
+        const f = e.target.files?.[0]
+        if (!f) return
+        if (!ALLOWED_TYPES.includes(f.type)) { setError('Only PDF, DOC, DOCX allowed'); return }
+        if (f.size > 20 * 1024 * 1024)       { setError('File must be under 20 MB'); return }
+        setFile(f); setError('')
+    }
 
     async function handleSubmit() {
         if (!form.title.trim())  { setError('Title is required.');  return }
@@ -207,18 +219,19 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
         setSaving(true)
         setError('')
         try {
-            const payload = {
-                title:           form.title.trim(),
-                description:     form.description.trim(),
-                course:          Number(form.course),
-                due_date:        form.due_date,
-                task_type:       form.task_type,
-                priority:        form.priority,
-                estimated_hours: form.estimated_hours === '' ? null : Number(form.estimated_hours),
-            }
+            const fd = new FormData()
+            fd.append('title', form.title.trim())
+            fd.append('description', form.description.trim())
+            fd.append('course', Number(form.course))
+            fd.append('due_date', form.due_date)
+            fd.append('task_type', form.task_type)
+            fd.append('priority', form.priority)
+            if (form.estimated_hours !== '') fd.append('estimated_hours', Number(form.estimated_hours))
+            if (file) fd.append('file', file)
+
             const saved = isEdit
-                ? await tasksService.updateAssignment(assignment.id, payload)
-                : await tasksService.createAssignment(payload)
+                ? await tasksService.updateAssignment(assignment.id, fd)
+                : await tasksService.createAssignment(fd)
             toast.success(isEdit ? 'Assignment updated' : 'Assignment created')
             onSaved(saved)
         } catch (err) {
@@ -229,7 +242,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
     return (
         <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:16 }}
             className="anim-fade-in" onClick={onClose}>
-            <div style={{ background:'var(--color-surface)', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'0 16px 48px rgba(0,0,0,0.22)', overflow:'hidden' }}
+            <div style={{ background:'var(--color-surface)', borderRadius:16, width:'100%', maxWidth:560, boxShadow:'0 16px 48px rgba(0,0,0,0.22)', overflow:'hidden' }}
                 className="anim-scale-in" onClick={e => e.stopPropagation()}>
 
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid var(--color-border)' }}>
@@ -239,7 +252,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                     <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, color:'var(--color-text-secondary)', display:'flex' }}><X size={16}/></button>
                 </div>
 
-                <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:12, maxHeight:'65vh', overflowY:'auto' }}>
+                <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:12, maxHeight:'72vh', overflowY:'auto' }}>
                     {error && (
                         <p style={{ fontSize:12, color:'var(--color-red)', background:'var(--color-red-light)', padding:'8px 12px', borderRadius:8, margin:0 }}>{error}</p>
                     )}
@@ -266,8 +279,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                         </div>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Due date *</label>
-                            <input type="date" value={form.due_date} onChange={e => update('due_date', e.target.value)}
-                                style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'8px 10px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
+                            <BSDatePicker value={form.due_date} onChange={v => update('due_date', v)} placeholder="Select due date"/>
                         </div>
                     </div>
 
@@ -289,6 +301,41 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                             <input type="number" min="0" step="0.5" value={form.estimated_hours} onChange={e => update('estimated_hours', e.target.value)}
                                 style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'8px 10px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', boxSizing:'border-box' }}/>
                         </div>
+                    </div>
+
+                    <div>
+                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>
+                            <Paperclip size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Assignment File (PDF / DOC / DOCX)
+                        </label>
+                        <div style={{ border:'2px dashed var(--color-border)', borderRadius:10, padding:'16px', textAlign:'center', background:'var(--color-surface-subtle)', cursor:'pointer' }}
+                             onClick={() => document.getElementById('mgmt-asgn-file-input').click()}>
+                            <input id="mgmt-asgn-file-input" type="file" accept={ALLOWED_EXT} onChange={handleFile} style={{ display:'none' }}/>
+                            {file ? (
+                                <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center' }}>
+                                    <FileText size={16} style={{ color:'var(--color-primary)' }}/>
+                                    <span style={{ fontSize:13, color:'var(--color-text)', fontWeight:600 }}>{file.name}</span>
+                                    <button type="button" onClick={e => { e.stopPropagation(); setFile(null) }} style={{ background:'none', border:'none', cursor:'pointer', color:'var(--color-red)', padding:2 }}><X size={12}/></button>
+                                </div>
+                            ) : isEdit && assignment?.file ? (
+                                <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
+                                    <FileText size={16} style={{ color:'var(--color-primary)' }}/>
+                                    <a href={assignment.file} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+                                       style={{ fontSize:13, color:'var(--color-primary)', fontWeight:600, textDecoration:'underline' }}>
+                                        {assignment.file_name || 'View current file'}
+                                    </a>
+                                    <span style={{ fontSize:11, color:'var(--color-text-secondary)' }}>· click to replace</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <Upload size={20} style={{ color:'var(--color-text-secondary)', margin:'0 auto 6px', display:'block' }}/>
+                                    <p style={{ fontSize:12, color:'var(--color-text-secondary)', margin:0 }}>Click to upload or drag & drop</p>
+                                    <p style={{ fontSize:11, color:'var(--color-text-secondary)', margin:'3px 0 0' }}>PDF, DOC, DOCX · Max 20 MB</p>
+                                </>
+                            )}
+                        </div>
+                        {isEdit && assignment?.file && !file && (
+                            <p style={{ fontSize:11, color:'var(--color-text-secondary)', margin:'4px 0 0' }}>The current file stays attached unless you upload a new one.</p>
+                        )}
                     </div>
                 </div>
 
