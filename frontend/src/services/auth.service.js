@@ -1,22 +1,4 @@
-// src/services/auth.service.js
-// Supports login with EITHER username OR email.
-// Detects @ in the credential and sends the right field.
-//
-// ── RBAC Portal Enforcement ─────────────────────────────────────────────────
-//  portalRole = the tab the user clicked on the login screen ('student' | 'teacher')
-//
-//  Student tab  → ONLY backend role 'student' is allowed
-//  Teacher tab  → backend role 'teacher' OR 'admin' is allowed
-//                 (admin credentials entered in the Teacher tab redirect to /app/admin)
-//
-//  Any mismatch: tokens are immediately cleared and a ROLE_MISMATCH error is thrown.
-//  The caller (AuthContext → AuthPage) catches it and shows the red error banner.
-//
-// ── Email verification enforcement ───────────────────────────────────────────
-//  Login can also fail with EMAIL_NOT_VERIFIED — tagged the same way as
-//  ROLE_MISMATCH so AuthPage can redirect to the verify-email screen instead
-//  of showing a generic "invalid credentials" message.
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 import api, { setTokens, clearTokens, TOKEN_KEYS } from './api.js'
 

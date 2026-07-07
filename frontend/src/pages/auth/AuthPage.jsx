@@ -232,17 +232,17 @@ export default function AuthPage({ initialView }) {
     // ── SIGNUP ───────────────────────────────────────────────────────────────
     function validateSignup() {
         const e = {}
-        if (!regName.trim())                        e.name  = 'Full name is required'
-        if (!regUser.trim())                        e.user  = 'Username is required'
-        else if (regUser.length < 3)               e.user  = 'At least 3 characters'
-        else if (!/^[a-zA-Z0-9_]+$/.test(regUser)) e.user  = 'Letters, numbers and underscores only'
-        if (!regEmail.trim())                       e.email = 'Email is required'
-        else if (!isEmailRe(regEmail))              e.email = 'Enter a valid email address'
-        if (!regPw)                                 e.pw    = 'Password is required'
-        else if (regPw.length < 8)                 e.pw    = 'Minimum 8 characters'
+        if (!regName.trim())                        e.name  = 'Please enter your full name.'
+        if (!regUser.trim())                        e.user  = 'Please enter your username.'
+        else if (regUser.length < 3)               e.user  ='Username must be at least 3 characters.'
+        else if (!/^[a-zA-Z0-9_.]+$/.test(regUser)) e.user  = 'Username can only contain letters, numbers,dot,and underscores.'
+        if (!regEmail.trim())                       e.email = 'Please enter your email address.'
+        else if (!isEmailRe(regEmail))              e.email = 'Please enter a valid email address'
+        if (!regPw)                                 e.pw    = 'Please enter your password.'
+        else if (regPw.length < 8)                 e.pw    = 'Password must be at least 8 characters.'
         if (!regConf)                               e.conf  = 'Please confirm your password'
-        else if (regPw !== regConf)                 e.conf  = 'Passwords do not match'
-        if (!agreeTerms)                            e.agree = 'You must agree to the Terms and Conditions'
+        else if (regPw !== regConf)                 e.conf  = 'Passwords do not match. Please try again.'
+        if (!agreeTerms)                            e.agree = 'Please accept the Terms and Conditions to continue.'
         setRegErrors(e); return !Object.keys(e).length
     }
 
@@ -262,7 +262,7 @@ export default function AuthPage({ initialView }) {
         } catch (err) {
             const msg = getApiError(err).toLowerCase()
             const e = {}
-            if (msg.includes('username'))   e.user  = 'Username already taken'
+            if (msg.includes('username'))   e.user  = 'Username already exists'
             else if (msg.includes('email')) e.email = 'Email already registered'
             else                            e.form  = getApiError(err)
             setRegErrors(e)
@@ -617,7 +617,7 @@ export default function AuthPage({ initialView }) {
                         value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} required
                         iconL={<Mail size={14}/>} error={forgotErrors.email}/>
                     <p className="auth-hint">
-                        The code will arrive within a few minutes. If you don't see it, please check your spam folder.
+                        The code will arrive within a few minutes. If you don't see it, please check your spam folder or resend it.
                     </p>
                     {forgotErrors.form && <ErrBanner msg={forgotErrors.form}/>}
                     <button type="submit" disabled={submitting} className="auth-btn auth-btn-navy" style={{ marginTop:4 }}>
