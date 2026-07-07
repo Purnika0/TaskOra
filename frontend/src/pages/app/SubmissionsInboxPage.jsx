@@ -86,7 +86,7 @@ export default function SubmissionsInboxPage() {
                 <div>
                     <h2 className="page-title">Submissions Inbox</h2>
                     <p className="page-subtitle">
-                        Every submission across all {courses.length} course{courses.length !== 1 ? 's' : ''} — review without opening each assignment individually.
+                        View all student submissions across your courses in one place—no need to open each assignment individually.
                     </p>
                 </div>
             </div>
@@ -118,19 +118,16 @@ export default function SubmissionsInboxPage() {
                         </select>
                     </div>
 
-                    <div style={{ display:'flex', gap:4, overflowX:'auto', paddingBottom:2 }}>
+                    <div className="tab-bar" style={{ borderRadius:14 }}>
                         {TABS.map(t => {
                             const active = activeTab === t.key
                             return (
-                                <button key={t.key} onClick={() => setActiveTab(t.key)}
-                                    style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:8, border:'none', cursor:'pointer', whiteSpace:'nowrap',
-                                        background: active ? 'var(--color-text)' : 'var(--color-surface)',
-                                        color:      active ? 'var(--color-white)' : 'var(--color-text-secondary)',
-                                        fontSize:12.5, fontWeight:600 }}>
+                                <button key={t.key} className={`tab-btn${active ? ' active' : ''}`}
+                                    onClick={() => setActiveTab(t.key)}>
                                     {t.label}
-                                    <span style={{ fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:99,
-                                        background: active ? 'rgba(255,255,255,0.25)' : 'var(--color-surface-subtle)',
-                                        color:      active ? 'var(--color-white)' : 'var(--color-text-secondary)' }}>
+                                    <span style={{ marginLeft:5, fontSize:11, fontWeight:600, padding:'1px 6px', borderRadius:99,
+                                        background: active ? 'rgba(84,82,228,0.12)' : 'var(--color-surface-subtle)',
+                                        color:'inherit' }}>
                                         {count(t.key)}
                                     </span>
                                 </button>
@@ -142,10 +139,32 @@ export default function SubmissionsInboxPage() {
                         <div className="white-card" style={{ padding:'44px 24px', textAlign:'center' }}>
                             <Inbox size={22} style={{ color:'var(--color-text-placeholder)', margin:'0 auto 10px', display:'block' }}/>
                             <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'var(--color-text)', margin:'0 0 5px' }}>
-                                {activeTab === 'submitted' ? "You're all caught up" : 'Nothing here'}
+                                {(() => {
+                                    const narrowed = search.trim() || courseFilter !== 'all'
+                                    if (narrowed) return 'No matches found'
+                                    switch (activeTab) {
+                                        case 'submitted': return "You're all caught up"
+                                        case 'completed': return 'No approved submissions yet'
+                                        case 'rejected':  return 'No rejected submissions'
+                                        case 'pending':   return 'No pending assignments'
+                                        case 'overdue':   return 'No overdue assignments'
+                                        default:          return 'No submissions yet'
+                                    }
+                                })()}
                             </p>
                             <p style={{ fontSize:12, color:'var(--color-text-placeholder)' }}>
-                                {activeTab === 'submitted' ? 'No submissions waiting for review right now.' : 'Nothing matches this filter yet.'}
+                                {(() => {
+                                    const narrowed = search.trim() || courseFilter !== 'all'
+                                    if (narrowed) return 'Try a different search term or course to see more results.'
+                                    switch (activeTab) {
+                                        case 'submitted': return 'No submissions waiting for review right now.'
+                                        case 'completed': return 'Submissions you approve will show up here.'
+                                        case 'rejected':  return 'Submissions you reject will show up here.'
+                                        case 'pending':   return 'Assignments students haven\u2019t submitted yet will show up here.'
+                                        case 'overdue':   return 'Assignments past their due date will show up here.'
+                                        default:          return 'Submissions will appear here once students start turning in work.'
+                                    }
+                                })()}
                             </p>
                         </div>
                     ) : (

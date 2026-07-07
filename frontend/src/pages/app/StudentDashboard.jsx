@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react'
 import {
     Star, BookOpen, Clock, CheckCircle2, ClipboardList, XCircle,
     ChevronLeft, ChevronRight, ChevronDown, Upload, AlertCircle, Send,
-    X, FileText, MessageSquare, Paperclip, Pencil, Layers,
+    X, FileText, MessageSquare, Paperclip, Pencil,
 } from 'lucide-react'
 import { useAuth }                         from '../../hooks/useAuth.js'
 import { useTasks, isPending, isOverdue, isRejected, statusLabel, statusBg, statusColor } from '../../hooks/useTasks.js'
@@ -262,14 +262,14 @@ function SubmitModal({ task, onClose, onSubmitted }) {
 
                     {task.assignment?.file && (
                         <a href={task.assignment.file} target="_blank" rel="noreferrer" download
-                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'#6d4fc2', background:'#f0e8ff', padding:'8px 10px', borderRadius:8, textDecoration:'none' }}>
+                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'var(--color-primary)', background:'var(--color-primary-light)', padding:'8px 10px', borderRadius:8, textDecoration:'none' }}>
                             <Paperclip size={12}/> Download assignment document: {task.assignment.file_name || 'file'}
                         </a>
                     )}
 
                     {isEdit && task.submission_file && !file && (
                         <a href={task.submission_file} target="_blank" rel="noreferrer"
-                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'#3b6fd4', textDecoration:'none' }}>
+                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
                             <Paperclip size={12}/> Current file: {task.file_name || 'view attachment'}
                         </a>
                     )}
@@ -437,7 +437,32 @@ function AssignmentTable({ tasks, onSubmit }) {
                 {filtered.length === 0 ? (
                     <div style={{ padding:'36px 20px', textAlign:'center' }}>
                         <ClipboardList size={22} style={{ color:'var(--color-text-placeholder)', marginBottom:8 }}/>
-                        <p style={{ fontSize:13, color:'var(--color-text-placeholder)', margin:0 }}>No assignments in this category.</p>
+                        <p style={{ fontSize:13, fontWeight:700, color:'var(--color-text)', margin:'0 0 4px' }}>
+                            {(() => {
+                                if (courseFocus !== 'all') return 'No assignments found'
+                                switch (tab) {
+                                    case 'pending':   return 'No pending assignments'
+                                    case 'submitted': return 'Nothing awaiting review'
+                                    case 'completed': return 'No completed assignments yet'
+                                    case 'rejected':  return 'No rejected assignments'
+                                    case 'overdue':   return "You're all caught up"
+                                    default:          return 'No assignments yet'
+                                }
+                            })()}
+                        </p>
+                        <p style={{ fontSize:12, color:'var(--color-text-placeholder)', margin:0 }}>
+                            {(() => {
+                                if (courseFocus !== 'all') return 'Try selecting a different subject to see more assignments.'
+                                switch (tab) {
+                                    case 'pending':   return "You've submitted everything that's due — nice work."
+                                    case 'submitted': return 'Assignments you submit will show up here while your teacher reviews them.'
+                                    case 'completed': return 'Assignments your teacher approves will appear here.'
+                                    case 'rejected':  return 'Assignments sent back for changes will appear here.'
+                                    case 'overdue':   return 'Nothing is past its due date right now.'
+                                    default:          return 'Assignments from your courses will appear here once your teacher adds them.'
+                                }
+                            })()}
+                        </p>
                     </div>
                 ) : (
                     <div style={{ display:'flex', flexDirection:'column' }}>
@@ -586,7 +611,7 @@ export default function StudentDashboard({ user: propUser }) {
 
             {/* Assignment status stats — Total first, Rejected before Overdue */}
             <div className="stat-grid stagger">
-                <StatCard label="Total"      value={displayStats.total}     icon={<Layers/>}       accent="#6d4fc2"/>
+                <StatCard label="Total Assignments" value={displayStats.total}     icon={<ClipboardList/>} accent="#6d4fc2"/>
                 <StatCard label="Completed"  value={displayStats.completed} icon={<CheckCircle2/>}  accent="#3cb87a"/>
                 <StatCard label="Submitted"  value={displayStats.submitted} icon={<Send/>}          accent="#3b6fd4"/>
                 <StatCard label="Pending"    value={displayStats.pending}   icon={<Clock/>}         accent="#d4a93c"/>

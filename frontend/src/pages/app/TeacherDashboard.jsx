@@ -2,7 +2,7 @@
     import React, { useState, useMemo, useEffect, useCallback } from 'react'
     import { useNavigate } from 'react-router-dom'
     import {
-    Plus, Users, AlertTriangle, TrendingUp, Layers,
+    Plus, Users, AlertTriangle, TrendingUp,
     ChevronLeft, ChevronRight, FileText, Eye, Clock,
     CheckCircle2, X, Calendar, Upload, BookOpen,
     ClipboardList, BarChart3, ThumbsUp, ThumbsDown,
@@ -1159,7 +1159,7 @@ function SubmissionPreviewModal({
 
                 {!ranking?.length && (
                     <p style={{ fontSize:12, color:'#b0a898' }}>
-                        No student data yet.
+                        No student data available to generate rankings.
                     </p>
                 )}
 
@@ -1190,12 +1190,17 @@ function SubmissionPreviewModal({
 
         {/* Student Groups */}
         <Section
-            title="Student Groups"
-            icon={<Layers/>}
+            title="Student Performance Groups"
+            icon={<Users/>}
             loading={grL}
             error={grErr}
         >
-            {groups?.students && (
+            {!grL && (!groups?.students?.length) && (
+                <p style={{ fontSize:12, color:'#b0a898' }}>
+                    Not enough student data to generate performance groups. At least 3 students with task data are required.
+                </p>
+            )}
+            {groups?.students && groups.students.length > 0 && (
                 <>
                     <div
                         style={{
@@ -1344,9 +1349,15 @@ function SubmissionPreviewModal({
         loading={olL}
         error={olErr}
         >
-        {outliers?.outliers && !outliers.outliers.length && (
+        {!olL && outliers?.error && (
             <p style={{ fontSize:12, color:'#b0a898' }}>
-                No outliers detected.
+                Not enough student data to detect outliers. At least 4 students with task data are required.
+            </p>
+        )}
+
+        {!olL && !outliers?.error && outliers?.outliers && !outliers.outliers.length && (
+            <p style={{ fontSize:12, color:'#1a1f35' }}>
+                All students are performing within expected patterns.
             </p>
         )}
 

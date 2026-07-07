@@ -1,19 +1,7 @@
-// src/pages/app/AnalyticsPage.jsx
-//
-// Student view  → Task summary cards + weekly bar chart + course workload
-// Teacher view  → Assignment completion + K-Means student groups + Isolation Forest outliers
-//
-// ML Integration (teacher):
-//   K-Means Clustering       → GET /api/ml/analytics/teacher/student-groups/
-//     Response: { summary: { "High Performer": N, "Average": N, "At-Risk": N }, students: [...] }
-//     UI: Human-readable performance groups — NO cluster IDs exposed
-//
-//   Isolation Forest          → GET /api/ml/analytics/teacher/outliers/
-//     Response: { outliers: [{ student_name, completion_rate, z_score, flagged_by, reason }], total_flagged }
-//     UI: Student name + completion rate + reason — z_score / flagged_by NEVER shown
+
 
 import React from 'react'
-import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Clock, Users, AlertCircle } from 'lucide-react'
+import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Clock, Users, SearchX, ListOrdered, UsersRound } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
     useStudentSummary, useWeeklyProgress, useCourseWorkload,
@@ -56,6 +44,30 @@ function Bar({ label, value, max, accent = '#3b6fd4' }) {
         <div className="progress-bar-track" aria-label={`${pct}%`} aria-hidden="true">
             <div className="progress-bar-fill" style={{ width:`${pct}%`, background:accent }}/>
         </div>
+        </div>
+    )
+}
+
+// ── Empty-state card ──────────────────────────────────────────
+// Feature-specific empty state shown when a backend validation
+// threshold isn't met (e.g. not enough students with task data yet)
+// instead of a generic "No data available" message.
+function EmptyState({ icon, message }) {
+    return (
+        <div style={{
+            display:'flex', flexDirection:'column', alignItems:'center',
+            justifyContent:'center', textAlign:'center', gap:12,
+            padding:'36px 20px', minHeight:180, height:'100%',
+        }}>
+        <div style={{
+            width:44, height:44, borderRadius:12, background:'#f5f1e9',
+            display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
+        }} aria-hidden="true">
+            {React.cloneElement(icon, { size:20, style:{ color:'#b0a898' } })}
+        </div>
+        <p style={{ fontSize:13, color:'#8a7e6e', lineHeight:1.55, maxWidth:280, margin:0 }}>
+            {message}
+        </p>
         </div>
     )
 }
@@ -174,7 +186,7 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
         }
         >
         {!loading && !full.length ? (
-            <p style={{ fontSize:13, color:'#b0a898' }}>No student data yet.</p>
+            <EmptyState icon={<ListOrdered/>} message="No student data available to generate rankings." />
         ) : !loading && (
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
             {view.map((r, i) => (
@@ -263,9 +275,14 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
         >
 
         {!loading && total === 0 ? (
-            <p style={{ fontSize:13, color:'#b0a898' }}>
-            Student groups will appear once enough task data is available.
-            </p>
+            data?.error ? (
+            <EmptyState
+                icon={<UsersRound/>}
+                message="Not enough student data to generate performance groups. At least 3 students with task data are required."
+            />
+            ) : (
+            <EmptyState icon={<Users/>} message="No student data yet." />
+            )
         ) : !loading && (
             <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             {/* Group bars */}
@@ -347,13 +364,13 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
         : outliers.filter(o => o.course === courseFilter)
 
     if (error) return (
-        <Section title="Students Needing Attention" icon={<AlertCircle/>} loading={false}>
+        <Section title="Student Outliers" icon={<AlertTriangle/>} loading={false}>
         <p style={{ fontSize:12, color:'#e05252' }}>Could not load student attention data.</p>
         </Section>
     )
 
     return (
-        <Section title="Students Needing Attention" icon={<AlertCircle/>} loading={loading}
+        <Section title="Student Outliers" icon={<AlertTriangle/>} loading={loading}
         badge={total > 0 ? `${total} flagged` : undefined}
         filters={
             !loading && courses.length > 0 && (
@@ -366,7 +383,12 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
         }
         >
 
-        {!loading && outliers.length === 0 ? (
+        {!loading && data?.error ? (
+            <EmptyState
+            icon={<SearchX/>}
+            message="Not enough student data to detect outliers. At least 4 students with task data are required."
+            />
+        ) : !loading && outliers.length === 0 ? (
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
             <CheckCircle2 size={16} style={{ color:'#059669', flexShrink:0 }}/>
             <p style={{ fontSize:13, color:'#1a1f35', margin:0 }}>
