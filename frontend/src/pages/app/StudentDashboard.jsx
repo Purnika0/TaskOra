@@ -575,7 +575,7 @@ export default function StudentDashboard({ user: propUser }) {
                 <div style={{ position:'relative' }}>
                     <p style={{ fontSize:12, color:'rgba(255,255,255,0.60)', margin:'0 0 3px' }}>{greeting},</p>
                     <h2 style={{ color:'var(--color-white)', fontSize:22, fontWeight:800, fontFamily:'var(--font-display)', margin:'0 0 4px', letterSpacing:'-0.02em' }}>
-                        {user?.full_name || user?.username} 👋
+                        {user?.full_name || user?.username} 📖
                     </h2>
                     <p style={{ fontSize:12, color:'rgba(255,255,255,0.45)', margin:0 }}>
                         {displayStats.pending} pending · {displayStats.submitted} under review · {displayStats.completed} completed
