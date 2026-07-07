@@ -232,7 +232,33 @@ class ResetPasswordSerializer(serializers.Serializer):
 
 
 class VerifiedTokenObtainPairSerializer(TokenObtainPairSerializer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Frontend sends either `username` or `email` depending on what the
+        # user typed. SimpleJWT's base serializer only declares a required
+        # `username` field, so a pure-email login was always failing
+        # required-field validation before `validate()` even ran. Make the
+        # username field optional and accept an optional `email` field too,
+        # then resolve email -> username below.
+        self.fields[self.username_field].required = False
+        self.fields['email'] = serializers.EmailField(required=False)
+
     def validate(self, attrs):
+        email = attrs.pop('email', None)
+        if email and not attrs.get(self.username_field):
+            try:
+                user_obj = User.objects.get(email__iexact=email)
+            except User.DoesNotExist:
+                raise serializers.ValidationError(
+                    {"detail": "No active account found with the given credentials"}
+                )
+            attrs[self.username_field] = user_obj.username
+
+        if not attrs.get(self.username_field):
+            raise serializers.ValidationError(
+                {"detail": "Username or email is required."}
+            )
+
         data = super().validate(attrs)  # runs normal username/password auth first
         if self.user.role == User.Role.STUDENT and not self.user.is_email_verified:
             raise serializers.ValidationError(

@@ -24,6 +24,7 @@ from .throttles import OTPRequestThrottle, OTPVerifyThrottle
 from .permissions import IsAdmin, IsAdminOrTeacher
 from .models import User, OTP
 from .utils import send_otp_email
+from notifications.services import notify_admins_new_student, notify_admins_new_teacher
 
 
 
@@ -44,6 +45,8 @@ class RegisterView(generics.CreateAPIView):
 
         otp, raw_code = OTP.generate(user, OTP.Purpose.EMAIL_VERIFICATION)
         send_otp_email(user, raw_code, OTP.Purpose.EMAIL_VERIFICATION)
+
+        notify_admins_new_student(user)
 
         return Response(
             {
@@ -108,6 +111,7 @@ class CreateTeacherView(generics.CreateAPIView):
         serializer = self.get_serializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
+            notify_admins_new_teacher(user, created_by=request.user)
             return Response(
                 {
                     "detail": f"Teacher account created for {user.full_name or user.username}.",

@@ -5,6 +5,7 @@ from .models import ContactMessage
 from .serializers import ContactMessageSerializer, ContactMessageStatusUpdateSerializer
 from .utils import send_contact_notification_email
 from users.permissions import IsAdmin
+from notifications.services import notify_admins_contact_message
 
 
 class ContactMessageCreateView(generics.CreateAPIView):
@@ -21,6 +22,7 @@ class ContactMessageCreateView(generics.CreateAPIView):
         if serializer.is_valid():
             contact_message = serializer.save()
             send_contact_notification_email(contact_message)
+            notify_admins_contact_message(contact_message)
             return Response(
                 {
                     "detail": "Thank you for reaching out! We will get back to you within 24 hours.",

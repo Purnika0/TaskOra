@@ -19,6 +19,7 @@ from notifications.services import (
     notify_new_assignment,
     notify_new_submission,
     notify_submission_reviewed,
+    notify_assignment_updated,
 )
 
 class AssignmentListCreateView(generics.ListCreateAPIView):
@@ -56,6 +57,16 @@ class AssignmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Assignment.objects.filter(created_by=self.request.user).select_related('course')
+
+    def perform_update(self, serializer):
+        assignment = serializer.save()
+        # Notify every student currently enrolled in the course that the
+        # assignment they were given has changed (title, due date, etc.).
+        students = [
+            e.student for e in
+            Enrollment.objects.filter(course=assignment.course).select_related('student')
+        ]
+        notify_assignment_updated(assignment, students)
 
 
 class StudentTaskListView(generics.ListAPIView):

@@ -36,6 +36,17 @@ class NotificationSerializer(serializers.ModelSerializer):
 
     def get_link(self, obj):
         # Teacher-facing notification → submissions view; student-facing → assignments view.
-        if obj.notif_type == Notification.Type.NEW_SUBMISSION:
+        T = Notification.Type
+        if obj.notif_type == T.NEW_SUBMISSION:
             return '/app/submissions'
+        if obj.notif_type == T.NEW_STUDENT_REGISTERED:
+            return '/app/admin?tab=students'
+        if obj.notif_type == T.NEW_TEACHER_REGISTERED:
+            return '/app/admin?tab=teachers'
+        if obj.notif_type == T.NEW_COURSE_CREATED:
+            return '/app/admin?tab=courses'
+        if obj.notif_type == T.CONTACT_MESSAGE:
+            return '/app/admin?tab=messages'
+        if obj.notif_type == T.COURSE_ASSIGNED:
+            return '/app/courses'
         return '/app/assignments'

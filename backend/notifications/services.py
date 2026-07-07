@@ -1,9 +1,20 @@
 from django.utils import timezone
 from .models import Notification
+from users.models import User
 
 
 def _display_name(user):
     return user.full_name or user.username
+
+
+def _admin_recipients(exclude_user=None):
+    """All admin users — optionally excluding the admin who caused the event
+    themselves (no point notifying an admin about their own action)."""
+    qs = User.objects.filter(role=User.Role.ADMIN)
+    if exclude_user is not None:
+        qs = qs.exclude(pk=exclude_user.pk)
+    return qs
+
 
 def notify_new_assignment(assignment, students):
     """
@@ -117,4 +128,118 @@ def notify_overdue(task):
         course=assignment.course,
         assignment=assignment,
         task=task,
+    )
+
+
+def notify_assignment_updated(assignment, students):
+    """
+    students: iterable of User (every student currently enrolled in the
+    assignment's course). Bulk-creates one notification per student, the
+    same fan-out pattern as notify_new_assignment.
+    """
+    course_title = assignment.course.title
+    notifications = [
+        Notification(
+            recipient=student,
+            actor=assignment.created_by,
+            notif_type=Notification.Type.ASSIGNMENT_UPDATED,
+            title='Assignment updated',
+            message=f"\"{assignment.title}\" in {course_title} was updated. "
+                    f"Due {assignment.due_date.strftime('%d %b %Y')}.",
+            course=assignment.course,
+            assignment=assignment,
+        )
+        for student in students
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+
+
+# ── Admin-facing notifications ──────────────────────────────────────────────
+
+def notify_admins_new_student(student):
+    """Every admin is notified when a new student self-registers."""
+    notifications = [
+        Notification(
+            recipient=admin,
+            actor=student,
+            notif_type=Notification.Type.NEW_STUDENT_REGISTERED,
+            title='New student registered',
+            message=f"{_display_name(student)} ({student.email}) just created a student account.",
+        )
+        for admin in _admin_recipients()
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+
+
+def notify_admins_new_teacher(teacher, created_by=None):
+    """
+    Every OTHER admin is notified when a teacher account is created.
+    The admin who performed the action already knows, so they're excluded.
+    """
+    notifications = [
+        Notification(
+            recipient=admin,
+            actor=teacher,
+            notif_type=Notification.Type.NEW_TEACHER_REGISTERED,
+            title='New teacher account created',
+            message=f"A teacher account was created for {_display_name(teacher)} ({teacher.email}).",
+        )
+        for admin in _admin_recipients(exclude_user=created_by)
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+
+
+def notify_admins_new_course(course, created_by=None):
+    """
+    Every OTHER admin is notified when a course is created. If an admin
+    created the course themselves, they're excluded (they already know).
+    """
+    notifications = [
+        Notification(
+            recipient=admin,
+            actor=created_by,
+            notif_type=Notification.Type.NEW_COURSE_CREATED,
+            title='New course created',
+            message=(f"\"{course.title}\" was created by {_display_name(created_by)}."
+                      if created_by else f"\"{course.title}\" was created."),
+            course=course,
+        )
+        for admin in _admin_recipients(exclude_user=created_by)
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+
+
+def notify_admins_contact_message(contact_message):
+    """Every admin is notified when a visitor submits the Contact form."""
+    preview = (contact_message.subject or contact_message.message or '').strip()
+    if len(preview) > 80:
+        preview = preview[:77] + '...'
+
+    notifications = [
+        Notification(
+            recipient=admin,
+            notif_type=Notification.Type.CONTACT_MESSAGE,
+            title='New contact message',
+            message=f"{contact_message.full_name} ({contact_message.email}) sent a message"
+                    + (f": \"{preview}\"" if preview else "."),
+        )
+        for admin in _admin_recipients()
+    ]
+    if notifications:
+        Notification.objects.bulk_create(notifications)
+
+
+def notify_course_assigned(course, teacher, assigned_by=None):
+    """A teacher is notified when an admin assigns them to a course."""
+    Notification.objects.create(
+        recipient=teacher,
+        actor=assigned_by,
+        notif_type=Notification.Type.COURSE_ASSIGNED,
+        title='New course assigned to you',
+        message=f"You have been assigned as the teacher for \"{course.title}\".",
+        course=course,
     )

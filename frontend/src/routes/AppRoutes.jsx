@@ -24,6 +24,7 @@ import AnalyticsPage            from '../pages/app/AnalyticsPage.jsx'
 import CoursesPage              from '../pages/app/CoursesPage.jsx'
 import SettingsPage             from '../pages/app/SettingsPage.jsx'
 import RecommendationsPage      from '../pages/app/RecommendationsPage.jsx'
+import NotificationsPage        from '../pages/app/NotificationsPage.jsx'
 import { PageLoader }           from '../components/shared/Loader.jsx'
 
 function AuthLayout({ children }) {
@@ -127,6 +128,7 @@ export default function AppRoutes() {
                 }/>
 
                 <Route path="settings" element={<SettingsPage/>}/>
+                <Route path="notifications" element={<NotificationsPage/>}/>
                 <Route path="*" element={<RoleRedirect/>}/>
             </Route>
 

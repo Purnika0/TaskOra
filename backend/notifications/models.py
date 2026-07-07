@@ -21,6 +21,12 @@ class Notification(models.Model):
         DEADLINE_REMINDER    = 'deadline_reminder',    'Deadline Reminder'
         ASSIGNMENT_OVERDUE   = 'assignment_overdue',   'Assignment Overdue'
         NEW_SUBMISSION       = 'new_submission',       'New Submission'
+        ASSIGNMENT_UPDATED   = 'assignment_updated',   'Assignment Updated'
+        NEW_STUDENT_REGISTERED = 'new_student_registered', 'New Student Registered'
+        NEW_TEACHER_REGISTERED = 'new_teacher_registered', 'New Teacher Registered'
+        NEW_COURSE_CREATED     = 'new_course_created',     'New Course Created'
+        CONTACT_MESSAGE        = 'contact_message',        'Contact Message'
+        COURSE_ASSIGNED        = 'course_assigned',        'Course Assigned'
 
     recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='notifications'
