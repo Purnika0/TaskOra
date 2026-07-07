@@ -121,7 +121,7 @@
     }
 
 const TASK_TYPES = ['assignment', 'quiz', 'project', 'exam', 'lab']
-const PRIORITIES = ['low', 'medium', 'high']
+const PRIORITIES = [1, 2, 3, 4, 5]
 
 function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved }) {
     const isEdit = Boolean(assignment)
@@ -133,7 +133,7 @@ function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved })
         course:          assignment?.course ?? (courses[0]?.id ?? ''),
         due_date:        assignment?.due_date || '',
         task_type:       assignment?.task_type || TASK_TYPES[0],
-        priority:        assignment?.priority || PRIORITIES[1],
+        priority:        assignment?.priority ?? 3,
         estimated_hours: assignment?.estimated_hours ?? 1,
     })
     const [file, setFile]     = useState(null)
@@ -163,7 +163,7 @@ function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved })
             fd.append('course', Number(form.course))
             fd.append('due_date', form.due_date)
             fd.append('task_type', form.task_type)
-            fd.append('priority', form.priority)
+            fd.append('priority', Number(form.priority))
             if (form.estimated_hours !== '') fd.append('estimated_hours', Number(form.estimated_hours))
             if (file) fd.append('file', file)
 
@@ -230,8 +230,8 @@ function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved })
                         </div>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Priority</label>
-                            <select value={form.priority} onChange={e => update('priority', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {PRIORITIES.map(p => <option key={p} value={p}>{p[0].toUpperCase()+p.slice(1)}</option>)}
+                            <select value={form.priority} onChange={e => update('priority', Number(e.target.value))} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
+                                {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
                             </select>
                         </div>
                         <div>
