@@ -9,6 +9,7 @@ import {
 const NAV = {
     admin: [
         { to: '/app/admin',          icon: <LayoutDashboard size={15}/>, label: 'Dashboard'    },
+        { to: '/app/admin/calendar', icon: <CalendarDays size={15}/>,    label: 'Calendar'     },
         { to: '/app/settings',       icon: <Settings size={15}/>,        label: 'Settings'     },
     ],
     teacher: [
@@ -76,7 +77,7 @@ export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
                     <NavLink
                         key={n.to + idx}
                         to={n.to}
-                        end={['admin','teacher'].includes(user?.role) ? (n.to === '/app/teacher') : (n.to === '/app/dashboard')}
+                        end={n.to === '/app/admin' || n.to === '/app/teacher' || n.to === '/app/dashboard'}
                         title={collapsed ? n.label : undefined}
                         className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
                     >

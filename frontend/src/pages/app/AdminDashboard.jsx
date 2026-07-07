@@ -21,6 +21,7 @@ import { useAuth }    from '../../hooks/useAuth.js'
 import { LoadingBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker   from '../../components/shared/BSDatePicker.jsx'
 import { apiError }   from '../../utils/helpers.js'
+import AdminCalendarPage from './AdminCalendarPage.jsx'
 
 const A = {
     blue:'#2563EB', blueBg:'#DBEAFE',
@@ -1105,6 +1106,10 @@ const TABS = [
     { key:'messages',  label:'Messages',  icon:Mail            },
     { key:'analytics', label:'Analytics', icon:BarChart2       },
     { key:'activity',  label:'Activity',  icon:History         },
+    // NOTE: 'calendar' intentionally left out of TABS so it doesn't show as a
+    // tab button — it's only reachable via the sidebar link (/app/admin/calendar),
+    // which passes initialTab="calendar" directly (see AppRoutes.jsx). The
+    // render branch below still handles it.
 ]
 const TAB_KEYS = TABS.map(t => t.key)
 
@@ -1292,6 +1297,7 @@ export default function AdminDashboard({ initialTab }) {
                 {tab === 'analytics' && (
                     <AnalyticsTab users={users} courses={courses} loading={loading || coursesLoading}/>
                 )}
+                {tab === 'calendar' && <AdminCalendarPage/>}
                 {tab === 'activity' && (
                     <ActivityTab users={users} loading={loading}/>
                 )}

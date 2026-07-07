@@ -21,6 +21,26 @@ const holidaysService = {
         })
         return data   // { year_bs, month_bs, days: [...] }
     },
+
+    // ── Admin CRUD ──────────────────────────────────────────────────────────
+    // Confirmed against holidays/views.py + urls.py:
+    // POST /api/holidays/ (HolidayListCreateView, IsAdmin-only for POST)
+    // PATCH/DELETE /api/holidays/:id/ (HolidayDetailView, IsAdmin-only)
+    // Payload shape (HolidaySerializer): { title, date, holiday_type, description }
+    // date = AD 'YYYY-MM-DD'. holiday_type ∈ public|festival|regional|restricted.
+    async create(payload) {
+        const { data } = await api.post('/api/holidays/', payload)
+        return data
+    },
+
+    async update(id, payload) {
+        const { data } = await api.patch(`/api/holidays/${id}/`, payload)
+        return data
+    },
+
+    async remove(id) {
+        await api.delete(`/api/holidays/${id}/`)
+    },
 }
 
 export default holidaysService

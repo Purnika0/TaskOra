@@ -90,6 +90,9 @@ export default function AppRoutes() {
                 <Route path="admin/students" element={
                     <ProtectedRoute allowedRoles={['admin']}><AdminDashboard initialTab="students"/></ProtectedRoute>
                 }/>
+                <Route path="admin/calendar" element={
+                    <ProtectedRoute allowedRoles={['admin']}><AdminDashboard initialTab="calendar"/></ProtectedRoute>
+                }/>
 
                 <Route path="teacher" element={
                     <ProtectedRoute allowedRoles={['teacher']}><TeacherDashboard/></ProtectedRoute>

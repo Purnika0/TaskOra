@@ -134,6 +134,7 @@ class BSMonthCalendarView(APIView):
                 "day_bs": day,
                 "date_ad": str(ad),
                 "is_holiday": holiday is not None,
+                "holiday_id": holiday.id if holiday else None,
                 "holiday_title": holiday.title if holiday else None,
                 "holiday_type": holiday.holiday_type if holiday else None,
             })
