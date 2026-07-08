@@ -9,7 +9,7 @@ from tasks.models import Assignment, Task
 from tasks.priority import calculate_priority_score
 from django.db import transaction
 from django.shortcuts import get_object_or_404
-from notifications.services import notify_student_left_course, notify_student_removed
+from notifications.services import notify_student_left_course, notify_student_removed, notify_student_enrolled
 
 
 class CourseListCreateView(generics.ListCreateAPIView):
@@ -121,6 +121,7 @@ class JoinCourseView(APIView):
                 Task.objects.bulk_create(tasks_to_create)
         # ─────────────────────────────────────────────────────────────────
 
+        notify_student_enrolled(course, request.user)
         return Response(
             {
                 "detail": f"Successfully joined '{course.title}'.",

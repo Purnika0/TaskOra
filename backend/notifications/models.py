@@ -29,6 +29,7 @@ class Notification(models.Model):
         COURSE_ASSIGNED        = 'course_assigned',        'Course Assigned'
         STUDENT_LEFT_COURSE = 'student_left_course', 'Student Left Course'
         STUDENT_REMOVED_FROM_COURSE = 'student_removed_from_course', 'Student Removed From Course'
+        STUDENT_ENROLLED = 'student_enrolled', 'Student Enrolled'
 
     recipient = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='notifications'

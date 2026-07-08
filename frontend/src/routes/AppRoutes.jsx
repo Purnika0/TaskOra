@@ -23,6 +23,7 @@ import SubmissionsInboxPage     from '../pages/app/SubmissionsInboxPage.jsx'
 import CalendarPage             from '../pages/app/CalendarPage.jsx'
 import AnalyticsPage            from '../pages/app/AnalyticsPage.jsx'
 import CoursesPage              from '../pages/app/CoursesPage.jsx'
+import EnrolledStudentsPage     from '../pages/app/EnrolledStudentsPage.jsx'
 import SettingsPage             from '../pages/app/SettingsPage.jsx'
 import RecommendationsPage      from '../pages/app/RecommendationsPage.jsx'
 import NotificationsPage        from '../pages/app/NotificationsPage.jsx'
@@ -129,6 +130,9 @@ export default function AppRoutes() {
                 }/>
                 <Route path="courses" element={
                     <ProtectedRoute allowedRoles={['student','teacher']}><CoursesPage/></ProtectedRoute>
+                }/>
+                <Route path="courses/:id/students" element={
+                    <ProtectedRoute allowedRoles={['teacher']}><EnrolledStudentsPage/></ProtectedRoute>
                 }/>
 
                 <Route path="settings" element={<SettingsPage/>}/>

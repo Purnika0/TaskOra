@@ -270,3 +270,17 @@ def notify_student_removed(course, student, removed_by=None):
         message=f"You have been removed from \"{course.title}\".",
         course=course,
     )
+
+def notify_student_enrolled(course, student):
+    """Teacher is notified when a student joins their course via join code."""
+    if not course.teacher_id:
+        return  # unassigned course, no teacher to notify
+
+    Notification.objects.create(
+        recipient=course.teacher,
+        actor=student,
+        notif_type=Notification.Type.STUDENT_ENROLLED,
+        title='New student enrolled',
+        message=f"{_display_name(student)} has joined \"{course.title}\".",
+        course=course,
+    )

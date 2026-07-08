@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, GraduationCap, Hash, BookOpen, Calendar, User, Pencil, Trash2, ListChecks } from 'lucide-react'
+import { Plus, GraduationCap, Hash, BookOpen, Calendar, User, Pencil, Trash2, ListChecks, LogOut, Users } from 'lucide-react'
 import { useAuth }        from '../../hooks/useAuth.js'
 import { useToast }       from '../../context/ToastContext.jsx'
 import coursesService     from '../../services/courses.service.js'
@@ -49,6 +49,8 @@ export default function CoursesPage() {
     const [creating,       setCreating]       = useState(false)
     const [deletingId,     setDeletingId]     = useState(null)
     const [deleteTarget,   setDeleteTarget]   = useState(null)   // course pending delete confirmation
+    const [leavingId,      setLeavingId]      = useState(null)
+    const [leaveTarget,    setLeaveTarget]    = useState(null)   // course pending leave confirmation
 
 async function load() {
         setLoading(true)
@@ -131,6 +133,31 @@ async function confirmDelete() {
 
 function handleViewAssignments(course) {
         navigate(`/app/assignments?course=${course.id}`)
+}
+
+function handleViewStudents(course) {
+        navigate(`/app/courses/${course.id}/students`)
+}
+
+function handleLeaveClick(course) {
+        setLeaveTarget(course)
+}
+
+function cancelLeave() {
+        if (leavingId) return // don't allow closing mid-request
+        setLeaveTarget(null)
+}
+
+async function confirmLeave() {
+        if (!leaveTarget) return
+        setLeavingId(leaveTarget.id)
+        try {
+        await coursesService.leave(leaveTarget.id)
+        toast.success('You have left the course')
+        setLeaveTarget(null)
+        load()
+        } catch (err) { toast.error(apiError(err)) }
+        finally { setLeavingId(null) }
 }
 
 return (
@@ -268,8 +295,24 @@ return (
                         <ListChecks size={12} aria-hidden="true"/>
                         Assignments
                     </button>
+                    {!isTeacher && (
+                        <button
+                            onClick={() => handleLeaveClick(course)}
+                            aria-label={`Leave ${course.title}`}
+                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#c0392b', background:'#fbeceb', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                        >
+                            <LogOut size={12} aria-hidden="true"/>
+                        </button>
+                    )}
                     {isTeacher && (
                         <>
+                        <button
+                            onClick={() => handleViewStudents(course)}
+                            aria-label={`View students enrolled in ${course.title}`}
+                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#3cb87a', background:'#eafaf1', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                        >
+                            <Users size={12} aria-hidden="true"/>
+                        </button>
                         <button
                             onClick={() => handleEditClick(course)}
                             aria-label={`Edit ${course.title}`}
@@ -332,6 +375,51 @@ return (
                             style={{ background:'#c0392b', color:'#fff', cursor: deletingId ? 'default' : 'pointer', opacity: deletingId ? 0.75 : 1 }}
                         >
                             {deletingId ? 'Deleting…' : 'Delete Course'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {/* Leave confirmation modal */}
+        {leaveTarget && (
+            <div
+                onClick={cancelLeave}
+                style={{
+                    position:'fixed', inset:0, background:'rgba(26,31,53,0.45)', backdropFilter:'blur(2px)',
+                    display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:20,
+                }}
+            >
+                <div
+                    onClick={e => e.stopPropagation()}
+                    className="white-card anim-fade-in"
+                    style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)' }}
+                >
+                    <div style={{ width:44, height:44, borderRadius:'50%', background:'#fbeceb', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
+                        <LogOut size={19} style={{ color:'#c0392b' }}/>
+                    </div>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:'0 0 8px' }}>
+                        Leave Course
+                    </h3>
+                    <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
+                        Are you sure you want to leave "{leaveTarget.title}"? Your assignments and progress will be restored if you re-enroll later.
+                    </p>
+                    <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <button
+                            onClick={cancelLeave}
+                            disabled={!!leavingId}
+                            className="btn-primary"
+                            style={{ background:'#f0ece5', color:'#7a7060', cursor: leavingId ? 'default' : 'pointer' }}
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmLeave}
+                            disabled={!!leavingId}
+                            className="btn-primary"
+                            style={{ background:'#c0392b', color:'#fff', cursor: leavingId ? 'default' : 'pointer', opacity: leavingId ? 0.75 : 1 }}
+                        >
+                            {leavingId ? 'Leaving…' : 'Leave Course'}
                         </button>
                     </div>
                 </div>

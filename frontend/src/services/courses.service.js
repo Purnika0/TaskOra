@@ -58,6 +58,18 @@ const coursesService = {
         return data
     },
 
+    // Student: leave (un-enroll from) a course themselves
+    // DELETE /api/courses/<id>/leave/
+    async leave(id) {
+        await api.delete(`/api/courses/${id}/leave/`)
+    },
+
+    // Teacher / Admin: un-enroll a specific student from a course
+    // DELETE /api/courses/<id>/students/<studentId>/
+    async unenrollStudent(id, studentId) {
+        await api.delete(`/api/courses/${id}/students/${studentId}/`)
+    },
+
     // NOTE: no matching backend route in courses/urls.py currently (only
     // '', '<pk>/', 'join/', 'my/', '<pk>/students/' exist) — the join code
     // is already returned on the course object itself via CourseSerializer.
