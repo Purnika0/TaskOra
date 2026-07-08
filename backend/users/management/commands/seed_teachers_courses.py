@@ -12,7 +12,8 @@ Run with:
 from django.core.management.base import BaseCommand
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from datetime import date
+from datetime import date, timedelta
+import random
 
 User = get_user_model()
 
@@ -56,12 +57,22 @@ COURSES = [
      "Boolean algebra, logic gates, combinational and sequential circuits, and digital system design."),
     ("SCO105", "Sociology", 1, "bishnu.bhusal",
      "Introduction to sociology, social structures, institutions, and the relationship between technology and society."),
+    # Semester I (addition)
+    ("MTH104", "Basic Mathematics", 1, "kishor.luitel",
+     "Differential and integral calculus, matrices, vectors, and their applications to engineering and computing problems."),
 
     # Semester II
     ("BIT151", "Microprocessor and Computer Architecture", 2, "kumar.prasun",
      "Microprocessor architecture, instruction sets, assembly language programming, memory and I/O interfacing."),
     ("BIT153", "Object Oriented Programming", 2, "subash.siwa",
      "Principles of OOP using Java: classes, objects, inheritance, polymorphism, encapsulation, and exception handling."),
+    # Semester II (additions)
+    ("BIT152", "Discrete Structure", 2, "santosh.dhungana",
+     "Set theory, relations, functions, propositional logic, graph theory, and combinatorics as applied to computer science."),
+    ("STA154", "Basic Statistics", 2, "bimal.acharya",
+     "Descriptive statistics, probability distributions, correlation, regression, and hypothesis testing for data analysis."),
+    ("ECO155", "Economics", 2, "niraj.panta",
+     "Microeconomic and macroeconomic principles, demand and supply, market structures, and their relevance to IT industry decisions."),
 
     # Semester III
     ("BIT201", "Data Structures and Algorithms", 3, "ramesh.saud",
@@ -120,18 +131,44 @@ COURSES = [
      "E-commerce models, payment systems, digital marketing, security, and legal aspects of online business."),
     ("BIT408", "Cloud Computing (Elective II)", 7, "rakesh.bachhan",
      "Cloud service models (IaaS/PaaS/SaaS), virtualization, deployment models, and major cloud platforms."),
+
+    # Semester VIII (new)
+    ("BIT451", "Network and System Administration", 8, "rakesh.bachhan",
+     "Server administration, network configuration, user/permission management, system monitoring, and troubleshooting on Linux/Windows platforms."),
+    ("BIT452", "E Governance", 8, "anil.lamichhane",
+     "E-governance models, digital government services, ICT policy in Nepal, citizen service delivery systems, and case studies of government IT projects."),
+    ("BIT454", "Data Warehousing and Data Mining", 8, "bhim.rawat",
+     "Data warehouse architecture, OLAP, ETL processes, data mining techniques including classification, clustering, and association rule mining."),
 ]
 
 # Approximate semester start and end dates (AD)
 # Based on TU academic calendar pattern
+# ---------------------------------------------------------------------------
+# Current academic term (BS: ~1 Falgun 2082 – end of Shrawan 2083)
+# Term shifted later than the usual Baishakh end due to 2082 election
+# disruption. Only semesters 1, 3, 5, 7 are actively running (one batch per
+# year, alternating odd/even semesters) — each starts a few days apart from
+# the others rather than all on the same calendar day.
+# ---------------------------------------------------------------------------
+TERM_START = date(2026, 2, 13)   # ~1 Falgun 2082
+TERM_END   = date(2026, 8, 16)    # ~end of Shrawan 2083
+
+ACTIVE_SEMESTERS = [1, 3, 5, 7]
+
+def _build_active_semester_dates():
+    dates = {}
+    for sem in ACTIVE_SEMESTERS:
+        start = TERM_START + timedelta(days=random.randint(5, 20))
+        dates[sem] = (start, TERM_END)
+    return dates
+
 SEMESTER_DATES = {
-    1: (date(2021, 11, 1), date(2022, 4, 30)),
+    **_build_active_semester_dates(),
+    # Not currently active this cycle — placeholders until that batch's term begins
     2: (date(2022, 5, 1), date(2022, 10, 31)),
-    3: (date(2022, 11, 1), date(2023, 4, 30)),
     4: (date(2023, 5, 1), date(2023, 10, 31)),
-    5: (date(2023, 11, 1), date(2024, 4, 30)),
     6: (date(2024, 5, 1), date(2024, 10, 31)),
-    7: (date(2024, 11, 1), date(2025, 4, 30)),
+    8: (date(2025, 5, 1), date(2025, 10, 31)),
 }
 
 
@@ -209,6 +246,7 @@ class Command(BaseCommand):
         self.stdout.write("\n[2/2] Creating courses...")
         created_count = 0
         skipped_count = 0
+        updated_count = 0
 
         for code, title, semester, teacher_username, description in COURSES:
             teacher = teachers_map.get(teacher_username)
@@ -233,15 +271,33 @@ class Command(BaseCommand):
                 self.stdout.write(f"    ✓ Sem {semester}  {code} — {title}")
                 created_count += 1
             else:
-                self.stdout.write(f"    ~ Exists  {code} — {title}")
+                # get_or_create only applies `defaults` on creation, so an
+                # existing course's start_date/end_date would otherwise stay
+                # frozen at whatever they were the first time this ran --
+                # always sync them here so changes to SEMESTER_DATES (e.g.
+                # the Falgun-Shrawan term shift) actually take effect.
+                if course.start_date != start_date or course.end_date != end_date:
+                    course.start_date = start_date
+                    course.end_date = end_date
+                    course.save(update_fields=["start_date", "end_date"])
+                    self.stdout.write(
+                        f"    ~ Updated dates  {code} — {title}  ({start_date} to {end_date})"
+                    )
+                    updated_count += 1
+                else:
+                    self.stdout.write(f"    ~ Exists  {code} — {title}")
                 skipped_count += 1
 
-        self.stdout.write(f"\n    Created: {created_count}  |  Already existed: {skipped_count}  |  Total: {created_count + skipped_count}")
+        self.stdout.write(
+            f"\n    Created: {created_count}  |  Dates updated: {updated_count}  |  "
+            f"Unchanged: {skipped_count - updated_count}  |  Total: {created_count + skipped_count}"
+        )
 
         self.stdout.write("\n" + "=" * 60)
         self.stdout.write("  SUMMARY")
         self.stdout.write("=" * 60)
         self.stdout.write(f"  Teachers : {len(teachers_map)}")
         self.stdout.write(f"  Courses  : {created_count + skipped_count}")
+        self.stdout.write(f"  Dates refreshed on existing courses: {updated_count}")
         self.stdout.write("\n  Default teacher password: Teacher@123")
         self.stdout.write("=" * 60 + "\n")

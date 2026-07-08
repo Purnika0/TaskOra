@@ -5,13 +5,27 @@ Place this file at:
     any_app/management/commands/seed_assignments.py
 
 Run with:
-    python manage.py seed_assignments           # create assignments
-    python manage.py seed_assignments --clear   # delete and re-create
+    python manage.py seed_assignments             # create assignments
+    python manage.py seed_assignments --refresh   # also refresh due dates on existing assignments
+    python manage.py seed_assignments --clear     # delete and re-create everything
 
 Notes:
-    - BIT-coded courses get a Lab Report assignment (mandatory per TU evaluation policy)
-    - Non-BIT courses (SCO, MGT, ENG, ORS, RSM) do not get lab reports
-    - Semester is considered ~50% complete: mix of past and future due dates
+    - Practical-heavy courses (BIT-coded) get 4 items: 1 major end-of-semester
+        Lab Report (covers all practical work for the course, submitted to both
+        the internal teacher and external invigilator) + 3 minor items (a mix
+        of assignment/homework)
+    - Theory-only courses (SCO, MGT, ENG, ORS, RSM) get 5 items: 1 written
+        assignment + 2 presentation-style assignments + 1 quiz + 1 homework
+    - Due dates are calculated as a PERCENTAGE OF EACH COURSE'S ACTUAL TERM
+        (course.start_date -> course.end_date), not relative to "today". This
+        means due dates stay correctly positioned within the semester no
+        matter when you run this command.
+    - Because assignments are matched by title+course, re-running this
+        command normally SKIPS existing assignments and does not touch their
+        due dates. Use --refresh to recompute and update due_date (and
+        task_type/estimated_hours/priority) on existing assignments -- safe
+        to run any time before a demo/presentation, and does not delete
+        student Task history the way --clear would.
     - Due dates never fall on Saturday or a Nepali public holiday
     - Priority: Exam=5, Project=4, Assignment=3, Quiz=2, Homework=1
     - Estimated hours vary by task type and topic complexity
@@ -59,27 +73,35 @@ def is_off_day(d):
     return d.weekday() == 5 or d in HOLIDAY_DATES
 
 
-def safe_past(days_min, days_max):
-    """Return a random past date that is not a Saturday or holiday."""
+def term_pct(course, pct_min, pct_max):
+    """
+    Return a random date that falls between pct_min and pct_max of the way
+    through the given course's term (course.start_date -> course.end_date),
+    skipping Saturdays and holidays.
+
+    This is calculated relative to the COURSE'S ACTUAL TERM DATES, not to
+    "today" -- so due dates stay correctly positioned within the semester
+    no matter when this command is run, and re-running the command with
+    the --refresh behavior below will recompute a fresh (but still
+    correctly-positioned) date rather than going stale.
+    """
+    span_days = (course.end_date - course.start_date).days
+    if span_days <= 0:
+        return course.start_date
+
+    lo = int(span_days * pct_min)
+    hi = int(span_days * pct_max)
+    if hi <= lo:
+        hi = lo + 1
+
     for _ in range(60):  # max attempts
-        d = date.today() - timedelta(days=random.randint(days_min, days_max))
+        offset = random.randint(lo, hi)
+        d = course.start_date + timedelta(days=offset)
         if not is_off_day(d):
             return d
-    # Fallback: walk backwards from days_min until a safe day is found
-    d = date.today() - timedelta(days=days_min)
-    while is_off_day(d):
-        d -= timedelta(days=1)
-    return d
 
-
-def safe_future(days_min, days_max):
-    """Return a random future date that is not a Saturday or holiday."""
-    for _ in range(60):
-        d = date.today() + timedelta(days=random.randint(days_min, days_max))
-        if not is_off_day(d):
-            return d
-    # Fallback: walk forward from days_min until a safe day is found
-    d = date.today() + timedelta(days=days_min)
+    # Fallback: walk forward from the low end until a safe day is found
+    d = course.start_date + timedelta(days=lo)
     while is_off_day(d):
         d += timedelta(days=1)
     return d
@@ -93,691 +115,570 @@ def safe_future(days_min, days_max):
 COURSE_ASSIGNMENTS = {
 
     # -----------------------------------------------------------------------
-    # BIT101 — Introduction to Information Technology (Sem 1)
+    # BIT101 — Introduction to Information Technology (Sem 1) — Practical
     # Teacher: Subash Siwa
     # -----------------------------------------------------------------------
     "BIT101": [
-        ("Lab Report: Hardware Components and OS Exploration",
-         "assignment", lambda: safe_past(60, 75), 3, 6.0),
-        ("Presentation: Generations of Computer and their Impact",
-         "assignment", lambda: safe_past(45, 60), 3, 3.0),
+        ("Lab Report: Hardware Components and OS Exploration (Complete Semester Lab)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 9.0),
         ("Homework: Number System Conversions (Binary, Octal, Hex)",
-         "homework",   lambda: safe_past(30, 44), 1, 1.5),
-        ("Quiz 1: Introduction to Computer and Hardware",
-         "quiz",       lambda: safe_past(50, 65), 2, 1.0),
+         "homework",   lambda c: term_pct(c, 0.26, 0.35), 1, 1.5),
         ("Assignment: Research on ISPs in Nepal and Their Services",
-         "assignment", lambda: safe_past(15, 29), 3, 2.5),
-        ("Quiz 2: Computer Networks and Internet Services",
-         "quiz",       lambda: safe_future(5, 15), 2, 1.0),
-        ("Presentation: Applications and Societal Impact of IT",
-         "assignment", lambda: safe_future(16, 30), 3, 3.0),
+         "assignment", lambda c: term_pct(c, 0.36, 0.45), 3, 2.5),
         ("Homework: Database Systems — DBMS vs File System Comparison",
-         "homework",   lambda: safe_future(10, 20), 1, 1.5),
+         "homework",   lambda c: term_pct(c, 0.62, 0.68), 1, 1.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT102 — C Programming (Sem 1)
+    # BIT102 — C Programming (Sem 1) — Practical
     # Teacher: Arjun Lamichhane
     # -----------------------------------------------------------------------
     "BIT102": [
-        ("Lab Report: C Programming Exercises (Units 1–5)",
-         "assignment", lambda: safe_past(55, 70), 3, 8.0),
+        ("Lab Report: Complete C Programming Lab (All Units)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Write a C Program using Control Structures",
-         "homework",   lambda: safe_past(40, 54), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.19, 0.28), 1, 2.0),
         ("Assignment: Implement Array and String Manipulation Programs",
-         "assignment", lambda: safe_past(25, 39), 3, 3.0),
-        ("Quiz 1: Elements of C, Operators, and Control Structures",
-         "quiz",       lambda: safe_past(45, 60), 2, 1.0),
-        ("Homework: Recursive Functions — Factorial, Fibonacci, Tower of Hanoi",
-         "homework",   lambda: safe_past(10, 24), 1, 2.0),
+         "assignment", lambda c: term_pct(c, 0.29, 0.38), 3, 3.0),
         ("Assignment: Pointer and Dynamic Memory Allocation Programs",
-         "assignment", lambda: safe_future(5, 18), 3, 3.5),
-        ("Quiz 2: Functions, Pointers, and Structures",
-         "quiz",       lambda: safe_future(10, 20), 2, 1.0),
-        ("Lab Report: File Handling and Structures in C (Units 9–10)",
-         "assignment", lambda: safe_future(20, 35), 3, 6.0),
+         "assignment", lambda c: term_pct(c, 0.58, 0.67), 3, 3.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT103 — Digital Logic (Sem 1)
+    # BIT103 — Digital Logic (Sem 1) — Practical
     # Teacher: Kumar Prasun
     # -----------------------------------------------------------------------
     "BIT103": [
-        ("Lab Report: Logic Gates and Combinational Circuit Design",
-         "assignment", lambda: safe_past(60, 75), 3, 6.0),
+        ("Lab Report: Complete Digital Logic Lab (Combinational & Sequential Circuits)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 9.0),
         ("Homework: Number System Conversions and Binary Arithmetic",
-         "homework",   lambda: safe_past(50, 65), 1, 1.5),
+         "homework",   lambda c: term_pct(c, 0.12, 0.22), 1, 1.5),
         ("Assignment: Boolean Algebra Simplification using K-Map",
-         "assignment", lambda: safe_past(35, 49), 3, 2.5),
-        ("Quiz 1: Number Systems, Boolean Algebra, and Logic Gates",
-         "quiz",       lambda: safe_past(45, 58), 2, 1.0),
-        ("Lab Report: Multiplexer, Demultiplexer, Encoder, and Decoder",
-         "assignment", lambda: safe_past(20, 34), 3, 5.0),
-        ("Homework: Design Flip-Flop Circuits (SR, JK, D, T)",
-         "homework",   lambda: safe_future(5, 15), 1, 2.0),
-        ("Quiz 2: Sequential Logic and Counters",
-         "quiz",       lambda: safe_future(8, 18), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.22, 0.32), 3, 2.5),
         ("Assignment: Design of ALU and Processor Logic",
-         "assignment", lambda: safe_future(20, 35), 3, 4.0),
+         "assignment", lambda c: term_pct(c, 0.68, 0.78), 3, 4.0),
     ],
 
     # -----------------------------------------------------------------------
-    # SCO105 — Sociology (Sem 1)
-    # Teacher: Bishnu Bhusal | No lab report
+    # MTH104 — Basic Mathematics (Sem 1) — Practical
+    # Teacher: Kishor Luitel
+    # -----------------------------------------------------------------------
+    "MTH104": [
+        ("Lab Report: Solve Calculus and Matrix Problems using Python/MATLAB",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 8.0),
+        ("Homework: Differentiation and Integration Practice Problems",
+         "homework",   lambda c: term_pct(c, 0.15, 0.25), 1, 1.5),
+        ("Assignment: Application of Matrices — Solve Systems of Linear Equations",
+         "assignment", lambda c: term_pct(c, 0.26, 0.35), 3, 3.0),
+        ("Assignment: Vector Calculus — Gradient, Divergence, and Curl Problems",
+         "assignment", lambda c: term_pct(c, 0.62, 0.70), 3, 3.5),
+    ],
+
+    # -----------------------------------------------------------------------
+    # SCO105 — Sociology (Sem 1) — Theory | No lab report
+    # Teacher: Bishnu Bhusal
     # -----------------------------------------------------------------------
     "SCO105": [
-        ("Presentation: Introduction to Sociology and its Scope",
-         "assignment", lambda: safe_past(55, 70), 3, 2.5),
-        ("Homework: Write a Note on Social Norms and Values",
-         "homework",   lambda: safe_past(40, 54), 1, 1.5),
         ("Assignment: Research Report on Social Institutions in Nepal",
-         "assignment", lambda: safe_past(20, 39), 3, 4.0),
-        ("Quiz 1: Introduction and Fundamentals of Society",
-         "quiz",       lambda: safe_past(45, 60), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.29, 0.42), 3, 4.0),
+        ("Presentation: Introduction to Sociology and its Scope",
+         "assignment", lambda c: term_pct(c, 0.08, 0.18), 3, 2.5),
         ("Presentation: Social Stratification and Caste System in Nepal",
-         "assignment", lambda: safe_future(5, 18), 3, 3.0),
-        ("Homework: Essay on Social Change and IT's Role in Nepal",
-         "homework",   lambda: safe_future(15, 28), 1, 2.0),
+         "assignment", lambda c: term_pct(c, 0.58, 0.67), 3, 3.0),
         ("Quiz 2: Social Structure and Institutions",
-         "quiz",       lambda: safe_future(10, 20), 2, 1.0),
+         "quiz",       lambda c: term_pct(c, 0.62, 0.68), 2, 1.0),
+        ("Homework: Write a Note on Social Norms and Values",
+         "homework",   lambda c: term_pct(c, 0.19, 0.28), 1, 1.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT151 — Microprocessor and Computer Architecture (Sem 2)
+    # BIT151 — Microprocessor and Computer Architecture (Sem 2) — Practical
     # Teacher: Kumar Prasun
     # -----------------------------------------------------------------------
     "BIT151": [
-        ("Lab Report: Intel 8085 Assembly Language Programs",
-         "assignment", lambda: safe_past(60, 75), 3, 8.0),
+        ("Lab Report: Complete Intel 8085 Assembly Language Lab",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Microprocessor Architecture — Register Organization",
-         "homework",   lambda: safe_past(50, 65), 1, 1.5),
+         "homework",   lambda c: term_pct(c, 0.12, 0.22), 1, 1.5),
         ("Assignment: Write and Trace 8085 Assembly Programs for Arithmetic Operations",
-         "assignment", lambda: safe_past(35, 49), 3, 4.0),
-        ("Quiz 1: Introduction to Microprocessor and Intel 8085",
-         "quiz",       lambda: safe_past(48, 62), 2, 1.0),
-        ("Assignment: Presentation on Control Unit Design and CPU Organization",
-         "assignment", lambda: safe_past(20, 34), 3, 3.0),
-        ("Homework: Fixed Point Arithmetic — Multiplication and Division",
-         "homework",   lambda: safe_future(5, 15), 1, 2.0),
-        ("Quiz 2: CPU Architecture, Pipelining, and Memory Organization",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.22, 0.32), 3, 4.0),
         ("Assignment: Research on I/O Organization and Interrupt Handling",
-         "assignment", lambda: safe_future(20, 35), 3, 3.5),
+         "assignment", lambda c: term_pct(c, 0.68, 0.78), 3, 3.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT153 — Object Oriented Programming (Sem 2)
+    # BIT152 — Discrete Structure (Sem 2) — Practical
+    # Teacher: Santosh Dhungana
+    # -----------------------------------------------------------------------
+    "BIT152": [
+        ("Lab Report: Implement Set, Relation, and Graph Operations in Python",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 8.0),
+        ("Homework: Propositional Logic — Truth Tables and Logical Equivalences",
+         "homework",   lambda c: term_pct(c, 0.15, 0.25), 1, 1.5),
+        ("Assignment: Prove Statements using Mathematical Induction",
+         "assignment", lambda c: term_pct(c, 0.26, 0.35), 3, 3.0),
+        ("Assignment: Graph Theory — Trees, Traversals, and Shortest Path Problems",
+         "assignment", lambda c: term_pct(c, 0.62, 0.70), 3, 3.5),
+    ],
+
+    # -----------------------------------------------------------------------
+    # BIT153 — Object Oriented Programming (Sem 2) — Practical
     # Teacher: Subash Siwa
     # -----------------------------------------------------------------------
     "BIT153": [
-        ("Lab Report: OOP Concepts Using C++ (Classes, Objects, Inheritance)",
-         "assignment", lambda: safe_past(60, 75), 3, 8.0),
+        ("Lab Report: Complete OOP Lab using C++ (Classes, Inheritance, Templates, File Handling)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 11.0),
         ("Homework: Implement Class and Object Programs in C++",
-         "homework",   lambda: safe_past(48, 63), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.13, 0.23), 1, 2.0),
         ("Assignment: Operator Overloading Programs in C++",
-         "assignment", lambda: safe_past(33, 47), 3, 3.5),
-        ("Quiz 1: Introduction to OOP, Classes, and Objects",
-         "quiz",       lambda: safe_past(50, 65), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.5),
         ("Assignment: Implement Inheritance and Polymorphism in C++",
-         "assignment", lambda: safe_past(18, 32), 3, 4.0),
-        ("Homework: Virtual Functions and Runtime Polymorphism",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Inheritance, Polymorphism, and Exception Handling",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: File Handling and Templates in C++",
-         "assignment", lambda: safe_future(22, 38), 3, 5.0),
+         "assignment", lambda c: term_pct(c, 0.34, 0.43), 3, 4.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT201 — Data Structures and Algorithms (Sem 3)
+    # STA154 — Basic Statistics (Sem 2) — Practical
+    # Teacher: Bimal Acharya
+    # -----------------------------------------------------------------------
+    "STA154": [
+        ("Lab Report: Descriptive Statistics and Regression Analysis using Excel/R",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 7.0),
+        ("Homework: Measures of Central Tendency and Dispersion Practice Problems",
+         "homework",   lambda c: term_pct(c, 0.15, 0.25), 1, 1.5),
+        ("Assignment: Probability Distributions — Binomial and Normal Distribution Problems",
+         "assignment", lambda c: term_pct(c, 0.26, 0.35), 3, 3.0),
+        ("Assignment: Hypothesis Testing and Correlation Analysis on Sample Data",
+         "assignment", lambda c: term_pct(c, 0.62, 0.70), 3, 3.5),
+    ],
+
+    # -----------------------------------------------------------------------
+    # ECO155 — Economics (Sem 2) — Theory | No lab report
+    # Teacher: Niraj Panta
+    # -----------------------------------------------------------------------
+    "ECO155": [
+        ("Assignment: Analyze Demand and Supply Trends in the Nepali IT Market",
+         "assignment", lambda c: term_pct(c, 0.26, 0.35), 3, 3.5),
+        ("Presentation: Market Structures — Perfect Competition vs Monopoly",
+         "assignment", lambda c: term_pct(c, 0.12, 0.22), 3, 2.5),
+        ("Presentation: Macroeconomic Indicators and Their Impact on Nepal's Economy",
+         "assignment", lambda c: term_pct(c, 0.60, 0.68), 3, 3.0),
+        ("Quiz 1: Fundamentals of Micro and Macro Economics",
+         "quiz",       lambda c: term_pct(c, 0.15, 0.25), 2, 1.0),
+        ("Homework: Write a Note on Opportunity Cost and Scarcity",
+         "homework",   lambda c: term_pct(c, 0.65, 0.74), 1, 1.5),
+    ],
+
+    # -----------------------------------------------------------------------
+    # BIT201 — Data Structures and Algorithms (Sem 3) — Practical
     # Teacher: Ramesh Singh Saud
     # -----------------------------------------------------------------------
     "BIT201": [
-        ("Lab Report: Implementation of Stack, Queue, and Linked List",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
+        ("Lab Report: Complete DSA Lab (Stacks, Queues, Trees, Graphs, Sorting, Hashing)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 11.0),
         ("Homework: Algorithm Analysis — Big O Notation Practice Problems",
-         "homework",   lambda: safe_past(48, 60), 1, 1.5),
+         "homework",   lambda c: term_pct(c, 0.15, 0.23), 1, 1.5),
         ("Assignment: Implement Binary Search Tree Operations",
-         "assignment", lambda: safe_past(33, 47), 3, 4.0),
-        ("Quiz 1: Arrays, Stacks, Queues, and Recursion",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.0),
         ("Assignment: Sorting Algorithms — Implement and Compare Performance",
-         "assignment", lambda: safe_past(18, 32), 3, 4.5),
-        ("Homework: Graph Traversal — BFS and DFS Trace",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Trees, Sorting, Searching, and Graphs",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Graph and Hashing Implementation",
-         "assignment", lambda: safe_future(22, 38), 3, 6.0),
+         "assignment", lambda c: term_pct(c, 0.34, 0.43), 3, 4.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT202 — Database Management System (Sem 3)
+    # BIT202 — Database Management System (Sem 3) — Practical
     # Teacher: Mohan Ayer
     # -----------------------------------------------------------------------
     "BIT202": [
-        ("Lab Report: SQL Queries and Database Design",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
+        ("Lab Report: Complete DBMS Lab (SQL, Normalization, Transactions, Concurrency)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 11.0),
         ("Homework: Draw ER Diagram for a Library Management System",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Normalization — Convert Relations to 3NF and BCNF",
-         "assignment", lambda: safe_past(33, 47), 3, 3.5),
-        ("Quiz 1: Database Concepts, ER Model, and Relational Model",
-         "quiz",       lambda: safe_past(50, 64), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.5),
         ("Assignment: Write Complex SQL Queries (Joins, Subqueries, Aggregates)",
-         "assignment", lambda: safe_past(18, 32), 3, 4.0),
-        ("Homework: Research on NoSQL Databases — MongoDB vs PostgreSQL",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: SQL, Normalization, and Transaction Processing",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Transaction Management and Concurrency Control",
-         "assignment", lambda: safe_future(22, 38), 3, 5.0),
+         "assignment", lambda c: term_pct(c, 0.34, 0.43), 3, 4.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT203 — Numerical Methods (Sem 3)
+    # BIT203 — Numerical Methods (Sem 3) — Practical
     # Teacher: Arjun Lamichhane
     # -----------------------------------------------------------------------
     "BIT203": [
-        ("Lab Report: Numerical Solutions using C/Python Programs",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
+        ("Lab Report: Complete Numerical Methods Lab using C/Python Programs",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Solve Nonlinear Equations using Bisection and Newton-Raphson",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Interpolation Problems — Newton Forward and Backward",
-         "assignment", lambda: safe_past(33, 47), 3, 3.0),
-        ("Quiz 1: Solution of Nonlinear Equations and Interpolation",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Homework: Numerical Differentiation and Integration Problems",
-         "homework",   lambda: safe_past(18, 32), 1, 2.0),
-        ("Assignment: Solve System of Linear Equations using Gauss Elimination",
-         "assignment", lambda: safe_future(5, 18), 3, 3.5),
-        ("Quiz 2: Numerical Integration and Linear Systems",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.0),
         ("Homework: Solve ODEs using Euler's and Runge-Kutta Methods",
-         "homework",   lambda: safe_future(22, 36), 1, 2.5),
+         "homework",   lambda c: term_pct(c, 0.70, 0.79), 1, 2.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT204 — Operating Systems (Sem 3)
+    # BIT204 — Operating Systems (Sem 3) — Practical
     # Teacher: Sudarshan Sharma
     # -----------------------------------------------------------------------
     "BIT204": [
-        ("Lab Report: Process Scheduling Simulation Programs",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
+        ("Lab Report: Complete OS Lab (Scheduling, IPC, Synchronization)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Compare FCFS, SJF, and Round Robin Scheduling",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Presentation on Deadlock — Detection, Prevention, Avoidance",
-         "assignment", lambda: safe_past(33, 47), 3, 3.0),
-        ("Quiz 1: OS Introduction, System Structures, and Process Management",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Memory Management — Paging and Segmentation Problems",
-         "assignment", lambda: safe_past(15, 32), 3, 3.5),
-        ("Homework: Research on File System — FAT, NTFS, ext4 Comparison",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Memory Management, File Systems, and I/O Management",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Inter-Process Communication and Synchronization",
-         "assignment", lambda: safe_future(22, 36), 3, 6.0),
+         "assignment", lambda c: term_pct(c, 0.34, 0.45), 3, 3.5),
+        ("Assignment: Presentation on Deadlock — Detection, Prevention, Avoidance",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.0),
     ],
 
     # -----------------------------------------------------------------------
-    # MGT205 — Principles of Management (Sem 3)
-    # Teacher: Niraj Panta | No lab report
+    # MGT205 — Principles of Management (Sem 3) — Theory | No lab report
+    # Teacher: Niraj Panta
     # -----------------------------------------------------------------------
     "MGT205": [
-        ("Presentation: Evolution of Management Theories",
-         "assignment", lambda: safe_past(55, 70), 3, 2.5),
-        ("Homework: Analyze a Nepali Organization's Culture and Environment",
-         "homework",   lambda: safe_past(42, 58), 1, 2.0),
         ("Assignment: Case Study — Decision Making in IT Companies",
-         "assignment", lambda: safe_past(28, 42), 3, 4.0),
-        ("Quiz 1: Introduction to Management and Organizational Culture",
-         "quiz",       lambda: safe_past(48, 62), 2, 1.0),
-        ("Assignment: Prepare an Organizational Chart and Explain Design",
-         "assignment", lambda: safe_past(14, 27), 3, 3.0),
-        ("Homework: Essay on Motivation Theories — Maslow vs Herzberg",
-         "homework",   lambda: safe_future(5, 18), 1, 2.0),
-        ("Quiz 2: Planning, Organizing, Motivation, and Leadership",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.27, 0.36), 3, 4.0),
+        ("Presentation: Evolution of Management Theories",
+         "assignment", lambda c: term_pct(c, 0.08, 0.18), 3, 2.5),
         ("Presentation: Leadership Styles and Communication in IT Teams",
-         "assignment", lambda: safe_future(20, 35), 3, 3.0),
+         "assignment", lambda c: term_pct(c, 0.68, 0.78), 3, 3.0),
+        ("Quiz 2: Planning, Organizing, Motivation, and Leadership",
+         "quiz",       lambda c: term_pct(c, 0.62, 0.70), 2, 1.0),
+        ("Homework: Essay on Motivation Theories — Maslow vs Herzberg",
+         "homework",   lambda c: term_pct(c, 0.58, 0.67), 1, 2.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT251 — Web Technology I (Sem 4)
+    # BIT251 — Web Technology I (Sem 4) — Practical
     # Teacher: Sagar K.C.
     # -----------------------------------------------------------------------
     "BIT251": [
-        ("Lab Report: HTML, CSS, and JavaScript Web Pages",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
-        ("Homework: Create a Structured Web Page using HTML5 Semantic Tags",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Style a Multi-Page Website using CSS (Flexbox and Grid)",
-         "assignment", lambda: safe_past(33, 47), 3, 4.0),
-        ("Quiz 1: HTML Markup, CSS Styles, and Box Model",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Build an Interactive Form with JavaScript Validation",
-         "assignment", lambda: safe_past(15, 30), 3, 4.5),
-        ("Homework: Research on XML and its Use in Web Technologies",
-         "homework",   lambda: safe_future(5, 16), 1, 1.5),
-        ("Quiz 2: JavaScript DOM, Events, and XML",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Complete Static Website Project using HTML, CSS, JS",
-         "assignment", lambda: safe_future(22, 38), 4, 10.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 12.0),
+        ("Homework: Create a Structured Web Page using HTML5 Semantic Tags",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Style a Multi-Page Website using CSS (Flexbox and Grid)",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.0),
+        ("Assignment: Build an Interactive Form with JavaScript Validation",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT252 — Artificial Intelligence (Sem 4)
+    # BIT252 — Artificial Intelligence (Sem 4) — Practical
     # Teacher: Sudarshan Sharma
     # -----------------------------------------------------------------------
     "BIT252": [
-        ("Lab Report: Implement Search Algorithms in Python",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
+        ("Lab Report: Complete AI Lab (Search Algorithms and Rule-Based Expert System)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Trace BFS and DFS on a State Space Graph",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Presentation on Knowledge Representation — Frames and Logic",
-         "assignment", lambda: safe_past(33, 47), 3, 3.0),
-        ("Quiz 1: Introduction to AI, Search Strategies, and Heuristics",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.0),
         ("Assignment: Research Report on Machine Learning Applications in Nepal",
-         "assignment", lambda: safe_past(15, 30), 3, 4.0),
-        ("Homework: Compare Expert Systems and Neural Networks",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Knowledge Representation, Expert Systems, and ML Introduction",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Build a Simple Rule-Based Expert System",
-         "assignment", lambda: safe_future(22, 38), 3, 8.0),
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT253 — Systems Analysis and Design (Sem 4)
+    # BIT253 — Systems Analysis and Design (Sem 4) — Practical
     # Teacher: Santosh Dhungana
     # -----------------------------------------------------------------------
     "BIT253": [
-        ("Lab Report: Use Case Diagrams and DFDs for a Case Study System",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
-        ("Homework: Compare Waterfall, Agile, and Spiral SDLC Models",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Prepare a Feasibility Report for a Proposed IT System",
-         "assignment", lambda: safe_past(33, 47), 3, 5.0),
-        ("Quiz 1: Foundations of Systems Development and Planning",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Draw ERD, DFD, and System Flowchart for a College System",
-         "assignment", lambda: safe_past(15, 30), 3, 5.0),
-        ("Homework: Research on Agile and Scrum Methodologies",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Analysis, Design, and System Implementation",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Complete System Design Document for a Mini Project",
-         "assignment", lambda: safe_future(22, 38), 4, 10.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 12.0),
+        ("Homework: Compare Waterfall, Agile, and Spiral SDLC Models",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Prepare a Feasibility Report for a Proposed IT System",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 5.0),
+        ("Assignment: Draw ERD, DFD, and System Flowchart for a College System",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 5.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT254 — Network and Data Communications (Sem 4)
+    # BIT254 — Network and Data Communications (Sem 4) — Practical
     # Teacher: Bhim Bahadur Rawat
     # -----------------------------------------------------------------------
     "BIT254": [
-        ("Lab Report: Network Configuration and Protocol Analysis using Packet Tracer",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
+        ("Lab Report: Complete Networking Lab (Configuration, Subnetting, Routing Protocols)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Compare Transmission Media — Twisted Pair, Coaxial, Fiber",
-         "homework",   lambda: safe_past(48, 62), 1, 1.5),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 1.5),
         ("Assignment: Presentation on OSI Model vs TCP/IP Model",
-         "assignment", lambda: safe_past(33, 47), 3, 3.0),
-        ("Quiz 1: Data Communication Fundamentals and Physical Layer",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.0),
         ("Assignment: Subnet a Network — VLSM and CIDR Problems",
-         "assignment", lambda: safe_past(15, 30), 3, 3.5),
-        ("Homework: Research on IPv4 vs IPv6 Transition in Nepal",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Data Link, Network, and Transport Layers",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Configure Routing Protocols (RIP, OSPF) in Packet Tracer",
-         "assignment", lambda: safe_future(22, 38), 3, 6.0),
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 3.5),
     ],
 
     # -----------------------------------------------------------------------
-    # ORS255 — Operations Research (Sem 4)
-    # Teacher: Kishor Luitel | No lab report
+    # ORS255 — Operations Research (Sem 4) — Theory | No lab report
+    # Teacher: Kishor Luitel
     # -----------------------------------------------------------------------
     "ORS255": [
-        ("Homework: Solve Linear Programming Problems using Graphical Method",
-         "homework",   lambda: safe_past(55, 70), 1, 2.0),
         ("Assignment: Solve Transportation and Assignment Problems",
-         "assignment", lambda: safe_past(42, 56), 3, 3.5),
-        ("Quiz 1: Introduction to OR and Linear Programming",
-         "quiz",       lambda: safe_past(48, 62), 2, 1.0),
-        ("Homework: Solve Queuing Theory Problems (M/M/1 Queue)",
-         "homework",   lambda: safe_past(28, 42), 1, 2.0),
+         "assignment", lambda c: term_pct(c, 0.18, 0.27), 3, 3.5),
         ("Assignment: Game Theory — Solve Two-Person Zero-Sum Games",
-         "assignment", lambda: safe_past(14, 27), 3, 3.0),
-        ("Quiz 2: Transportation, Queuing Theory, and Game Theory",
-         "quiz",       lambda: safe_future(8, 20), 2, 1.0),
-        ("Homework: Network Analysis — Critical Path Method (CPM) Problems",
-         "homework",   lambda: safe_future(15, 28), 1, 2.5),
+         "assignment", lambda c: term_pct(c, 0.37, 0.46), 3, 3.0),
         ("Assignment: Decision Theory — Apply Maximin, Maximax, EMV Criteria",
-         "assignment", lambda: safe_future(22, 36), 3, 3.5),
+         "assignment", lambda c: term_pct(c, 0.70, 0.79), 3, 3.5),
+        ("Quiz 2: Transportation, Queuing Theory, and Game Theory",
+         "quiz",       lambda c: term_pct(c, 0.60, 0.68), 2, 1.0),
+        ("Homework: Solve Queuing Theory Problems (M/M/1 Queue)",
+         "homework",   lambda c: term_pct(c, 0.27, 0.36), 1, 2.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT301 — Web Technology II (Sem 5)
+    # BIT301 — Web Technology II (Sem 5) — Practical
     # Teacher: Sagar K.C.
     # -----------------------------------------------------------------------
     "BIT301": [
-        ("Lab Report: PHP Web Application with Database Integration",
-         "assignment", lambda: safe_past(58, 72), 3, 10.0),
-        ("Homework: Write PHP Functions for String and Array Manipulation",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Build a User Registration and Login System in PHP",
-         "assignment", lambda: safe_past(33, 47), 3, 5.0),
-        ("Quiz 1: PHP Introduction, Functions, and Strings",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Create a CRUD Application using PHP and MySQL",
-         "assignment", lambda: safe_past(15, 30), 3, 6.0),
-        ("Homework: Research on PHP Frameworks — Laravel vs CodeIgniter",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: PHP OOP, Database, and Session Management",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Complete PHP MVC Project with Authentication",
-         "assignment", lambda: safe_future(22, 38), 4, 12.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 14.0),
+        ("Homework: Write PHP Functions for String and Array Manipulation",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Build a User Registration and Login System in PHP",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 5.0),
+        ("Assignment: Create a CRUD Application using PHP and MySQL",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 6.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT302 — Software Engineering (Sem 5)
+    # BIT302 — Software Engineering (Sem 5) — Practical
     # Teacher: Ramesh Singh Saud
     # -----------------------------------------------------------------------
     "BIT302": [
-        ("Lab Report: UML Diagrams for a Software System",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
+        ("Lab Report: Complete Software Design Document (UML, Architecture, SRS)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 12.0),
         ("Homework: Compare Waterfall and Agile Process Models",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Write a Software Requirements Specification (SRS) Document",
-         "assignment", lambda: safe_past(33, 47), 3, 6.0),
-        ("Quiz 1: Introduction to SE, Process Models, and Requirements Engineering",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 6.0),
         ("Assignment: Design Architecture using UML (Class, Sequence, Activity Diagrams)",
-         "assignment", lambda: safe_past(15, 30), 3, 5.0),
-        ("Homework: Research on Software Testing Techniques — Black Box vs White Box",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: System Modeling, Design, Testing, and Quality Assurance",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Prepare a Complete Software Design Document",
-         "assignment", lambda: safe_future(22, 38), 4, 10.0),
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 5.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT303 — Information Security (Sem 5)
+    # BIT303 — Information Security (Sem 5) — Practical
     # Teacher: Bhim Bahadur Rawat
     # -----------------------------------------------------------------------
     "BIT303": [
-        ("Lab Report: Implement Encryption and Decryption Algorithms",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
+        ("Lab Report: Complete Security Lab (Encryption, Firewall Configuration, IDS)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Compare Symmetric and Asymmetric Encryption (AES vs RSA)",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Presentation on Digital Signatures and PKI",
-         "assignment", lambda: safe_past(33, 47), 3, 3.0),
-        ("Quiz 1: Introduction to Security and Encryption Algorithms",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.0),
         ("Assignment: Research Report on Malware Types and Prevention in Nepal",
-         "assignment", lambda: safe_past(15, 30), 3, 4.0),
-        ("Homework: Study Access Control Models — DAC, MAC, RBAC",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Authentication, Access Control, and Malicious Software",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Network Security Tools — Firewall Configuration and IDS",
-         "assignment", lambda: safe_future(22, 38), 3, 8.0),
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT304 — Computer Graphics (Sem 5)
+    # BIT304 — Computer Graphics (Sem 5) — Practical
     # Teacher: Shrilata Wagle
     # -----------------------------------------------------------------------
     "BIT304": [
-        ("Lab Report: Implement Line, Circle, and Ellipse Drawing Algorithms",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
+        ("Lab Report: Complete Graphics Lab (Drawing Algorithms, Transformations, 3D Rendering)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
         ("Homework: Derive Bresenham's Line Drawing Algorithm",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Apply 2D Transformations — Translation, Rotation, Scaling",
-         "assignment", lambda: safe_past(33, 47), 3, 3.5),
-        ("Quiz 1: Graphics System Overview and Output Primitives",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.5),
         ("Assignment: Implement 2D Viewing and Clipping Algorithms",
-         "assignment", lambda: safe_past(15, 30), 3, 4.0),
-        ("Homework: Research on 3D Projection — Orthographic vs Perspective",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: 2D/3D Transformations, Viewing, and Visible Surface Detection",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: 3D Object Rendering and OpenGL Introduction",
-         "assignment", lambda: safe_future(22, 38), 3, 8.0),
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.0),
     ],
 
     # -----------------------------------------------------------------------
-    # ENG305 — Technical Writing (Sem 5)
-    # Teacher: Saraswoti Katwal | No lab report
+    # ENG305 — Technical Writing (Sem 5) — Theory | No lab report
+    # Teacher: Saraswoti Katwal
     # -----------------------------------------------------------------------
     "ENG305": [
-        ("Assignment: Write a Technical Email and Formal Memo",
-         "assignment", lambda: safe_past(55, 70), 3, 2.0),
-        ("Homework: Rewrite Unclear Technical Sentences for Clarity",
-         "homework",   lambda: safe_past(42, 58), 1, 1.5),
-        ("Assignment: Write a Short Technical Proposal for a Software Project",
-         "assignment", lambda: safe_past(28, 42), 3, 4.0),
-        ("Quiz 1: Technical Sentences, Emails, Letters, and Memos",
-         "quiz",       lambda: safe_past(48, 62), 2, 1.0),
         ("Assignment: Prepare a Formal Report on a Technical Topic",
-         "assignment", lambda: safe_past(14, 27), 3, 5.0),
-        ("Homework: Prepare an Oral Presentation Outline on an IT Topic",
-         "homework",   lambda: safe_future(5, 18), 1, 2.0),
-        ("Quiz 2: Formal Reports, Technical Graphics, and Oral Presentations",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Assignment: Write a Job Application Package (CV + Cover Letter)",
-         "assignment", lambda: safe_future(20, 35), 3, 3.0),
+         "assignment", lambda c: term_pct(c, 0.37, 0.46), 3, 5.0),
+        ("Presentation: Prepare an Oral Presentation Outline on an IT Topic",
+         "assignment", lambda c: term_pct(c, 0.58, 0.67), 3, 2.0),
+        ("Presentation: Write a Short Technical Proposal for a Software Project",
+         "assignment", lambda c: term_pct(c, 0.27, 0.36), 3, 4.0),
+        ("Quiz 1: Technical Sentences, Emails, Letters, and Memos",
+         "quiz",       lambda c: term_pct(c, 0.14, 0.23), 2, 1.0),
+        ("Homework: Rewrite Unclear Technical Sentences for Clarity",
+         "homework",   lambda c: term_pct(c, 0.16, 0.27), 1, 1.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT351 — NET Centric Computing (Sem 6)
+    # BIT351 — NET Centric Computing (Sem 6) — Practical
     # Teacher: Sagar K.C.
     # -----------------------------------------------------------------------
     "BIT351": [
-        ("Lab Report: Build and Deploy a Web Service using ASP.NET Core",
-         "assignment", lambda: safe_past(58, 72), 3, 10.0),
-        ("Homework: Explain SOA Architecture and its Components",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Create a RESTful API using ASP.NET Core MVC",
-         "assignment", lambda: safe_past(33, 47), 3, 6.0),
-        ("Quiz 1: Language Preliminaries, ASP.NET Introduction, and HTTP",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Implement Database Integration in ASP.NET Core Application",
-         "assignment", lambda: safe_past(15, 30), 3, 6.0),
-        ("Homework: Research on Cloud-Based .NET Deployment (Azure/AWS)",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: MVC, Database, State Management, and Client-side Development",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Complete ASP.NET Core MVC Application with Authentication",
-         "assignment", lambda: safe_future(22, 38), 4, 12.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 14.0),
+        ("Homework: Explain SOA Architecture and its Components",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Create a RESTful API using ASP.NET Core MVC",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 6.0),
+        ("Assignment: Implement Database Integration in ASP.NET Core Application",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 6.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT352 — Database Administration (Sem 6)
+    # BIT352 — Database Administration (Sem 6) — Practical
     # Teacher: Yograj Joshi
     # -----------------------------------------------------------------------
     "BIT352": [
-        ("Lab Report: Oracle/PostgreSQL Administration Tasks",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
+        ("Lab Report: Complete DBA Lab (Administration, Backup, Recovery, Auditing)",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 11.0),
         ("Homework: Explain Database Storage Structures and Tablespaces",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Create Users, Assign Roles, and Manage Privileges in Oracle",
-         "assignment", lambda: safe_past(33, 47), 3, 4.0),
-        ("Quiz 1: Introduction to DBA, Network Environment, and Storage",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.0),
         ("Assignment: Implement Backup and Recovery Strategy for a Database",
-         "assignment", lambda: safe_past(15, 30), 3, 5.0),
-        ("Homework: Research on Database Performance Tuning Techniques",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Concurrency, Backup, Recovery, and Performance Management",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Lab Report: Database Audit, Resource Management, and Scheduling Tasks",
-         "assignment", lambda: safe_future(22, 38), 3, 7.0),
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 5.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT353 — Management Information System (Sem 6)
+    # BIT353 — Management Information System (Sem 6) — Practical
     # Teacher: Anil Lamichhane
     # -----------------------------------------------------------------------
     "BIT353": [
-        ("Lab Report: Design an MIS for a Nepali Organization",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
+        ("Lab Report: Design a Complete MIS for a Nepali Organization",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 11.0),
         ("Homework: Research on Role of IS in Nepali Government Organizations",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
         ("Assignment: Presentation on ERP Systems — SAP vs Oracle",
-         "assignment", lambda: safe_past(33, 47), 3, 3.0),
-        ("Quiz 1: IS in Global Business and Organizational Strategy",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.0),
         ("Assignment: Case Study on Ethical Issues in Information Systems in Nepal",
-         "assignment", lambda: safe_past(15, 30), 3, 4.0),
-        ("Homework: Compare BI Tools — Tableau vs Power BI",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Business Intelligence, Decision Making, and Digital Applications",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
-        ("Assignment: Propose an MIS Solution for a Real Business Problem",
-         "assignment", lambda: safe_future(22, 38), 4, 8.0),
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.0),
     ],
 
     # -----------------------------------------------------------------------
-    # RSM354 — Research Methodology (Sem 6)
-    # Teacher: Bimal Acharya | No lab report
+    # RSM354 — Research Methodology (Sem 6) — Theory | No lab report
+    # Teacher: Bimal Acharya
     # -----------------------------------------------------------------------
     "RSM354": [
-        ("Homework: Identify a Research Problem and Write a Research Question",
-         "homework",   lambda: safe_past(55, 70), 1, 2.0),
-        ("Assignment: Prepare a Research Proposal on an IT Topic",
-         "assignment", lambda: safe_past(42, 56), 3, 5.0),
-        ("Quiz 1: Introduction to Research, Types, and Research Design",
-         "quiz",       lambda: safe_past(48, 62), 2, 1.0),
         ("Assignment: Write a Literature Review on a Chosen IT Research Area",
-         "assignment", lambda: safe_past(28, 42), 3, 6.0),
+         "assignment", lambda c: term_pct(c, 0.27, 0.36), 3, 6.0),
+        ("Presentation: Prepare a Research Proposal on an IT Topic",
+         "assignment", lambda c: term_pct(c, 0.18, 0.27), 3, 5.0),
+        ("Presentation: Analyze Sample Data and Prepare a Statistical Report",
+         "assignment", lambda c: term_pct(c, 0.65, 0.75), 3, 5.0),
+        ("Quiz 1: Introduction to Research, Types, and Research Design",
+         "quiz",       lambda c: term_pct(c, 0.14, 0.23), 2, 1.0),
         ("Homework: Design a Questionnaire for Primary Data Collection",
-         "homework",   lambda: safe_past(14, 27), 1, 2.5),
-        ("Quiz 2: Data Collection, Sampling, and Measurement",
-         "quiz",       lambda: safe_future(8, 20), 2, 1.0),
-        ("Assignment: Analyze Sample Data and Prepare a Statistical Report",
-         "assignment", lambda: safe_future(15, 30), 3, 5.0),
-        ("Assignment: Write a Complete Research Report Following APA Format",
-         "assignment", lambda: safe_future(25, 42), 4, 8.0),
+         "homework",   lambda c: term_pct(c, 0.37, 0.46), 1, 2.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT356 — Multimedia Computing, Elective I (Sem 6)
+    # BIT356 — Multimedia Computing, Elective I (Sem 6) — Practical
     # Teacher: Sudarshan Sharma
     # -----------------------------------------------------------------------
     "BIT356": [
-        ("Lab Report: Audio and Image Processing Programs",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
-        ("Homework: Compare Lossy vs Lossless Compression Formats",
-         "homework",   lambda: safe_past(48, 62), 1, 1.5),
-        ("Assignment: Create a Multimedia Presentation using Animation and Sound",
-         "assignment", lambda: safe_past(33, 47), 3, 4.0),
-        ("Quiz 1: Introduction to Multimedia, Text, Sound, and Audio Systems",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Implement Image Processing Techniques (Grayscale, Filtering)",
-         "assignment", lambda: safe_past(15, 30), 3, 4.5),
-        ("Homework: Research on Video Compression Standards — H.264 vs H.265",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Image, Video, Compression, and Multimedia Design",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Build a Multimedia Application with User Interface",
-         "assignment", lambda: safe_future(22, 38), 3, 8.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 12.0),
+        ("Homework: Compare Lossy vs Lossless Compression Formats",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 1.5),
+        ("Assignment: Create a Multimedia Presentation using Animation and Sound",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.0),
+        ("Assignment: Implement Image Processing Techniques (Grayscale, Filtering)",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT401 — Advanced Java Programming (Sem 7)
+    # BIT401 — Advanced Java Programming (Sem 7) — Practical
     # Teacher: Janak Raj Joshi
     # -----------------------------------------------------------------------
     "BIT401": [
-        ("Lab Report: Java Swing GUI Application",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
-        ("Homework: Implement Java Collections Framework — List, Set, Map",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Build a GUI Application using Java Swing Components",
-         "assignment", lambda: safe_past(33, 47), 3, 5.0),
-        ("Quiz 1: Java Programming Review, Collections, and Swing Basics",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Implement JDBC — Connect Java Application to PostgreSQL",
-         "assignment", lambda: safe_past(15, 30), 3, 5.0),
-        ("Homework: Research on Java Servlets vs JSP vs Spring MVC",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Event Handling, JDBC, Network Programming, and Servlets",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Build a Java Web Application using Servlets and JSP",
-         "assignment", lambda: safe_future(22, 38), 4, 12.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 14.0),
+        ("Homework: Implement Java Collections Framework — List, Set, Map",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Build a GUI Application using Java Swing Components",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 5.0),
+        ("Assignment: Implement JDBC — Connect Java Application to PostgreSQL",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 5.0),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT402 — Software Project Management (Sem 7)
+    # BIT402 — Software Project Management (Sem 7) — Practical
     # Teacher: Sudarshan Sharma
     # -----------------------------------------------------------------------
     "BIT402": [
-        ("Lab Report: Prepare a Complete Project Plan using MS Project or similar tool",
-         "assignment", lambda: safe_past(58, 72), 3, 7.0),
-        ("Homework: Compare COCOMO and Function Point Estimation Models",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Prepare a Project Charter and Scope Statement",
-         "assignment", lambda: safe_past(33, 47), 3, 4.0),
-        ("Quiz 1: Introduction to SPM, Project Evaluation, and Planning Overview",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Create a Gantt Chart and Network Diagram for a Software Project",
-         "assignment", lambda: safe_past(15, 30), 3, 4.5),
-        ("Homework: Identify and Analyze Risks for a Software Project",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Effort Estimation, Activity Planning, and Risk Management",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Agile Sprint Planning and Retrospective Documentation",
-         "assignment", lambda: safe_future(22, 38), 4, 8.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
+        ("Homework: Compare COCOMO and Function Point Estimation Models",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Prepare a Project Charter and Scope Statement",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.0),
+        ("Assignment: Create a Gantt Chart and Network Diagram for a Software Project",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT403 — E-commerce (Sem 7)
+    # BIT403 — E-commerce (Sem 7) — Practical
     # Teacher: Anil Lamichhane
     # -----------------------------------------------------------------------
     "BIT403": [
-        ("Lab Report: Design and Prototype an E-commerce Website",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
-        ("Homework: Compare B2B, B2C, C2C, and C2B E-commerce Models",
-         "homework",   lambda: safe_past(48, 62), 1, 2.0),
-        ("Assignment: Research Report on E-commerce Security Threats and Solutions",
-         "assignment", lambda: safe_past(33, 47), 3, 4.0),
-        ("Quiz 1: Introduction to E-commerce and Business Models",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Analyze E-payment Systems Used in Nepal (eSewa, Khalti, etc.)",
-         "assignment", lambda: safe_past(15, 30), 3, 3.5),
-        ("Homework: Research on Digital Marketing Strategies for E-commerce",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: E-commerce Security, Payment Systems, and Marketing",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Complete E-commerce System with Cart and Payment Flow",
-         "assignment", lambda: safe_future(22, 38), 4, 12.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 14.0),
+        ("Homework: Compare B2B, B2C, C2C, and C2B E-commerce Models",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Research Report on E-commerce Security Threats and Solutions",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.0),
+        ("Assignment: Analyze E-payment Systems Used in Nepal (eSewa, Khalti, etc.)",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 3.5),
     ],
 
     # -----------------------------------------------------------------------
-    # BIT408 — Cloud Computing, Elective II (Sem 7)
+    # BIT408 — Cloud Computing, Elective II (Sem 7) — Practical
     # Teacher: Rakesh Bachhan
     # -----------------------------------------------------------------------
     "BIT408": [
-        ("Lab Report: Deploy an Application on AWS/Azure/GCP",
-         "assignment", lambda: safe_past(58, 72), 3, 8.0),
-        ("Homework: Compare IaaS, PaaS, and SaaS with Real-world Examples",
-         "homework",   lambda: safe_past(48, 62), 1, 1.5),
-        ("Assignment: Presentation on Virtualization Technologies — VMware vs Docker",
-         "assignment", lambda: safe_past(33, 47), 3, 3.0),
-        ("Quiz 1: Introduction to Cloud Computing and Service Models",
-         "quiz",       lambda: safe_past(50, 63), 2, 1.0),
-        ("Assignment: Design a Cloud Architecture for a Web Application",
-         "assignment", lambda: safe_past(15, 30), 3, 5.0),
-        ("Homework: Research on Cloud Security Challenges and Best Practices",
-         "homework",   lambda: safe_future(5, 16), 1, 2.0),
-        ("Quiz 2: Virtualization, SOA, Cloud Programming, and Security",
-         "quiz",       lambda: safe_future(10, 22), 2, 1.0),
         ("Lab Report: Implement Cloud-Based Analytics Pipeline",
-         "assignment", lambda: safe_future(22, 38), 3, 8.0),
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
+        ("Homework: Compare IaaS, PaaS, and SaaS with Real-world Examples",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 1.5),
+        ("Assignment: Presentation on Virtualization Technologies — VMware vs Docker",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 3.0),
+        ("Assignment: Design a Cloud Architecture for a Web Application",
+         "assignment", lambda c: term_pct(c, 0.65, 0.75), 3, 5.0),
+    ],
+
+    # -----------------------------------------------------------------------
+    # BIT451 — Network and System Administration (Sem 8) — Practical
+    # Teacher: Rakesh Bachhan
+    # -----------------------------------------------------------------------
+    "BIT451": [
+        ("Lab Report: Complete Linux/Windows Server Administration Lab",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
+        ("Homework: Compare Linux and Windows Server User/Permission Models",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Configure DNS, DHCP, and File Sharing Services",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.5),
+        ("Assignment: System Monitoring and Log Analysis for Troubleshooting",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 4.0),
+    ],
+
+    # -----------------------------------------------------------------------
+    # BIT452 — E Governance (Sem 8) — Practical
+    # Teacher: Anil Lamichhane
+    # -----------------------------------------------------------------------
+    "BIT452": [
+        ("Lab Report: Design a Prototype E-Governance Citizen Service Portal",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 9.0),
+        ("Homework: Compare E-Governance Models — G2C, G2B, G2G",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Case Study on a Nepali Government Digital Service (Nagarik App, etc.)",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 4.0),
+        ("Assignment: Analyze ICT Policy and Digital Nepal Framework",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 3.5),
+    ],
+
+    # -----------------------------------------------------------------------
+    # BIT454 — Data Warehousing and Data Mining (Sem 8) — Practical
+    # Teacher: Bhim Rawat
+    # -----------------------------------------------------------------------
+    "BIT454": [
+        ("Lab Report: Build a Data Warehouse Schema and ETL Pipeline",
+         "assignment", lambda c: term_pct(c, 0.75, 0.85), 4, 10.0),
+        ("Homework: Compare Star Schema and Snowflake Schema Designs",
+         "homework",   lambda c: term_pct(c, 0.14, 0.23), 1, 2.0),
+        ("Assignment: Implement Classification Algorithms (Decision Tree, Naive Bayes)",
+         "assignment", lambda c: term_pct(c, 0.24, 0.33), 3, 5.0),
+        ("Assignment: Apply Clustering and Association Rule Mining on a Sample Dataset",
+         "assignment", lambda c: term_pct(c, 0.35, 0.45), 3, 5.0),
     ],
 }
 
@@ -791,11 +692,23 @@ class Command(BaseCommand):
             action="store_true",
             help="Delete all seeded assignments before re-creating.",
         )
+        parser.add_argument(
+            "--refresh",
+            action="store_true",
+            help=(
+                "Recompute and update due_date/task_type/estimated_hours/priority "
+                "for assignments that already exist, instead of skipping them. "
+                "Safe to run before a demo/presentation to fix stale due dates "
+                "without needing --clear (keeps existing student Task history)."
+            ),
+        )
 
     @transaction.atomic
     def handle(self, *args, **options):
         from tasks.models import Assignment
-        from courses.models import Course
+        from courses.models import Course, Enrollment
+
+        refresh_dates = options["refresh"]
 
         if options["clear"]:
             self.stdout.write(self.style.WARNING("Clearing seeded assignments..."))
@@ -811,6 +724,7 @@ class Command(BaseCommand):
         total_created = 0
         total_skipped = 0
         total_errors = 0
+        total_no_students = 0
 
         for course_code, assignments in COURSE_ASSIGNMENTS.items():
             course = Course.objects.filter(title__startswith=course_code).first()
@@ -821,6 +735,13 @@ class Command(BaseCommand):
                 total_errors += 1
                 continue
 
+            if not Enrollment.objects.filter(course=course).exists():
+                self.stdout.write(
+                    f"  ~ {course_code} — no enrolled students (course not currently running) — skipping."
+                )
+                total_no_students += 1
+                continue
+
             teacher = course.teacher
             course_created = 0
             course_skipped = 0
@@ -829,13 +750,25 @@ class Command(BaseCommand):
             self.stdout.write("  " + "-" * 50)
 
             for title, task_type, due_fn, priority, est_hours in assignments:
-                if Assignment.objects.filter(title=title, course=course).exists():
-                    self.stdout.write(f"    ~ Exists  : {title[:65]}")
+                due_date = due_fn(course)
+                existing = Assignment.objects.filter(title=title, course=course).first()
+
+                if existing:
+                    if refresh_dates:
+                        existing.due_date = due_date
+                        existing.task_type = task_type
+                        existing.estimated_hours = est_hours
+                        existing.priority = priority
+                        existing.save()
+                        self.stdout.write(
+                            f"    ~ Refreshed: {title[:58]} — due {due_date}"
+                        )
+                    else:
+                        self.stdout.write(f"    ~ Exists  : {title[:65]}")
                     course_skipped += 1
                     total_skipped += 1
                     continue
 
-                due_date = due_fn()
                 Assignment.objects.create(
                     title=title,
                     description=(
@@ -865,5 +798,6 @@ class Command(BaseCommand):
         self.stdout.write(f"  Assignments created : {total_created}")
         self.stdout.write(f"  Already existed     : {total_skipped}")
         self.stdout.write(f"  Courses not found   : {total_errors}")
+        self.stdout.write(f"  Courses skipped (no students yet): {total_no_students}")
         self.stdout.write(f"  Grand total         : {total_created + total_skipped}")
         self.stdout.write("=" * 60 + "\n")

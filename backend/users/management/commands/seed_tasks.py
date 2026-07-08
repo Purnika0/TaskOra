@@ -12,18 +12,22 @@ What it does:
     - Loops through all assignments in the DB
     - For each assignment, finds all enrolled students in that course
     - Creates a Task for each student that doesn't already have one
-    - Assigns each student a consistent persona (fast/average/slow)
+    - Assigns each student a consistent persona (excellent/fast/average/slow/struggling)
     - Simulates realistic status distribution:
 
     PAST DUE assignments:
-        Fast    (20%) → 80% completed, 10% submitted, 10% overdue
-        Average (60%) → 55% completed, 15% submitted, 30% overdue
-        Slow    (20%) → 20% completed, 10% submitted, 70% overdue
+        Excellent   (10%) → ~95% completed, ~3% submitted, ~2% overdue
+        Fast        (20%) → ~80% completed, ~12% submitted, ~8% overdue
+        Average     (40%) → ~55% completed, ~20% submitted, ~25% overdue
+        Slow        (20%) → ~30% completed, ~15% submitted, ~55% overdue
+        Struggling  (10%) → ~10% completed, ~10% submitted, ~80% overdue
 
     FUTURE DUE assignments:
-        Fast    (20%) → 15% submitted, 85% pending
-        Average (60%) →  5% submitted, 95% pending
-        Slow    (20%) →  0% submitted, 100% pending
+        Excellent   → 25% submitted, 75% pending
+        Fast        → 15% submitted, 85% pending
+        Average     →  5% submitted, 95% pending
+        Slow        →  0% submitted, 100% pending
+        Struggling  →  0% submitted, 100% pending
 
 Prerequisites:
     - seed_teachers_courses
@@ -44,36 +48,44 @@ User = get_user_model()
 # ---------------------------------------------------------------------------
 # Persona config
 # ---------------------------------------------------------------------------
-PERSONA_WEIGHTS = ["fast", "average", "slow"]
-PERSONA_PROBS   = [0.20,   0.60,      0.20]
+PERSONA_WEIGHTS = ["excellent", "fast", "average", "slow", "struggling"]
+PERSONA_PROBS   = [0.10,         0.20,   0.40,      0.20,   0.10]
 
-# (completed_prob, submitted_prob, overdue_prob) for past due tasks
+# (completed_prob, submitted_prob) for past due tasks
 # remaining probability → overdue (handled explicitly)
 PAST_STATUS_RATES = {
-    "fast":    (0.80, 0.10),   # 80% completed, 10% submitted, 10% overdue
-    "average": (0.55, 0.15),   # 55% completed, 15% submitted, 30% overdue
-    "slow":    (0.20, 0.10),   # 20% completed, 10% submitted, 70% overdue
+    "excellent":  (0.95, 0.03),   # ~98% done, ~2% overdue
+    "fast":       (0.80, 0.12),   # ~92% done, ~8% overdue
+    "average":    (0.55, 0.20),   # ~75% done, ~25% overdue
+    "slow":       (0.30, 0.15),   # ~45% done, ~55% overdue
+    "struggling": (0.10, 0.10),   # ~20% done, ~80% overdue
 }
 
 # (submitted_prob,) for future due tasks — rest are pending
 FUTURE_STATUS_RATES = {
-    "fast":    0.15,
-    "average": 0.05,
-    "slow":    0.00,
+    "excellent":  0.25,
+    "fast":       0.15,
+    "average":    0.05,
+    "slow":       0.00,
+    "struggling": 0.00,
 }
 
 # Days before due date the student completed — varies by persona
 COMPLETION_OFFSET = {
-    "fast":    (2, 7),    # finishes well ahead of time
-    "average": (0, 3),    # finishes around the due date
-    "slow":    (-2, 1),   # sometimes just in time or slightly late
+    "excellent":  (3, 10),   # finishes very early
+    "fast":       (2, 7),    # finishes well ahead of time
+    "average":    (0, 3),    # finishes around the due date
+    "slow":       (-2, 1),   # sometimes just in time or slightly late
+    "struggling": (-3, 0),   # when they do finish, it's last-minute
 }
 
 # Days before due date the student submitted (before teacher reviews)
 SUBMISSION_OFFSET = {
-    "fast":    (1, 5),
-    "average": (0, 2),
-    "slow":    (0, 1),
+    "excellent":  (2, 6),
+    "fast":       (1, 5),
+    "average":    (0, 2),
+    "slow":       (0, 1),
+    "struggling": (-1, 1),
 }
 
 
@@ -217,7 +229,7 @@ class Command(BaseCommand):
             )
 
         # Persona distribution summary
-        persona_counts = {"fast": 0, "average": 0, "slow": 0}
+        persona_counts = {"excellent": 0, "fast": 0, "average": 0, "slow": 0, "struggling": 0}
         for p in student_personas.values():
             persona_counts[p] += 1
 
@@ -229,7 +241,9 @@ class Command(BaseCommand):
         self.stdout.write(f"  Already existed    : {total_skipped}")
         self.stdout.write(f"  Grand total        : {total_created + total_skipped}")
         self.stdout.write(f"\n  Student personas assigned:")
-        self.stdout.write(f"    Fast    : {persona_counts['fast']} students")
-        self.stdout.write(f"    Average : {persona_counts['average']} students")
-        self.stdout.write(f"    Slow    : {persona_counts['slow']} students")
+        self.stdout.write(f"    Excellent  : {persona_counts['excellent']} students")
+        self.stdout.write(f"    Fast       : {persona_counts['fast']} students")
+        self.stdout.write(f"    Average    : {persona_counts['average']} students")
+        self.stdout.write(f"    Slow       : {persona_counts['slow']} students")
+        self.stdout.write(f"    Struggling : {persona_counts['struggling']} students")
         self.stdout.write("=" * 60 + "\n")
