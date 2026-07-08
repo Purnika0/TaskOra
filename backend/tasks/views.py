@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
+from django.db import models
 from django.db.models import Count, Q
 
 from .models import Assignment, Task
@@ -70,12 +71,20 @@ class AssignmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class StudentTaskListView(generics.ListAPIView):
-    """Student lists all their tasks."""
+    """Student lists all their tasks (only for courses they're currently enrolled in)."""
     serializer_class   = TaskSerializer
     permission_classes = [IsStudent]
 
     def get_queryset(self):
-        qs     = Task.objects.filter(student=self.request.user).select_related('assignment__course')
+        enrolled_course_ids = Enrollment.objects.filter(
+            student=self.request.user
+        ).values_list('course_id', flat=True)
+
+        qs = Task.objects.filter(
+            student=self.request.user,
+            assignment__course_id__in=enrolled_course_ids
+        ).select_related('assignment__course')
+
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
@@ -83,14 +92,18 @@ class StudentTaskListView(generics.ListAPIView):
 
 
 class SmartPriorityTaskView(generics.ListAPIView):
-    """Student gets incomplete tasks ordered by priority score."""
+    """Student gets incomplete tasks ordered by priority score (currently enrolled courses only)."""
     serializer_class   = TaskSerializer
     permission_classes = [IsStudent]
 
     def get_queryset(self):
+        enrolled_course_ids = Enrollment.objects.filter(
+            student=self.request.user
+        ).values_list('course_id', flat=True)
 
         return Task.objects.filter(
             student=self.request.user,
+            assignment__course_id__in=enrolled_course_ids,
             status__in=[Task.Status.PENDING, Task.Status.OVERDUE]
         ).order_by('-priority_score').select_related('assignment__course')
 
@@ -140,7 +153,14 @@ class TeacherAssignmentTaskListView(generics.ListAPIView):
         assignment    = get_object_or_404(
             Assignment, pk=assignment_pk, created_by=self.request.user
         )
-        qs = Task.objects.filter(assignment=assignment).select_related('student', 'assignment__course')
+        enrolled_student_ids = Enrollment.objects.filter(
+            course=assignment.course
+        ).values_list('student_id', flat=True)
+
+        qs = Task.objects.filter(
+            assignment=assignment,
+            student_id__in=enrolled_student_ids
+        ).select_related('student', 'assignment__course')
         status_filter = self.request.query_params.get('status')
         if status_filter:
             qs = qs.filter(status=status_filter)
@@ -165,7 +185,14 @@ class TeacherSubmissionsInboxView(generics.ListAPIView):
     permission_classes = [IsTeacher]
 
     def get_queryset(self):
+        enrolled_pairs = Enrollment.objects.filter(
+            course__teacher=self.request.user,
+            student_id=models.OuterRef('student_id'),
+            course_id=models.OuterRef('assignment__course_id'),
+        )
+
         qs = Task.objects.filter(assignment__created_by=self.request.user)\
+            .filter(models.Exists(enrolled_pairs))\
             .select_related('student', 'assignment', 'assignment__course')\
             .order_by('-submitted_at', '-created_at')
 

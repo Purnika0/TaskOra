@@ -243,3 +243,30 @@ def notify_course_assigned(course, teacher, assigned_by=None):
         message=f"You have been assigned as the teacher for \"{course.title}\".",
         course=course,
     )
+
+
+def notify_student_left_course(course, student):
+    """Teacher is notified when a student leaves (un-enrolls from) their course."""
+    if not course.teacher_id:
+        return  # unassigned course, no teacher to notify
+
+    Notification.objects.create(
+        recipient=course.teacher,
+        actor=student,
+        notif_type=Notification.Type.STUDENT_LEFT_COURSE,
+        title='Student left your course',
+        message=f"{_display_name(student)} has left \"{course.title}\".",
+        course=course,
+    )
+
+
+def notify_student_removed(course, student, removed_by=None):
+    """Student is notified when a teacher/admin un-enrolls them from a course."""
+    Notification.objects.create(
+        recipient=student,
+        actor=removed_by,
+        notif_type=Notification.Type.STUDENT_REMOVED_FROM_COURSE,
+        title='Removed from course',
+        message=f"You have been removed from \"{course.title}\".",
+        course=course,
+    )

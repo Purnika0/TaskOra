@@ -8,6 +8,8 @@ from users.permissions import IsTeacher, IsAdmin, IsStudent
 from tasks.models import Assignment, Task
 from tasks.priority import calculate_priority_score
 from django.db import transaction
+from django.shortcuts import get_object_or_404
+from notifications.services import notify_student_left_course, notify_student_removed
 
 
 class CourseListCreateView(generics.ListCreateAPIView):
@@ -149,3 +151,50 @@ class CourseStudentsView(generics.ListAPIView):
         if user.role == 'admin':
             return Enrollment.objects.filter(course_id=course_id)
         return Enrollment.objects.filter(course_id=course_id, course__teacher=user)
+    
+
+
+class UnenrollStudentView(APIView):
+    """
+    Teacher (own course) or Admin un-enrolls a student from a course.
+    Does NOT delete the student's task/submission history — those stay
+    intact and will simply stop showing on the dashboard while unenrolled.
+    DELETE /api/courses/<course_id>/students/<student_id>/
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, course_id, student_id):
+        course = get_object_or_404(Course, pk=course_id)
+        if request.user.role == 'teacher' and course.teacher_id != request.user.id:
+            return Response({"detail": "You do not teach this course."}, status=status.HTTP_403_FORBIDDEN)
+        if request.user.role not in ('teacher', 'admin'):
+            return Response({"detail": "Not authorized."}, status=status.HTTP_403_FORBIDDEN)
+
+        enrollment = get_object_or_404(Enrollment, course_id=course_id, student_id=student_id)
+        student = enrollment.student
+        enrollment.delete()
+        notify_student_removed(course, student)  # -> notifies the student
+        return Response(
+            {"detail": "Student un-enrolled from the course."},
+            status=status.HTTP_204_NO_CONTENT
+        )
+    
+
+class LeaveCourseView(APIView):
+    """
+    Student leaves (un-enrolls from) a course themselves.
+    DELETE /api/courses/<course_id>/leave/
+    """
+    permission_classes = [IsStudent]
+
+    def delete(self, request, course_id):
+        enrollment = get_object_or_404(Enrollment, course_id=course_id, student=request.user)
+        course = enrollment.course
+        enrollment.delete()
+        notify_student_left_course(course, request.user)  # -> notifies course.teacher
+        return Response(
+            {"detail": "You have left the course. Your progress will be restored if you re-enroll."},
+            status=status.HTTP_204_NO_CONTENT
+        )
+
+
