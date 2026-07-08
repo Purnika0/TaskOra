@@ -159,10 +159,7 @@ class TeacherStudentRankingView(APIView):
     permission_classes = [IsTeacher]
 
     def get(self, request):
-        course_id   = request.query_params.get('course_id')
-        filter_kwargs = {"course__teacher": request.user}
-        if course_id:
-            filter_kwargs["course_id"] = course_id
+        course_id = request.query_params.get('course_id')
 
         students = User.objects.filter(
             role=User.Role.STUDENT,
@@ -195,6 +192,7 @@ class TeacherStudentRankingView(APIView):
             rejected  = tasks.filter(status=Task.Status.REJECTED).count()
 
             data.append({
+                "student_id":      student.id,
                 "student":         student.full_name or student.username,
                 "completed":       completed,
                 "submitted":       submitted,
@@ -205,5 +203,19 @@ class TeacherStudentRankingView(APIView):
                 "completion_rate": round((completed / total) * 100, 1) if total else 0,
             })
 
-        data.sort(key=lambda x: x["completion_rate"], reverse=True)
+        # Primary sort: completion rate, highest first.
+        # Tiebreakers (in order), so ties never fall back to arbitrary
+        # queryset order, which isn't guaranteed stable across requests:
+        #   1. more completed tasks wins
+        #   2. fewer overdue tasks wins
+        #   3. fewer rejected tasks wins
+        #   4. student name, alphabetically — final deterministic tiebreak
+        data.sort(key=lambda x: (
+            -x["completion_rate"],
+            -x["completed"],
+            x["overdue"],
+            x["rejected"],
+            x["student"].lower(),
+        ))
+
         return Response(data)

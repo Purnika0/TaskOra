@@ -1,5 +1,3 @@
-
-
 import React from 'react'
 import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Clock, Users, SearchX, ListOrdered, UsersRound } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
@@ -13,6 +11,7 @@ import { DashboardFooter }    from '../../components/layout/Footer.jsx'
 import { LoadingBlock }       from '../../components/shared/Loader.jsx'
 import { useTasks }           from '../../hooks/useTasks.js'
 import { isOverdue }          from '../../utils/helpers.js'
+import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
 
 // ── Metric card ───────────────────────────────────────────────
 function MetricCard({ icon, label, value, sub, accent }) {
@@ -223,9 +222,9 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
     // NEVER exposes cluster IDs or raw centroid data.
     // ═══════════════════════════════════════════════════════════════
     const GROUP_CONFIG = {
-    'High Performer': { color:'#059669', bg:'#ecfdf5', bar:'#059669', label:'High Performers' },
-    'Average':        { color:'#0891b2', bg:'#ecfeff', bar:'#0891b2', label:'Average'         },
-    'At-Risk':        { color:'#dc2626', bg:'#fef2f2', bar:'#ef4444', label:'Needs Support'   },
+    'High Performer': { color:'#059669', bg:'#ecfdf5', bar:'#059669', label:'High Performer', pluralLabel:'High Performers' },
+    'Average':        { color:'#0891b2', bg:'#ecfeff', bar:'#0891b2', label:'Average',        pluralLabel:'Average'         },
+    'At-Risk':        { color:'#dc2626', bg:'#fef2f2', bar:'#ef4444', label:'Needs Support',  pluralLabel:'Needs Support'   },
     }
 
     const GROUP_FILTERS = [
@@ -294,7 +293,7 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <span style={{ display:'inline-block', width:8, height:8, borderRadius:'50%', background:cfg.color, flexShrink:0 }}/>
-                        <span style={{ fontSize:13, fontWeight:600, color:'#1a1f35' }}>{cfg.label}</span>
+                        <span style={{ fontSize:13, fontWeight:600, color:'#1a1f35' }}>{cfg.pluralLabel}</span>
                     </div>
                     <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <span style={{ fontSize:12, fontWeight:700, color:'#1a1f35' }}>{count}</span>
@@ -409,14 +408,14 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
                 const rate = typeof o.completion_rate === 'number'
                 ? o.completion_rate
                 : parseFloat(o.completion_rate) || 0
-                const rateLabel = `${Math.round(rate)}% completion`
-                const lowRate = rate < 30
+                const severity = getOutlierSeverity(rate)
+                const reasons  = splitReasons(o.reason)
 
                 return (
                 <div key={o.student_id || o.student_name || i}
-                    style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 14px', background: lowRate ? '#fff7f7' : '#fffbeb', borderRadius:10, border:`1px solid ${lowRate ? '#fecaca' : '#fde68a'}` }}>
+                    style={{ display:'flex', alignItems:'flex-start', gap:12, padding:'12px 14px', background:severity.bg, borderRadius:10, border:`1px solid ${severity.border}` }}>
                     {/* Avatar initial */}
-                    <div style={{ width:34, height:34, borderRadius:'50%', background: lowRate ? '#fee2e2' : '#fef3c7', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12, fontWeight:700, color: lowRate ? '#dc2626' : '#d97706', fontFamily:'var(--font-display)' }}>
+                    <div style={{ width:34, height:34, borderRadius:'50%', background:severity.avatarBg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0, fontSize:12, fontWeight:700, color:severity.avatarText, fontFamily:'var(--font-display)' }}>
                     {(o.student_name || 'S').charAt(0).toUpperCase()}
                     </div>
 
@@ -425,21 +424,26 @@ function FilterPill({ active, onClick, children, accent = '#3b6fd4' }) {
                         <p style={{ fontSize:13, fontWeight:600, color:'#1a1f35', margin:0 }}>
                         {o.student_name || `Student ${i + 1}`}
                         </p>
-                        <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:99, background: lowRate ? '#fee2e2' : '#fef3c7', color: lowRate ? '#dc2626' : '#d97706', flexShrink:0 }}>
-                        {rateLabel}
+                        <span style={{ fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:99, background:severity.badgeBg, color:severity.badgeText, flexShrink:0 }}>
+                        {severity.label}
                         </span>
                     </div>
 
-                    {/* Completion bar */}
-                    <div style={{ height:4, background:'#f0ece4', borderRadius:99, overflow:'hidden', marginBottom:5 }}>
-                        <div style={{ height:'100%', background: lowRate ? '#ef4444' : '#f59e0b', borderRadius:99, width:`${Math.min(rate, 100)}%`, transition:'width 0.5s ease' }}/>
+                    {/* Completion bar + rate */}
+                    <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:5 }}>
+                        <div style={{ flex:1, height:4, background:'#f0ece4', borderRadius:99, overflow:'hidden' }}>
+                        <div style={{ height:'100%', background:severity.barColor, borderRadius:99, width:`${Math.min(rate, 100)}%`, transition:'width 0.5s ease' }}/>
+                        </div>
+                        <span style={{ fontSize:10, fontWeight:600, color:'#6a5e4e', flexShrink:0 }}>{Math.round(rate)}%</span>
                     </div>
 
-                    {/* Reason — human-readable only */}
-                    {o.reason && (
-                        <p style={{ fontSize:11, color:'#6a5e4e', margin:0, lineHeight:1.55 }}>
-                        {o.reason}
-                        </p>
+                    {/* Reasons — human-readable, one per line (backend joins with " | ") */}
+                    {reasons.length > 0 && (
+                        <ul style={{ margin:0, padding:'0 0 0 14px', listStyle:'disc' }}>
+                        {reasons.map((r, ri) => (
+                            <li key={ri} style={{ fontSize:11, color:'#6a5e4e', lineHeight:1.55 }}>{r}</li>
+                        ))}
+                        </ul>
                     )}
                     </div>
                 </div>
