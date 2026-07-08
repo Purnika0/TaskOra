@@ -19,6 +19,7 @@ import {
     getTaskTitle, getTaskDueDate, priorityColor, priorityLabel,
     deadlinePill, statusBadge, isOverdue, isActionable as isActionableFallback,
 } from '../../utils/helpers.js'
+import { urgencyLabel, urgencyColor, urgencyBg } from '../../utils/urgencyLabel.js'
 
 // isActionable isn't exported from helpers.js — mirror the same rule used in useTasks.js
 function isActionable(task) {
@@ -158,6 +159,9 @@ export default function TaskItem({ task, onSubmit, index, compact = false }) {
     const priority = task.assignment?.priority
     const pColor   = priorityColor(priority)
     const pLabel   = priorityLabel(priority)
+    const uScore   = task.priority_score
+    const uColor   = urgencyColor(uScore)
+    const uLabel   = urgencyLabel(uScore)
     const actionable = isActionable(task)
 
     // ── Compact table row ──────────────────────────────────────
@@ -194,9 +198,15 @@ export default function TaskItem({ task, onSubmit, index, compact = false }) {
                         </div>
                     </td>
                     <td className="pr-3">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                            <span style={{ width: 7, height: 7, borderRadius: '50%', background: pColor, flexShrink: 0 }}/>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: pColor, textTransform: 'capitalize' }}>{pLabel}</span>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }} title="Importance — set by the teacher">
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: pColor, flexShrink: 0 }}/>
+                                <span style={{ fontSize: 11, fontWeight: 700, color: pColor, textTransform: 'capitalize' }}>{pLabel}</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }} title="Urgency — computed from due date, importance, and workload">
+                                <span style={{ width: 7, height: 7, borderRadius: '50%', background: uColor, flexShrink: 0 }}/>
+                                <span style={{ fontSize: 10, fontWeight: 600, color: uColor }}>{uLabel} urgency</span>
+                            </div>
                         </div>
                     </td>
                     <td className="pr-3" style={{ fontSize: 12, color: '#8a7e6e', whiteSpace: 'nowrap' }}>{dueDate || '—'}</td>
@@ -283,9 +293,14 @@ export default function TaskItem({ task, onSubmit, index, compact = false }) {
 
                 {/* Meta pills */}
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1" title="Importance — set by the teacher">
                         <span className="w-1.5 h-1.5 rounded-full" style={{ background: pColor }}/>
                         <span className="text-[10px] font-bold capitalize" style={{ color: pColor }}>{pLabel}</span>
+                    </span>
+                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
+                        style={{ color: uColor, background: urgencyBg(uScore) }}
+                        title="Urgency — computed from due date, importance, and workload">
+                        {uLabel} urgency
                     </span>
                     <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
                         style={{ color: badge.color, background: badge.bg, border: `1px solid ${badge.border}` }}>

@@ -10,7 +10,22 @@ class Assignment(models.Model):
         PROJECT = 'project', 'Project'
         HOMEWORK = 'homework', 'Homework'
         QUIZ = 'quiz', 'Quiz'
+        LAB = 'lab', 'Lab'
         OTHER = 'other', 'Other'
+
+    class PriorityLevel(models.IntegerChoices):
+        """
+        Teacher-set editorial importance (1-5). This is distinct from
+        Task.priority_score, which is the system-computed urgency score.
+        Both assignment forms and any frontend display of this field
+        should use these five labels rather than inventing their own
+        subset — see src/constants/assignmentChoices.js on the frontend.
+        """
+        LOW = 1, 'Low'
+        MEDIUM_LOW = 2, 'Medium-Low'
+        MEDIUM = 3, 'Medium'
+        MEDIUM_HIGH = 4, 'Medium-High'
+        HIGH = 5, 'High'
 
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
@@ -19,7 +34,7 @@ class Assignment(models.Model):
     due_date = models.DateField()
     task_type = models.CharField(max_length=20, choices=TaskType.choices, default=TaskType.ASSIGNMENT)
     estimated_hours = models.FloatField(default=1.0)
-    priority = models.IntegerField(default=3)  # 1 (low) to 5 (high)
+    priority = models.IntegerField(choices=PriorityLevel.choices, default=PriorityLevel.MEDIUM)
     created_at = models.DateTimeField(auto_now_add=True)
 
     # Optional reference document the teacher attaches to the assignment

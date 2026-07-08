@@ -12,7 +12,8 @@ import { DashboardFooter }                 from '../../components/layout/Footer.
 import { LoadingBlock, ErrorBlock }        from '../../components/shared/Loader.jsx'
 import { useToast }                        from '../../context/ToastContext.jsx'
 import tasksService                        from '../../services/tasks.service.js'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError } from '../../utils/helpers.js'
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel } from '../../utils/helpers.js'
+import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS }            from '../../utils/bsCalendar.js'
 
 const DOW_LABELS = ['S','M','T','W','T','F','S']
@@ -399,8 +400,8 @@ function AssignmentTable({ tasks, onSubmit }) {
             <style>{`
                 .at-row-grid {
                     display:grid;
-                    grid-template-columns:minmax(180px,1fr) minmax(160px,0.5fr) 150px 100px 120px;
-                    align-items:center; column-gap:20px; row-gap:8px;
+                    grid-template-columns:minmax(170px,1fr) minmax(120px,0.5fr) 100px 100px 120px 100px 120px;
+                    align-items:center; column-gap:14px; row-gap:8px;
                 }
                 .at-row-head span { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-placeholder); }
                 @media (max-width:900px) { .at-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .at-row-head { display:none; } }
@@ -469,6 +470,8 @@ function AssignmentTable({ tasks, onSubmit }) {
                         <div className="at-row-grid at-row-head" style={{ padding:'12px 20px', background:'var(--color-surface-subtle)', borderBottom:'1px solid var(--color-cream-border)' }}>
                             <span>Assignment</span>
                             <span>Course</span>
+                            <span>Importance</span>
+                            <span>Urgency</span>
                             <span>Due Date</span>
                             <span>Status</span>
                             <span style={{ textAlign:'right' }}>Action</span>
@@ -486,6 +489,12 @@ function AssignmentTable({ tasks, onSubmit }) {
                             const docName   = t.assignment?.file_name || 'Document'
                             const hasDetails = Boolean(desc) || Boolean(docFile)
                             const courseName = getCourseName(t)
+                            const importanceVal = t.assignment?.priority
+                            const iColor = priorityColor(importanceVal)
+                            const iLabel = priorityLabel(importanceVal)
+                            const uScore = t.priority_score
+                            const uColor = urgencyColor(uScore)
+                            const uLabel = urgencyLabel(uScore)
 
                             return (
                                 <div key={t.id} style={{ padding:'14px 20px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-cream-border)' }}>
@@ -507,6 +516,16 @@ function AssignmentTable({ tasks, onSubmit }) {
                                         <span style={{ fontSize:11, fontWeight:600, color:'#1e40af', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                             {courseName}
                                         </span>
+
+                                        <div style={{ display:'flex', alignItems:'center', gap:5 }} title="Importance — set by the teacher">
+                                            <span style={{ width:6, height:6, borderRadius:'50%', background:iColor, flexShrink:0 }}/>
+                                            <span style={{ fontSize:11, fontWeight:700, color:iColor, textTransform:'capitalize' }}>{iLabel}</span>
+                                        </div>
+
+                                        <div style={{ display:'flex', alignItems:'center', gap:5 }} title="Urgency — computed from due date, importance, and workload">
+                                            <span style={{ width:6, height:6, borderRadius:'50%', background:uColor, flexShrink:0 }}/>
+                                            <span style={{ fontSize:11, fontWeight:700, color:uColor, textTransform:'capitalize' }}>{uLabel}</span>
+                                        </div>
 
                                         <span style={{ fontSize:11.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, whiteSpace:'nowrap' }}>
                                             {due || '—'}

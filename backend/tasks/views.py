@@ -13,7 +13,7 @@ from .serializers import (
     TaskSubmitSerializer,
     TaskReviewSerializer,
 )
-from .priority import calculate_priority_score
+from .priority import calculate_priority_score, HolidayCountCache
 from courses.models import Enrollment
 from users.permissions import IsTeacher, IsStudent
 from notifications.services import (
@@ -22,6 +22,18 @@ from notifications.services import (
     notify_submission_reviewed,
     notify_assignment_updated,
 )
+
+
+class HolidayCacheMixin:
+    """
+    Shares one HolidayCountCache across every task serialized in a single
+    request/response, so TaskSerializer's live priority_score recompute
+    doesn't re-query the Holiday table once per task.
+    """
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.setdefault('holiday_cache', HolidayCountCache())
+        return context
 
 class AssignmentListCreateView(generics.ListCreateAPIView):
     """Teacher lists their assignments or creates a new one."""
@@ -91,8 +103,18 @@ class StudentTaskListView(generics.ListAPIView):
         return qs
 
 
+
 class SmartPriorityTaskView(generics.ListAPIView):
-    """Student gets incomplete tasks ordered by priority score (currently enrolled courses only)."""
+    """
+    Student gets incomplete tasks ordered by priority score
+    (currently enrolled courses only).
+
+    Ordering can no longer be a DB-level `.order_by('-priority_score')`
+    since that stored column goes stale as due dates approach. Instead we
+    recompute the live score for each task (sharing one HolidayCountCache
+    across the whole list to avoid N+1 queries) and sort in Python — fine
+    here since a single student's incomplete-task list is small.
+    """
     serializer_class   = TaskSerializer
     permission_classes = [IsStudent]
 
@@ -105,7 +127,23 @@ class SmartPriorityTaskView(generics.ListAPIView):
             student=self.request.user,
             assignment__course_id__in=enrolled_course_ids,
             status__in=[Task.Status.PENDING, Task.Status.OVERDUE]
-        ).order_by('-priority_score').select_related('assignment__course')
+        ).select_related('assignment__course')
+
+    def list(self, request, *args, **kwargs):
+        self._holiday_cache = HolidayCountCache()
+        tasks = list(self.filter_queryset(self.get_queryset()))
+        tasks.sort(
+            key=lambda t: calculate_priority_score(t.assignment, cache=self._holiday_cache),
+            reverse=True,
+        )
+        serializer = self.get_serializer(tasks, many=True)
+        return Response(serializer.data)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context.setdefault('holiday_cache', getattr(self, '_holiday_cache', None) or HolidayCountCache())
+        return context
+
 
 
 class StudentSubmitTaskView(APIView):

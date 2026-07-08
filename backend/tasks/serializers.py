@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.utils import timezone
 from .models import Assignment, Task
+from .priority import calculate_priority_score
 from holidays.bs_calendar import ad_to_bs
 
 
@@ -14,12 +15,17 @@ class AssignmentSerializer(serializers.ModelSerializer):
     rejected_count        = serializers.SerializerMethodField()
     file_name             = serializers.SerializerMethodField()
 
+    # Human-readable label for the teacher-set importance (1-5), e.g. "Medium-High".
+    # This is the *importance* the teacher assigned — not to be confused with
+    # Task.priority_score, which is the system-computed urgency shown on TaskSerializer.
+    priority_label = serializers.CharField(source='get_priority_display', read_only=True)
+
     class Meta:
         model = Assignment
         fields = [
             'id', 'title', 'description', 'course', 'course_name', 'created_by',
             'due_date', 'due_date_bs', 'task_type',
-            'estimated_hours', 'priority', 'created_at',
+            'estimated_hours', 'priority', 'priority_label', 'created_at',
             'submission_count', 'pending_review_count', 'approved_count', 'rejected_count',
             'file', 'file_name',
         ]
@@ -68,6 +74,16 @@ class TaskSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
     student_username = serializers.CharField(source="student.username", read_only=True)
     file_name = serializers.SerializerMethodField()
+
+    # Recomputed live on every read rather than trusting the value stored at
+    # task-creation time, which goes stale as the due date approaches (the
+    # urgency component is a function of days-left, so a score computed
+    # three weeks out is wrong by the time the deadline is close). The view
+    # passes a HolidayCountCache in via serializer context so a page of N
+    # tasks only queries the Holiday table once per distinct due_date, not
+    # once per task.
+    priority_score = serializers.SerializerMethodField()
+
     class Meta:
         model = Task
         fields = [
@@ -78,9 +94,13 @@ class TaskSerializer(serializers.ModelSerializer):
             'due_date_bs', 'created_at',
         ]
         read_only_fields = [
-            'student', 'priority_score', 'status',
+            'student', 'status',
             'submitted_at', 'completed_at', 'created_at',
         ]
+
+    def get_priority_score(self, obj):
+        cache = self.context.get('holiday_cache')
+        return calculate_priority_score(obj.assignment, cache=cache)
 
     def get_due_date_bs(self, obj):
         return ad_to_bs(obj.assignment.due_date)

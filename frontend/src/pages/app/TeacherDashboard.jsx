@@ -16,11 +16,12 @@ import { useToast }       from '../../context/ToastContext.jsx'
 import { useAuth }        from '../../hooks/useAuth.js'
 import tasksService       from '../../services/tasks.service.js'
 import coursesService     from '../../services/courses.service.js'
-import { apiError }       from '../../utils/helpers.js'
+import { apiError, priorityColor } from '../../utils/helpers.js'
 import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
 import StudentSubmissionWorkspace from "../../components/teacher/StudentSubmissionWorkspace"
 import BSDatePicker from '../../components/shared/BSDatePicker.jsx'
+import { TASK_TYPES, PRIORITY_CHOICES } from '../../constants/assignmentChoices.js'
 
 const DOW_LABELS = ['S','M','T','W','T','F','S']
 const RED     = '#ef4444'
@@ -121,9 +122,6 @@ function BSCalWidget({ assignments }) {
     )
 }
 
-const TASK_TYPES = ['assignment', 'quiz', 'project', 'exam', 'lab']
-const PRIORITIES = [1, 2, 3, 4, 5]
-
 function DashboardAssignmentFormModal({ assignment, courses, onClose, onSaved }) {
 const isEdit = Boolean(assignment)
 const toast  = useToast()
@@ -133,7 +131,7 @@ const [form, setForm] = useState({
     description:     assignment?.description || '',
     course:          assignment?.course ?? (courses[0]?.id ?? ''),
     due_date:        assignment?.due_date || '',
-    task_type:       assignment?.task_type || TASK_TYPES[0],
+    task_type:       assignment?.task_type || TASK_TYPES[0].value,
     priority:        assignment?.priority ?? 3,
     estimated_hours: assignment?.estimated_hours ?? 1,
 })
@@ -226,13 +224,13 @@ return (
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Type</label>
                         <select value={form.task_type} onChange={e => update('task_type', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                            {TASK_TYPES.map(t => <option key={t} value={t}>{t[0].toUpperCase()+t.slice(1)}</option>)}
+                            {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Priority</label>
+                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Importance</label>
                         <select value={form.priority} onChange={e => update('priority', Number(e.target.value))} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                            {PRIORITIES.map(p => <option key={p} value={p}>{p}</option>)}
+                            {PRIORITY_CHOICES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                         </select>
                     </div>
                     <div>
@@ -976,6 +974,9 @@ return (
 
                                             {/* Review Status Pills */}
                                             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
+                                                <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: '#f5f2ed', color: priorityColor(a.priority) }}>
+                                                    {a.priority_label || '—'}
+                                                </span>
                                                 <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: '#eff3fd', color: '#1e40af' }}>
                                                     {a.pending_review_count ?? 0} to review
                                                 </span>

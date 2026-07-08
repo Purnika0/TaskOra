@@ -13,17 +13,9 @@ import coursesService      from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker         from '../../components/shared/BSDatePicker.jsx'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError } from '../../utils/helpers.js'
-
-// Guessed choice values for Assignment.task_type / priority — adjust these
-// to match whatever choices actually exist on the Django model if the
-// create/edit form throws a validation error for these fields.
-const TASK_TYPES = ['assignment', 'quiz', 'project', 'exam', 'lab']
-const PRIORITIES = [
-    { value: 1, label: 'Low' },
-    { value: 3, label: 'Medium' },
-    { value: 5, label: 'High' },
-]
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel } from '../../utils/helpers.js'
+import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
+import { TASK_TYPES, PRIORITY_CHOICES } from '../../constants/assignmentChoices.js'
 
 // Rejected is listed before Overdue everywhere in the UI (tabs, stat cards)
 // so the ordering matches the Student Dashboard.
@@ -198,8 +190,8 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
         description:     assignment?.description || '',
         course:          assignment?.course ?? (courses[0]?.id ?? ''),
         due_date:        assignment?.due_date || '',
-        task_type:       assignment?.task_type || TASK_TYPES[0],
-        priority:        assignment?.priority ?? PRIORITIES[1].value,
+        task_type:       assignment?.task_type || TASK_TYPES[0].value,
+        priority:        assignment?.priority ?? 3,
         estimated_hours: assignment?.estimated_hours ?? 1,
     })
     const [file, setFile]     = useState(null)
@@ -291,13 +283,13 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Type</label>
                             <select value={form.task_type} onChange={e => update('task_type', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {TASK_TYPES.map(t => <option key={t} value={t}>{t[0].toUpperCase()+t.slice(1)}</option>)}
+                                {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Priority</label>
+                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Importance</label>
                             <select value={form.priority} onChange={e => update('priority', Number(e.target.value))} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {PRIORITIES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
+                                {PRIORITY_CHOICES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
                             </select>
                         </div>
                         <div>
@@ -452,8 +444,8 @@ function StudentAssignments() {
                 .am-view-btn { transition:var(--transition-fast); }
                 .am-row-grid {
                     display:grid;
-                    grid-template-columns:minmax(180px,1fr) minmax(160px,0.5fr) 150px 100px 120px;
-                    align-items:center; column-gap:20px; row-gap:8px;
+                    grid-template-columns:minmax(170px,1fr) minmax(120px,0.5fr) 100px 100px 120px 100px 120px;
+                    align-items:center; column-gap:14px; row-gap:8px;
                 }
                 .am-row-head span { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-placeholder); }
                 @media (max-width:900px) { .am-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .am-row-head { display:none; } }
@@ -541,6 +533,8 @@ function StudentAssignments() {
                     <div className="am-row-grid am-row-head" style={{ padding:'12px 20px', background:'var(--color-surface-subtle)', borderBottom:'1px solid var(--color-border)' }}>
                         <span>Assignment</span>
                         <span>Course</span>
+                        <span>Importance</span>
+                        <span>Urgency</span>
                         <span>Due Date</span>
                         <span>Status</span>
                         <span style={{ textAlign:'right' }}>Action</span>
@@ -559,6 +553,12 @@ function StudentAssignments() {
                             const docName = t.assignment?.file_name || 'Document'
                             const hasDetails = Boolean(desc) || Boolean(docFile)
                             const courseName = getCourseName(t)
+                            const importanceVal = t.assignment?.priority
+                            const iColor = priorityColor(importanceVal)
+                            const iLabel = priorityLabel(importanceVal)
+                            const uScore = t.priority_score
+                            const uColor = urgencyColor(uScore)
+                            const uLabel = urgencyLabel(uScore)
 
                             return (
                                 <div key={t.id} style={{ padding:'14px 20px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-border)' }}>
@@ -580,6 +580,16 @@ function StudentAssignments() {
                                         <span style={{ fontSize:11, fontWeight:600, color:'var(--color-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                             {courseName}
                                         </span>
+
+                                        <div style={{ display:'flex', alignItems:'center', gap:5 }} title="Importance — set by the teacher">
+                                            <span style={{ width:6, height:6, borderRadius:'50%', background:iColor, flexShrink:0 }}/>
+                                            <span style={{ fontSize:11, fontWeight:700, color:iColor, textTransform:'capitalize' }}>{iLabel}</span>
+                                        </div>
+
+                                        <div style={{ display:'flex', alignItems:'center', gap:5 }} title="Urgency — computed from due date, importance, and workload">
+                                            <span style={{ width:6, height:6, borderRadius:'50%', background:uColor, flexShrink:0 }}/>
+                                            <span style={{ fontSize:11, fontWeight:700, color:uColor, textTransform:'capitalize' }}>{uLabel}</span>
+                                        </div>
 
                                         <span style={{ fontSize:11.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, whiteSpace:'nowrap' }}>
                                             {due || '—'}
@@ -867,6 +877,9 @@ function TeacherAssignments() {
                                 </div>
 
                                 <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:14 }}>
+                                    <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:'var(--color-surface-subtle)', color:priorityColor(a.priority) }}>
+                                        Importance: {a.priority_label || '—'}
+                                    </span>
                                     <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:'var(--color-primary-light)', color:'var(--color-primary)' }}>
                                         {a.pending_review_count ?? 0} to review
                                     </span>
