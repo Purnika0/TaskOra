@@ -65,7 +65,7 @@ class TaskSerializer(serializers.ModelSerializer):
     due_date_bs   = serializers.SerializerMethodField()
 
     # Extra fields for teacher dashboard
-    student_name = serializers.CharField(source="student.get_full_name", read_only=True)
+    student_name = serializers.SerializerMethodField()
     student_username = serializers.CharField(source="student.username", read_only=True)
     file_name = serializers.SerializerMethodField()
     class Meta:
@@ -84,19 +84,9 @@ class TaskSerializer(serializers.ModelSerializer):
 
     def get_due_date_bs(self, obj):
         return ad_to_bs(obj.assignment.due_date)
-    
-    # def get_student_name(self, obj):
-    #     return (
-    #         obj.student.get_full_name()
-    #         or obj.student.full_name
-    #         or obj.student.username
-    #     )
+
     def get_student_name(self, obj):
-        if hasattr(obj.student, "get_full_name"):
-            name = obj.student.get_full_name()
-            if name:
-                return name
-        return obj.student.username
+        return obj.student.full_name or obj.student.username
 
     def get_file_name(self, obj):
         if obj.submission_file:

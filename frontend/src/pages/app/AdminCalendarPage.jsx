@@ -4,6 +4,7 @@ import { useToday } from '../../hooks/useHolidays.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import holidaysService from '../../services/holidays.service.js'
 import { apiError } from '../../utils/helpers.js'
+import BSDatePicker from '../../components/shared/BSDatePicker.jsx'
 import {
     BS_MONTH_NAMES, buildMonthDays, daysInBSMonth, adToBS,
 } from '../../utils/bsCalendar.js'
@@ -160,11 +161,12 @@ function HolidayModal({ initial, onClose, onSaved }) {
                         />
                     </div>
                     <div>
-                        <label style={{ fontSize:11, fontWeight:600, color:'#64748B', display:'block', marginBottom:5 }}>Date (AD)</label>
-                        <input
-                            type="date" value={date}
-                            onChange={e => { setDate(e.target.value); setError('') }}
-                            className="form-input"
+                        <label style={{ fontSize:11, fontWeight:600, color:'#64748B', display:'block', marginBottom:5 }}>Date</label>
+                        <BSDatePicker
+                            value={date}
+                            onChange={d => { setDate(d); setError('') }}
+                            placeholder="Select a date"
+                            hasError={!!error && !date}
                         />
                     </div>
                     <div>
@@ -211,9 +213,7 @@ function AdminSidePanel({ day, bsMonth, bsYear, onAdd, onEdit, onDelete }) {
                 <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:BLUE, margin:'0 0 5px' }}>
                     Select a date
                 </p>
-                <p style={{ fontSize:12, color:'#94A3B8' }}>
-                    Add, edit, or remove a holiday
-                </p>
+                
             </div>
         </div>
     )
@@ -244,11 +244,7 @@ function AdminSidePanel({ day, bsMonth, bsYear, onAdd, onEdit, onDelete }) {
             )}
 
             <div style={{ flex:1 }}>
-                {isWeekend && !hasCustomHoliday ? (
-                    <p style={{ fontSize:11.5, color:'#94A3B8', margin:'6px 0' }}>
-                        This is a weekend. Weekly off days aren't editable here — only named holidays.
-                    </p>
-                ) : hasCustomHoliday ? (
+                {hasCustomHoliday ? (
                     <div style={{ display:'flex', gap:8, marginTop:4 }}>
                         <button onClick={() => onEdit(day)}
                             style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'8px 10px', fontSize:12, fontWeight:600, background:BLUE_BG, color:BLUE, border:'none', borderRadius:8, cursor:'pointer' }}>
@@ -260,10 +256,17 @@ function AdminSidePanel({ day, bsMonth, bsYear, onAdd, onEdit, onDelete }) {
                         </button>
                     </div>
                 ) : (
-                    <button onClick={() => onAdd(day)}
-                        style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px 10px', fontSize:12, fontWeight:600, background:BLUE, color:'#fff', border:'none', borderRadius:8, cursor:'pointer', marginTop:4 }}>
-                        <Plus size={13}/> Add Holiday
-                    </button>
+                    <>
+                        {isWeekend && (
+                            <p style={{ fontSize:11.5, color:'#94A3B8', margin:'6px 0' }}>
+                                This date is a scheduled weekly off. You can still add a named holiday if required.
+                            </p>
+                        )}
+                        <button onClick={() => onAdd(day)}
+                            style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'center', gap:6, padding:'9px 10px', fontSize:12, fontWeight:600, background:BLUE, color:'#fff', border:'none', borderRadius:8, cursor:'pointer', marginTop:4 }}>
+                            <Plus size={13}/> Add Holiday
+                        </button>
+                    </>
                 )}
             </div>
         </div>
@@ -356,6 +359,39 @@ export default function AdminCalendarPage() {
     const [deleteTarget, setDeleteTarget] = useState(null)
     const [deleting, setDeleting] = useState(false)
 
+    // ── Page-level tabs: Calendar / Upcoming Holidays ──────────────────────
+    const [pageTab, setPageTab] = useState('calendar')
+    const [allHolidays, setAllHolidays] = useState([])
+    const [holidaysLoading, setHolidaysLoading] = useState(false)
+
+    const loadAllHolidays = useCallback(() => {
+        setHolidaysLoading(true)
+        holidaysService.getAll()
+            .then(data => setAllHolidays(Array.isArray(data) ? data : (data?.results || [])))
+            .catch(() => toast.error('Failed to load holidays'))
+            .finally(() => setHolidaysLoading(false))
+    }, [toast])
+
+    useEffect(() => { loadAllHolidays() }, [loadAllHolidays])
+
+    const todayISO = useMemo(() => {
+        const t = new Date()
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
+    }, [])
+
+    const upcomingHolidays = useMemo(() => {
+        return allHolidays
+            .filter(h => h.date >= todayISO)
+            .sort((a, b) => a.date.localeCompare(b.date))
+    }, [allHolidays, todayISO])
+
+    function handleEditHoliday(h) {
+        setModalState({ mode:'edit', initial:{ id:h.id, title:h.title, date:h.date, holiday_type:h.holiday_type, description:h.description } })
+    }
+    function handleDeleteHoliday(h) {
+        setDeleteTarget({ holidayId:h.id, holidayTitle:h.title })
+    }
+
     function handleAdd(day) {
         setModalState({ mode:'add', initial:{ date: day.adISO } })
     }
@@ -373,6 +409,7 @@ export default function AdminCalendarPage() {
             toast.success('Holiday deleted')
             setDeleteTarget(null)
             loadCalendar()
+            loadAllHolidays()
         } catch (err) {
             toast.error(apiError(err))
         } finally {
@@ -382,6 +419,7 @@ export default function AdminCalendarPage() {
     function handleSaved() {
         setModalState(null)
         loadCalendar()
+        loadAllHolidays()
     }
 
     return (
@@ -390,7 +428,7 @@ export default function AdminCalendarPage() {
                 <div>
                     <h2 className="page-title">Holiday Calendar</h2>
                     <p className="page-subtitle">
-                        Bikram Sambat · English {new Date().getFullYear()} · Manage Nepal Public Holidays
+                        Bikram Sambat · English {new Date().getFullYear()} 
                         {todayBS && (
                             <span style={{ marginLeft:8, fontWeight:600, color:BLUE }}>
                                 Today: {BS_MONTH_NAMES[todayBS.month-1]?.en} {todayBS.day}, {todayBS.year} BS
@@ -403,13 +441,34 @@ export default function AdminCalendarPage() {
                         style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', fontSize:12, fontWeight:600, background:'#fff', color:BLUE, border:`1px solid ${BLUE}`, borderRadius:8, cursor:'pointer', fontFamily:'var(--font-display)' }}>
                         <Plus size={13}/> Add Holiday
                     </button>
-                    <button onClick={goToday}
-                        style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', fontSize:12, fontWeight:600, background:BLUE, color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontFamily:'var(--font-display)' }}>
-                        <CalendarDays size={13}/> Today
-                    </button>
+                    {pageTab === 'calendar' && (
+                        <button onClick={goToday}
+                            style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', fontSize:12, fontWeight:600, background:BLUE, color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontFamily:'var(--font-display)' }}>
+                            <CalendarDays size={13}/> Today
+                        </button>
+                    )}
                 </div>
             </div>
 
+            <div className="tab-bar" style={{ borderRadius:14, marginBottom:20 }}>
+                {[
+                    { key:'calendar', label:'Calendar' },
+                    { key:'holidays', label:'Upcoming Holidays' },
+                ].map(t => (
+                    <button key={t.key} className={`tab-btn${pageTab === t.key ? ' active' : ''}`}
+                        onClick={() => setPageTab(t.key)}>
+                        {t.label}
+                        {t.key === 'holidays' && upcomingHolidays.length > 0 && (
+                            <span style={{ marginLeft:5, fontSize:11, fontWeight:600, padding:'1px 6px', borderRadius:99,
+                                background: pageTab === 'holidays' ? 'rgba(84,82,228,0.12)' : 'var(--color-surface-subtle)', color:'inherit' }}>
+                                {upcomingHolidays.length}
+                            </span>
+                        )}
+                    </button>
+                ))}
+            </div>
+
+            {pageTab === 'calendar' ? (
             <div className="cal-pg-grid" style={{ marginBottom:24 }}>
                 <div className="white-card" style={{ padding:20 }}>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
@@ -497,6 +556,53 @@ export default function AdminCalendarPage() {
                     />
                 </div>
             </div>
+            ) : (
+            <div className="white-card" style={{ padding:0, marginBottom:24, overflow:'hidden' }}>
+                {holidaysLoading ? (
+                    <div style={{ padding:'44px 20px', textAlign:'center' }}>
+                        <Loader size={20} style={{ color:'#94A3B8', animation:'to-spin 1s linear infinite' }}/>
+                    </div>
+                ) : upcomingHolidays.length === 0 ? (
+                    <div style={{ padding:'44px 20px', textAlign:'center' }}>
+                        <CalendarDays size={26} style={{ color:'#CBD5E1', margin:'0 auto 10px', display:'block' }}/>
+                        <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#0F172A', margin:'0 0 4px' }}>
+                            No upcoming holidays
+                        </p>
+                        <p style={{ fontSize:12, color:'#94A3B8', margin:0 }}>
+                            Holidays you add will show up here.
+                        </p>
+                    </div>
+                ) : (
+                    upcomingHolidays.map((h, i) => {
+                        const typeInfo = HOLIDAY_TYPES.find(t => t.value === h.holiday_type)
+                        const d = new Date(`${h.date}T00:00:00`)
+                        const dateLabel = d.toLocaleDateString('en-US', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
+                        return (
+                            <div key={h.id}
+                                style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px', borderTop: i === 0 ? 'none' : '1px solid var(--color-border)' }}>
+                                <div style={{ flex:1, minWidth:0 }}>
+                                    <p style={{ fontSize:13.5, fontWeight:700, color:'#0F172A', margin:'0 0 2px' }}>{h.title}</p>
+                                    <p style={{ fontSize:11.5, color:'#94A3B8', margin:0 }}>
+                                        {dateLabel}
+                                        {typeInfo && <span style={{ marginLeft:8, fontWeight:600, color:BLUE }}>{typeInfo.label}</span>}
+                                    </p>
+                                </div>
+                                <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                                    <button onClick={() => handleEditHoliday(h)} aria-label={`Edit ${h.title}`}
+                                        style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 10px', fontSize:12, fontWeight:600, background:BLUE_BG, color:BLUE, border:'none', borderRadius:8, cursor:'pointer' }}>
+                                        <Pencil size={12}/> Edit
+                                    </button>
+                                    <button onClick={() => handleDeleteHoliday(h)} aria-label={`Delete ${h.title}`}
+                                        style={{ display:'flex', alignItems:'center', gap:5, padding:'7px 10px', fontSize:12, fontWeight:600, background:RED_BG, color:RED, border:'none', borderRadius:8, cursor:'pointer' }}>
+                                        <Trash2 size={12}/> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        )
+                    })
+                )}
+            </div>
+            )}
 
             {modalState && (
                 <HolidayModal
@@ -518,8 +624,16 @@ export default function AdminCalendarPage() {
                     <div
                         onClick={e => e.stopPropagation()}
                         className="white-card anim-fade-in"
-                        style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)' }}
+                        style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)', position:'relative' }}
                     >
+                        <button
+                            onClick={() => !deleting && setDeleteTarget(null)}
+                            disabled={deleting}
+                            aria-label="Close"
+                            style={{ position:'absolute', top:16, right:16, background:'none', border:'none', cursor: deleting ? 'default' : 'pointer', color:'#94A3B8' }}
+                        >
+                            <X size={16}/>
+                        </button>
                         <div style={{ width:44, height:44, borderRadius:'50%', background:'#fbeceb', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
                             <Trash2 size={19} style={{ color:'#c0392b' }}/>
                         </div>
@@ -527,7 +641,7 @@ export default function AdminCalendarPage() {
                             Delete holiday?
                         </h3>
                         <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
-                            This will permanently delete <strong style={{ color:'#1a1f35' }}>"{deleteTarget.holidayTitle || 'this holiday'}"</strong>. This action cannot be undone.
+                            Are you sure you want to delete <strong style={{ color:'#1a1f35' }}>"{deleteTarget.holidayTitle || 'this holiday'}"</strong> permanently?
                         </p>
                         <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                             <button

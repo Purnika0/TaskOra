@@ -1220,6 +1220,8 @@ export default function AdminDashboard({ initialTab }) {
         } catch (err) { toast.error(apiError(err)) }
     }
 
+    if (tab === 'calendar') return <AdminCalendarPage/>
+
     return (
         <div style={{ display:'flex', flexDirection:'column', gap:0 }} className="anim-fade-in">
 
@@ -1297,7 +1299,6 @@ export default function AdminDashboard({ initialTab }) {
                 {tab === 'analytics' && (
                     <AnalyticsTab users={users} courses={courses} loading={loading || coursesLoading}/>
                 )}
-                {tab === 'calendar' && <AdminCalendarPage/>}
                 {tab === 'activity' && (
                     <ActivityTab users={users} loading={loading}/>
                 )}

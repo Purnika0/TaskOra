@@ -16,6 +16,7 @@ import LegalPage                from '../pages/portal/LegalPage.jsx'
 import StudentDashboard         from '../pages/app/StudentDashboard.jsx'
 import TeacherDashboard         from '../pages/app/TeacherDashboard.jsx'
 import AdminDashboard           from '../pages/app/AdminDashboard.jsx'
+import AdminCalendarPage        from '../pages/app/AdminCalendarPage.jsx'
 import AssignmentManagement     from '../pages/app/AssignmentManagement.jsx'
 import AssignmentSubmissions    from '../pages/app/AssignmentSubmissions.jsx'
 import SubmissionsInboxPage     from '../pages/app/SubmissionsInboxPage.jsx'
@@ -91,7 +92,7 @@ export default function AppRoutes() {
                     <ProtectedRoute allowedRoles={['admin']}><AdminDashboard initialTab="students"/></ProtectedRoute>
                 }/>
                 <Route path="admin/calendar" element={
-                    <ProtectedRoute allowedRoles={['admin']}><AdminDashboard initialTab="calendar"/></ProtectedRoute>
+                    <ProtectedRoute allowedRoles={['admin']}><AdminCalendarPage/></ProtectedRoute>
                 }/>
 
                 <Route path="teacher" element={
