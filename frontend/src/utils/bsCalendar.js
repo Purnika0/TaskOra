@@ -177,8 +177,8 @@ export function buildMonthDays(bsYear, bsMonth) {
             isHoliday: !!hTitle || isSat || isSun,
             holidayTitle: hTitle,
             bsKey,
-            // ISO string of AD date for task due_date matching
-            adISO: adDate.toISOString().split('T')[0],
+            // ISO string of AD date for task due_date matching (local date, not UTC — avoids off-by-one in +UTC timezones)
+            adISO: `${adDate.getFullYear()}-${String(adDate.getMonth() + 1).padStart(2, '0')}-${String(adDate.getDate()).padStart(2, '0')}`,
         }
     })
 }

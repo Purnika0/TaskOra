@@ -18,10 +18,10 @@ const BLUE_BG = '#EEEEFE'
 
 // Real choices from Holiday.HOLIDAY_TYPES (backend/holidays/models.py)
 const HOLIDAY_TYPES = [
-    { value:'public',     label:'Public'     },
-    { value:'festival',   label:'Festival'   },
-    { value:'regional',   label:'Regional'   },
-    { value:'restricted', label:'Restricted' },
+    { value:'public',     label:'Public Holiday'                    },
+    { value:'festival',   label:'Festival'                          },
+    { value:'regional',   label:'Regional (Valley / Pradesh / District)' },
+    { value:'restricted', label:'Private'                  },
 ]
 
 // ── Day Cell ──────────────────────────────────────────────────────────────────
