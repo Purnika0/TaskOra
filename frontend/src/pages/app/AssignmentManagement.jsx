@@ -425,6 +425,17 @@ function StudentAssignments() {
             list.sort((a, b) => (getTaskDueDate(b) || '0000-00-00').localeCompare(getTaskDueDate(a) || '0000-00-00'))
         } else if (sortBy === 'title') {
             list.sort((a, b) => getTaskTitle(a).localeCompare(getTaskTitle(b)))
+        } else if (sortBy === 'importance') {
+            // Highest importance first (assignment.priority, 1-5, teacher-set)
+            list.sort((a, b) => (b.assignment?.priority ?? 0) - (a.assignment?.priority ?? 0))
+        } else if (sortBy === 'urgency') {
+            // Highest urgency first (priority_score, 0-1, system-computed).
+            // Completed tasks sink to the bottom — urgency no longer applies to them.
+            list.sort((a, b) => {
+                const ua = a.status === 'completed' ? -1 : (a.priority_score ?? 0)
+                const ub = b.status === 'completed' ? -1 : (b.priority_score ?? 0)
+                return ub - ua
+            })
         }
 
         return list
@@ -490,6 +501,8 @@ function StudentAssignments() {
                     <option value="due">Due Date: Earliest First</option>
                     <option value="due-desc">Due Date: Latest First</option>
                     <option value="title">Title (A–Z)</option>
+                    <option value="importance">Importance: Highest First</option>
+                    <option value="urgency">Urgency: Highest First</option>
                 </select>
                 <button onClick={refetch} className="btn-secondary" style={{ padding:'7px 10px' }}>
                     <RefreshCw size={12}/>
@@ -556,9 +569,10 @@ function StudentAssignments() {
                             const importanceVal = t.assignment?.priority
                             const iColor = priorityColor(importanceVal)
                             const iLabel = priorityLabel(importanceVal)
+                            const isDone = t.status === 'completed'
                             const uScore = t.priority_score
-                            const uColor = urgencyColor(uScore)
-                            const uLabel = urgencyLabel(uScore)
+                            const uColor = isDone ? 'var(--color-text-placeholder)' : urgencyColor(uScore)
+                            const uLabel = isDone ? '—' : urgencyLabel(uScore)
 
                             return (
                                 <div key={t.id} style={{ padding:'14px 20px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-border)' }}>
@@ -586,8 +600,8 @@ function StudentAssignments() {
                                             <span style={{ fontSize:11, fontWeight:700, color:iColor, textTransform:'capitalize' }}>{iLabel}</span>
                                         </div>
 
-                                        <div style={{ display:'flex', alignItems:'center', gap:5 }} title="Urgency — computed from due date, importance, and workload">
-                                            <span style={{ width:6, height:6, borderRadius:'50%', background:uColor, flexShrink:0 }}/>
+                                        <div style={{ display:'flex', alignItems:'center', gap:5 }} title={isDone ? 'No longer relevant — task is completed' : 'Urgency — computed from due date, importance, and workload'}>
+                                            {!isDone && <span style={{ width:6, height:6, borderRadius:'50%', background:uColor, flexShrink:0 }}/>}
                                             <span style={{ fontSize:11, fontWeight:700, color:uColor, textTransform:'capitalize' }}>{uLabel}</span>
                                         </div>
 
