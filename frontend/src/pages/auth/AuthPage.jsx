@@ -129,15 +129,36 @@ export default function AuthPage({ initialView }) {
     const [loginErrors, setLoginErrors] = useState({})
 
     // Signup — student only, no role selector
-    const [regName,     setRegName]     = useState('')
-    const [regUser,     setRegUser]     = useState('')
-    const [regEmail,    setRegEmail]    = useState('')
-    const [regPw,       setRegPw]       = useState('')
-    const [regConf,     setRegConf]     = useState('')
+    const SIGNUP_DRAFT_KEY = 'taskora:signupDraft'
+    const loadSignupDraft = () => {
+        try {
+            const raw = sessionStorage.getItem(SIGNUP_DRAFT_KEY)
+            return raw ? JSON.parse(raw) : null
+        } catch {
+            return null
+        }
+    }
+
+    const [regName,     setRegName]     = useState(() => loadSignupDraft()?.name ?? '')
+    const [regUser,     setRegUser]     = useState(() => loadSignupDraft()?.user ?? '')
+    const [regEmail,    setRegEmail]    = useState(() => loadSignupDraft()?.email ?? '')
+    const [regPw,       setRegPw]       = useState(() => loadSignupDraft()?.pw ?? '')
+    const [regConf,     setRegConf]     = useState(() => loadSignupDraft()?.conf ?? '')
     const [showRegPw,   setShowRegPw]   = useState(false)
     const [showRegConf, setShowRegConf] = useState(false)
     const [regErrors,   setRegErrors]   = useState({})
-    const [agreeTerms,  setAgreeTerms]  = useState(false)
+    const [agreeTerms,  setAgreeTerms]  = useState(() => loadSignupDraft()?.agreeTerms ?? false)
+
+    // Persist signup form as a draft so it survives navigating away (e.g. reading
+    // Terms and Conditions) and coming back, even if the component remounts.
+    useEffect(() => {
+        try {
+            sessionStorage.setItem(SIGNUP_DRAFT_KEY, JSON.stringify({
+                name: regName, user: regUser, email: regEmail,
+                pw: regPw, conf: regConf, agreeTerms,
+            }))
+        } catch { /* ignore quota/availability errors */ }
+    }, [regName, regUser, regEmail, regPw, regConf, agreeTerms])
 
     // Email verification (post-signup, or when login is blocked)
     const [verifyEmail,   setVerifyEmail]   = useState('')
