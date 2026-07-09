@@ -1,5 +1,3 @@
-
-
 import api, { setTokens, clearTokens, TOKEN_KEYS } from './api.js'
 
 const authService = {
@@ -23,10 +21,10 @@ const authService = {
             const res = await api.post('/api/users/login/', payload)
             tokens = res.data
         } catch (err) {
-            const detail = err.response?.data?.detail
-            const msg = Array.isArray(detail) ? detail[0] : detail
-            if (typeof msg === 'string' && msg.toLowerCase().includes('verify your email')) {
-                const vErr = new Error(msg)
+            if (err.response?.data?.code === 'email_not_verified') {
+                const detail = err.response.data.detail
+                const msg = Array.isArray(detail) ? detail[0] : detail
+                const vErr = new Error(msg || 'Please verify your email before logging in.')
                 vErr.code = 'EMAIL_NOT_VERIFIED'
                 vErr.email = isEmail ? cred : undefined  // only known if they logged in with an email
                 throw vErr

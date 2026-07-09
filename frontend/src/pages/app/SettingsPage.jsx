@@ -172,10 +172,9 @@ function OtpPasswordChangeForm({ email }) {
             setStep('done')
             setOtpCode(''); setNewPw(''); setConfirmPw('')
         } catch (err) {
-            const msg = apiError(err)
-            setErrors({ form: msg.toLowerCase().includes('invalid') || msg.toLowerCase().includes('expired')
+            setErrors({ form: err.response?.data?.code === 'otp_invalid'
                 ? 'This code is invalid or has expired. Please request a new one.'
-                : msg })
+                : apiError(err) })
         } finally { setSubmitting(false) }
     }
 

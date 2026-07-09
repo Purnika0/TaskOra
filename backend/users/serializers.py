@@ -208,14 +208,14 @@ class ResetPasswordSerializer(serializers.Serializer):
     def validate(self, attrs):
         user = User.objects.filter(email__iexact=attrs['email']).first()
         if user is None:
-            raise serializers.ValidationError({"detail": "Invalid email or code."})
+            raise serializers.ValidationError({"detail": "Invalid email or code.", "code": "otp_invalid"})
 
         otp = OTP.objects.filter(
             user=user, purpose=OTP.Purpose.PASSWORD_RESET, is_used=False
         ).order_by('-created_at').first()
 
         if not otp or not otp.is_valid or not otp.check_code(attrs['otp_code']):
-            raise serializers.ValidationError({"detail": "Invalid or expired code."})
+            raise serializers.ValidationError({"detail": "Invalid or expired code.", "code": "otp_invalid"})
 
         attrs['user'] = user
         attrs['otp']  = otp
@@ -262,7 +262,6 @@ class VerifiedTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)  # runs normal username/password auth first
         if self.user.role == User.Role.STUDENT and not self.user.is_email_verified:
             raise serializers.ValidationError(
-                {"detail": "Please verify your email before logging in."},
-                code='email_not_verified',
+                {"detail": "Please verify your email before logging in.", "code": "email_not_verified"},
             )
         return data

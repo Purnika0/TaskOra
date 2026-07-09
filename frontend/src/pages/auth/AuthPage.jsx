@@ -260,11 +260,11 @@ export default function AuthPage({ initialView }) {
             setVerifyEmail(regEmail.trim())
             setView('verify')
         } catch (err) {
-            const msg = getApiError(err).toLowerCase()
+            const data = err.response?.data
             const e = {}
-            if (msg.includes('username'))   e.user  = 'Username already exists'
-            else if (msg.includes('email')) e.email = 'Email already registered'
-            else                            e.form  = getApiError(err)
+            if (data?.username)      e.user  = 'Username already exists'
+            else if (data?.email)    e.email = 'Email already registered'
+            else                     e.form  = getApiError(err)
             setRegErrors(e)
         } finally { setSubmitting(false) }
     }
@@ -372,8 +372,7 @@ export default function AuthPage({ initialView }) {
             await authService.resetPassword(forgotEmail.trim(), resetOtp.trim(), resetPw)
             setResetDone(true)
         } catch (err) {
-            const msg = getApiError(err).toLowerCase()
-            setResetErrors({ form: msg.includes('invalid') || msg.includes('expired')
+            setResetErrors({ form: err.response?.data?.code === 'otp_invalid'
                 ? 'This code is invalid or has expired. Please request a new one.'
                 : getApiError(err) })
         } finally { setSubmitting(false) }
