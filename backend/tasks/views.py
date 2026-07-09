@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from django.utils import timezone
 from django.shortcuts import get_object_or_404
 from django.db import models
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
 
 from .models import Assignment, Task
 from .serializers import (
@@ -44,10 +44,26 @@ class AssignmentListCreateView(generics.ListCreateAPIView):
         return Assignment.objects.filter(created_by=self.request.user)\
             .select_related('course')\
             .annotate(
-                submission_count=Count('tasks', filter=Q(tasks__submitted_at__isnull=False), distinct=True),
-                pending_review_count=Count('tasks', filter=Q(tasks__status=Task.Status.SUBMITTED), distinct=True),
-                approved_count=Count('tasks', filter=Q(tasks__status=Task.Status.COMPLETED), distinct=True),
-                rejected_count=Count('tasks', filter=Q(tasks__status=Task.Status.REJECTED), distinct=True),
+                submission_count=Count(
+                    'tasks',
+                    filter=Q(tasks__submitted_at__isnull=False) & Q(tasks__student__enrollments__course=F('course')),
+                    distinct=True
+                ),
+                pending_review_count=Count(
+                    'tasks',
+                    filter=Q(tasks__status=Task.Status.SUBMITTED) & Q(tasks__student__enrollments__course=F('course')),
+                    distinct=True
+                ),
+                approved_count=Count(
+                    'tasks',
+                    filter=Q(tasks__status=Task.Status.COMPLETED) & Q(tasks__student__enrollments__course=F('course')),
+                    distinct=True
+                ),
+                rejected_count=Count(
+                    'tasks',
+                    filter=Q(tasks__status=Task.Status.REJECTED) & Q(tasks__student__enrollments__course=F('course')),
+                    distinct=True
+                ),
             )
 
     def perform_create(self, serializer):

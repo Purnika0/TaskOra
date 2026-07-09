@@ -16,7 +16,14 @@ class StudentTaskSummaryView(APIView):
     permission_classes = [IsStudent]
 
     def get(self, request):
-        tasks     = Task.objects.filter(student=request.user)
+        enrolled_course_ids = Enrollment.objects.filter(
+            student=request.user
+        ).values_list('course_id', flat=True)
+
+        tasks     = Task.objects.filter(
+            student=request.user,
+            assignment__course_id__in=enrolled_course_ids
+        )
         total     = tasks.count()
         completed = tasks.filter(status=Task.Status.COMPLETED).count()
         submitted = tasks.filter(status=Task.Status.SUBMITTED).count()
@@ -38,6 +45,10 @@ class StudentWeeklyProgressView(APIView):
     permission_classes = [IsStudent]
 
     def get(self, request):
+        enrolled_course_ids = Enrollment.objects.filter(
+            student=request.user
+        ).values_list('course_id', flat=True)
+
         today = timezone.now().date()
         data  = []
 
@@ -45,6 +56,7 @@ class StudentWeeklyProgressView(APIView):
             day   = today - timezone.timedelta(days=i)
             count = Task.objects.filter(
                 student=request.user,
+                assignment__course_id__in=enrolled_course_ids,
                 status=Task.Status.COMPLETED,
                 completed_at__date=day
             ).count()
@@ -100,7 +112,14 @@ class TeacherTaskProgressView(APIView):
         data        = []
 
         for assignment in assignments:
-            tasks     = Task.objects.filter(assignment=assignment)
+            enrolled_student_ids = Enrollment.objects.filter(
+                course=assignment.course
+            ).values_list('student_id', flat=True)
+
+            tasks     = Task.objects.filter(
+                assignment=assignment,
+                student_id__in=enrolled_student_ids
+            )
             total     = tasks.count()
             completed = tasks.filter(status=Task.Status.COMPLETED).count()
             submitted = tasks.filter(status=Task.Status.SUBMITTED).count()
@@ -134,7 +153,14 @@ class TeacherCourseOverviewView(APIView):
         for course in courses:
             student_count    = Enrollment.objects.filter(course=course).count()
             assignment_count = Assignment.objects.filter(course=course).count()
-            tasks            = Task.objects.filter(assignment__course=course)
+
+            enrolled_student_ids = Enrollment.objects.filter(
+                course=course
+            ).values_list('student_id', flat=True)
+            tasks            = Task.objects.filter(
+                assignment__course=course,
+                student_id__in=enrolled_student_ids
+            )
             total_tasks      = tasks.count()
             completed_tasks  = tasks.filter(status=Task.Status.COMPLETED).count()
             submitted_tasks  = tasks.filter(status=Task.Status.SUBMITTED).count()
@@ -174,15 +200,16 @@ class TeacherStudentRankingView(APIView):
         data = []
 
         for student in students:
+            enrolled_course_ids = Enrollment.objects.filter(
+                student=student, course__teacher=request.user
+            ).values_list('course_id', flat=True)
+            if course_id:
+                enrolled_course_ids = enrolled_course_ids.filter(course_id=course_id)
+
             tasks = Task.objects.filter(
                 student=student,
-                assignment__course__teacher=request.user,
+                assignment__course_id__in=enrolled_course_ids,
             )
-
-            if course_id:
-                tasks = tasks.filter(
-                    assignment__course_id=course_id
-                )
 
             total     = tasks.count()
             completed = tasks.filter(status=Task.Status.COMPLETED).count()
