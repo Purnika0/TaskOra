@@ -21,11 +21,16 @@ const authService = {
             const res = await api.post('/api/users/login/', payload)
             tokens = res.data
         } catch (err) {
+<<<<<<< Updated upstream
             const data = err.response?.data
             const rawCode = data?.code
             const codeVal = Array.isArray(rawCode) ? rawCode[0] : rawCode
             if (codeVal === 'email_not_verified') {
                 const detail = data.detail
+=======
+            if (err.response?.data?.code === 'email_not_verified') {
+                const detail = err.response.data.detail
+>>>>>>> Stashed changes
                 const msg = Array.isArray(detail) ? detail[0] : detail
                 const vErr = new Error(msg || 'Please verify your email before logging in.')
                 vErr.code = 'EMAIL_NOT_VERIFIED'
