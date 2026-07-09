@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, GraduationCap, Hash, BookOpen, Calendar, User, Pencil, Trash2, ListChecks, LogOut, Users } from 'lucide-react'
+import { Plus, GraduationCap, Hash, BookOpen, User, Pencil, Trash2, ListChecks, LogOut, Users } from 'lucide-react'
 import { useAuth }        from '../../hooks/useAuth.js'
 import { useToast }       from '../../context/ToastContext.jsx'
 import coursesService     from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock }   from '../../components/shared/Loader.jsx'
-import BSDatePicker       from '../../components/shared/BSDatePicker.jsx'
 import { apiError }       from '../../utils/helpers.js'
 
 const inpStyle = {
@@ -45,7 +44,7 @@ export default function CoursesPage() {
     const [joining,        setJoining]        = useState(false)
     const [showCreate,     setShowCreate]     = useState(false)
     const [editingCourse,  setEditingCourse]  = useState(null)   // course object being edited, or null when creating
-    const [newCourse,      setNewCourse]      = useState({ title:'', description:'', start_date:'' })
+    const [newCourse,      setNewCourse]      = useState({ title:'', description:'' })
     const [creating,       setCreating]       = useState(false)
     const [deletingId,     setDeletingId]     = useState(null)
     const [deleteTarget,   setDeleteTarget]   = useState(null)   // course pending delete confirmation
@@ -75,12 +74,12 @@ async function handleJoin(e) {
 function resetForm() {
         setShowCreate(false)
         setEditingCourse(null)
-        setNewCourse({ title:'', description:'', start_date:'' })
+        setNewCourse({ title:'', description:'' })
 }
 
 function handleToggleCreate() {
         if (showCreate) resetForm()
-        else { setEditingCourse(null); setNewCourse({ title:'', description:'', start_date:'' }); setShowCreate(true) }
+        else { setEditingCourse(null); setNewCourse({ title:'', description:'' }); setShowCreate(true) }
 }
 
 function handleEditClick(course) {
@@ -88,7 +87,6 @@ function handleEditClick(course) {
         setNewCourse({
         title: course.title || '',
         description: course.description || '',
-        start_date: course.start_date || '',
         })
         setShowCreate(true)
 }
@@ -191,8 +189,6 @@ return (
                 onChange={e => setNewCourse(p=>({...p,title:e.target.value}))} required/>
                 <FormInput placeholder="Description (optional)" rows={2} value={newCourse.description}
                 onChange={e => setNewCourse(p=>({...p,description:e.target.value}))}/>
-                <BSDatePicker value={newCourse.start_date} placeholder="Start date" background="#faf8f5"
-                onChange={v => setNewCourse(p=>({...p,start_date:v}))}/>
                 <div style={{ display:'flex', gap:10 }}>
                 <button type="submit" disabled={creating} className="btn-primary" style={{ alignSelf:'flex-start' }}>
                     {creating ? (editingCourse ? 'Saving…' : 'Creating…') : (editingCourse ? 'Save Changes' : 'Create Course')}
@@ -277,12 +273,6 @@ return (
                         <div style={{ display:'flex', alignItems:'center', gap:5 }}>
                         <User size={10} style={{ color:'#b0a898' }} aria-hidden="true"/>
                         <span style={{ fontSize:11, color:'#a09080' }}>{course.teacher.full_name||course.teacher.username}</span>
-                        </div>
-                    )}
-                    {course.start_date && (
-                        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                        <Calendar size={10} style={{ color:'#b0a898' }} aria-hidden="true"/>
-                        <span style={{ fontSize:11, color:'#a09080' }}>{course.start_date}</span>
                         </div>
                     )}
                     </div>

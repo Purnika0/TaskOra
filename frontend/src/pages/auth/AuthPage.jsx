@@ -21,6 +21,7 @@ import {
 import { useAuth }    from '../../hooks/useAuth.js'
 import authService    from '../../services/auth.service.js'
 import { Spinner }    from '../../components/shared/Loader.jsx'
+import { currentBSYear } from '../../utils/helpers.js'
 
 const MAX_ATTEMPTS  = 3
 const LOCK_SECS     = 30
@@ -463,7 +464,7 @@ export default function AuthPage({ initialView }) {
                         </p>
                     </div>
                     <p style={{ fontSize:11, color:'rgba(255,255,255,0.55)', margin:0 }}>
-                        © {new Date().getFullYear()} TaskOra
+                        © {currentBSYear()} TaskOra
                     </p>
                 </div>
 

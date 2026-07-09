@@ -12,7 +12,7 @@ import { DashboardFooter }                 from '../../components/layout/Footer.
 import { LoadingBlock, ErrorBlock }        from '../../components/shared/Loader.jsx'
 import { useToast }                        from '../../context/ToastContext.jsx'
 import tasksService                        from '../../services/tasks.service.js'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel } from '../../utils/helpers.js'
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, nepalNow, nepalHour, todayNepalISO, fmtDate } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS }            from '../../utils/bsCalendar.js'
 
@@ -38,9 +38,9 @@ function BSCalWidget({ tasks }) {
     const { today: todayData } = useToday()
     const todayBS = useMemo(() => {
         if (todayData?.today_bs) return todayData.today_bs
-        const t = adToBS(new Date()); return { year:t.year, month:t.month, day:t.day }
+        const t = adToBS(nepalNow()); return { year:t.year, month:t.month, day:t.day }
     }, [todayData])
-    const [cur, setCur] = useState(() => { const t = adToBS(new Date()); return { y:t.year, m:t.month } })
+    const [cur, setCur] = useState(() => { const t = adToBS(nepalNow()); return { y:t.year, m:t.month } })
 
     // Render-time adjustment (React's recommended pattern) instead of a useEffect,
     // comparing primitive values so it stays correct regardless of upstream memoization.
@@ -159,7 +159,7 @@ function HolidaysWidget() {
 
 // ── Upcoming Assignments widget ───────────────────────────────────────────────
 function UpcomingWidget({ tasks }) {
-    const today = new Date().toISOString().slice(0, 10) // 'YYYY-MM-DD'
+    const today = todayNepalISO() // 'YYYY-MM-DD', Nepal local
 
     const upcomingOnly = tasks
         .filter(t => isPending(t) && getTaskDueDate(t) && getTaskDueDate(t) >= today)
@@ -542,7 +542,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                                         </div>
 
                                         <span style={{ fontSize:11.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, whiteSpace:'nowrap' }}>
-                                            {due || '—'}
+                                            {fmtDate(due)}
                                             {urgent && d !== null && d < 0 && <span style={{ display:'block', fontSize:10 }}>({Math.abs(d)}d late)</span>}
                                         </span>
 
@@ -621,7 +621,7 @@ export default function StudentDashboard({ user: propUser }) {
         rejected:  summary?.rejected  ?? tasks.filter(isRejected).length,
     }
 
-    const hour     = new Date().getHours()
+    const hour     = nepalHour()
     const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
     return (

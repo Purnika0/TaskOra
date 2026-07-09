@@ -5,7 +5,36 @@
 //   • getTaskTitle() updated — personal tasks removed, assignment nested object is primary
 //   • deadlinePill() updated to use status field
 
-import { format, parseISO } from 'date-fns'
+import { adToBS, BS_MONTH_NAMES, toNepaliNum } from './bsCalendar.js'
+
+// ── "Today" in Nepal local time ──────────────────────────────────────────────
+// Never use `new Date().toISOString()` for "today's date" — that reads UTC,
+// which drifts a day off from Nepal (UTC+5:45) for part of every day.
+// This is the one place "today" should be computed from, everywhere in the app.
+export function todayNepalISO() {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kathmandu', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).formatToParts(new Date())
+    const get = t => parts.find(p => p.type === t)?.value
+    return `${get('year')}-${get('month')}-${get('day')}`
+}
+
+// A Date object whose getFullYear()/getMonth()/getDate() reflect Nepal's
+// current calendar date, regardless of the browser/device's own timezone.
+// Use this (not `new Date()`) anywhere "today" feeds into adToBS() or any
+// other date-only comparison — it keeps the app on Nepal time everywhere.
+export function nepalNow() {
+    return new Date(todayNepalISO() + 'T00:00:00')
+}
+
+// Current hour (0-23) in Nepal local time — use for time-of-day greetings
+// ("Good morning" etc.) so they're correct regardless of the device's own tz.
+export function nepalHour() {
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kathmandu', hour: 'numeric', hour12: false,
+    }).formatToParts(new Date())
+    return Number(parts.find(p => p.type === 'hour')?.value ?? new Date().getHours())
+}
 
 // ── Priority helpers ────────────────────────────────────────────────────────
 export function priorityToLevel(n) {
@@ -80,7 +109,7 @@ export function deadlinePill(task) {
     if (task.status === 'overdue')   return { label: 'Overdue', color: '#991b1b', bg: '#fde8e8' }
     const due = getTaskDueDate(task)
     if (!due) return { label: 'No date', color: '#6b7280', bg: '#f3f4f6' }
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const today = new Date(todayNepalISO() + 'T00:00:00')
     const d = Math.ceil((new Date(due + 'T00:00:00') - today) / 86400000)
     if (d < 0)   return { label: `${Math.abs(d)}d overdue`, color: '#991b1b', bg: '#fde8e8' }
     if (d === 0) return { label: 'Due today',  color: '#991b1b', bg: '#fde8e8' }
@@ -92,15 +121,73 @@ export function deadlinePill(task) {
 // ── Days until a date string ─────────────────────────────────────────────────
 export function daysUntil(dateStr) {
     if (!dateStr) return null
-    const today = new Date(); today.setHours(0, 0, 0, 0)
+    const today = new Date(todayNepalISO() + 'T00:00:00')
     return Math.ceil((new Date(dateStr + 'T00:00:00') - today) / 86400000)
 }
 
-// ── Format date ──────────────────────────────────────────────────────────────
+// ── Format date — always displayed in Bikram Sambat (BS) ────────────────────
+// Accepts an AD ISO date string ('YYYY-MM-DD') — which is what the backend
+// always sends/stores — and renders it in BS, e.g. "15 Ashadh 2082".
+// This is the ONLY date formatter that should be used to display dates
+// anywhere in the UI; never render a raw AD date string directly.
 export function fmtDate(s) {
     if (!s) return '—'
-    try { return format(parseISO(s), 'd MMM yyyy') }
-    catch { return s }
+    try {
+        let y, m, d
+        if (s.includes('T') || s.includes(' ')) {
+            // Full datetime string — read the calendar date as it falls in
+            // Nepal local time (Asia/Kathmandu), not the browser's timezone.
+            const dt = new Date(s)
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Kathmandu', year: 'numeric', month: '2-digit', day: '2-digit',
+            }).formatToParts(dt)
+            const get = t => parts.find(p => p.type === t)?.value
+            y = Number(get('year')); m = Number(get('month')); d = Number(get('day'))
+        } else {
+            [y, m, d] = s.split('-').map(Number)
+        }
+        const bs = adToBS(new Date(y, m - 1, d))
+        const mn = BS_MONTH_NAMES[bs.month - 1]
+        return `${bs.day} ${mn?.en} ${bs.year}`
+    } catch {
+        return s
+    }
+}
+
+// ── Format date + time — BS date, Nepal-local time ──────────────────────────
+// For timestamp fields (submitted_at, created_at, date_joined, etc.) where
+// the time of day also matters. Date portion is always BS.
+export function fmtDateTime(s) {
+    if (!s) return '—'
+    try {
+        const dt = new Date(s)
+        const dateStr = fmtDate(s)
+        const timeStr = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Asia/Kathmandu', hour: 'numeric', minute: '2-digit', hour12: true,
+        }).format(dt)
+        return `${dateStr}, ${timeStr}`
+    } catch {
+        return s
+    }
+}
+
+// ── Current BS year — for footers/headers that show a copyright or "today" year ─
+export function currentBSYear() {
+    return adToBS(nepalNow()).year
+}
+
+// Same as fmtDate but with Nepali digits and an explicit "BS" suffix —
+// use where AD/BS could otherwise be ambiguous to the reader.
+export function fmtDateBSFull(s) {
+    if (!s) return '—'
+    try {
+        const [y, m, d] = s.split('-').map(Number)
+        const bs = adToBS(new Date(y, m - 1, d))
+        const mn = BS_MONTH_NAMES[bs.month - 1]
+        return `${toNepaliNum(bs.day)} ${mn?.ne} ${toNepaliNum(bs.year)} (${bs.day} ${mn?.en} ${bs.year} BS)`
+    } catch {
+        return s
+    }
 }
 
 // ── BS month names ────────────────────────────────────────────────────────────

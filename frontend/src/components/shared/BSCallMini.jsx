@@ -3,6 +3,7 @@
     import {
     BS_MONTH_NAMES, buildMonthDays, daysInBSMonth, adToBS,
     } from '../../utils/bsCalendar.js'
+    import { nepalNow } from '../../utils/helpers.js'
 
     const DOW = ['S','M','T','W','T','F','S']
     const RED = 'rgba(255,80,80,0.80)'
@@ -13,7 +14,7 @@
 
     const todayBS = useMemo(() => {
         if (todayData?.today_bs) return todayData.today_bs
-        const t = adToBS(new Date())
+        const t = adToBS(nepalNow())
         return { year: t.year, month: t.month, day: t.day }
     }, [todayData])
 

@@ -13,7 +13,7 @@ import coursesService      from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker         from '../../components/shared/BSDatePicker.jsx'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel } from '../../utils/helpers.js'
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, fmtDate, fmtDateTime } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { TASK_TYPES, PRIORITY_CHOICES } from '../../constants/assignmentChoices.js'
 
@@ -606,7 +606,7 @@ function StudentAssignments() {
                                         </div>
 
                                         <span style={{ fontSize:11.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, whiteSpace:'nowrap' }}>
-                                            {due || '—'}
+                                            {fmtDate(due)}
                                             {urgent && d !== null && d < 0 && <span style={{ display:'block', fontSize:10 }}>({Math.abs(d)}d late)</span>}
                                         </span>
 
@@ -877,7 +877,7 @@ function TeacherAssignments() {
                                     <div style={{ display:'flex', alignItems:'center', gap:5 }}>
                                         <Calendar size={11} style={{ color:'var(--color-text-placeholder)' }} aria-hidden="true"/>
                                         <span style={{ fontSize:11.5, color: urgent ? 'var(--color-red)' : 'var(--color-text-secondary)', fontWeight: urgent?600:400 }}>
-                                            Due {a.due_date || '—'} {urgent && `(${Math.abs(d)}d late)`}
+                                            Due {fmtDate(a.due_date)} {urgent && `(${Math.abs(d)}d late)`}
                                         </span>
                                     </div>
                                     {enrolledCount != null && (

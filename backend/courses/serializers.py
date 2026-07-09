@@ -9,7 +9,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'teacher', 'join_code', 'start_date', 'end_date', 'created_at']
+        fields = ['id', 'title', 'description', 'teacher', 'join_code', 'created_at']
         read_only_fields = ['join_code', 'created_at']
 
 
@@ -21,7 +21,7 @@ class CourseWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ['id', 'title', 'description', 'start_date', 'end_date', 'teacher_id']
+        fields = ['id', 'title', 'description', 'teacher_id']
 
 
 class EnrollmentSerializer(serializers.ModelSerializer):

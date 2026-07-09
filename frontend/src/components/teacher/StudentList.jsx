@@ -1,4 +1,5 @@
 import { User, CheckCircle2, Clock3, XCircle, AlertCircle } from "lucide-react"
+import { fmtDateTime } from "../../utils/helpers.js"
 
 export default function StudentList({
     loading,
@@ -211,7 +212,7 @@ export default function StudentList({
                                         }}
                                     >
                                         {sub.submitted_at
-                                            ? new Date(sub.submitted_at).toLocaleString()
+                                            ? fmtDateTime(sub.submitted_at)
                                             : "Not submitted"}
                                     </div>
                                 </div>

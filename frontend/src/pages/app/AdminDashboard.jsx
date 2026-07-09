@@ -19,8 +19,8 @@ import { useToast }   from '../../context/ToastContext.jsx'
 import { useConfirm } from '../../context/ConfirmContext.jsx'
 import { useAuth }    from '../../hooks/useAuth.js'
 import { LoadingBlock } from '../../components/shared/Loader.jsx'
-import BSDatePicker   from '../../components/shared/BSDatePicker.jsx'
-import { apiError }   from '../../utils/helpers.js'
+import { apiError, fmtDate, fmtDateTime }   from '../../utils/helpers.js'
+import { adToBS, BS_MONTH_NAMES } from '../../utils/bsCalendar.js'
 import AdminCalendarPage from './AdminCalendarPage.jsx'
 
 const A = {
@@ -355,7 +355,10 @@ function OverviewTab({ users, courses, loading, coursesLoading, adminName }) {
         suspended: users.filter(u => u.is_active === false).length,
     }
     const recent = [...users].sort((a, b) => (b.date_joined || '').localeCompare(a.date_joined || '')).slice(0, 8)
-    const today = new Date().toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    const nowNepal = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kathmandu' }))
+    const todayBS  = adToBS(nowNepal)
+    const todayDow = nowNepal.toLocaleDateString('en-US', { weekday: 'long' })
+    const today = `${todayDow}, ${todayBS.day} ${BS_MONTH_NAMES[todayBS.month - 1]?.en} ${todayBS.year}`
 
     return (
         <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
@@ -396,7 +399,7 @@ function OverviewTab({ users, courses, loading, coursesLoading, adminName }) {
                         </div>
                         <RoleBadge role={u.role}/>
                         <span style={{ fontSize:11, color:'var(--color-text-muted)', whiteSpace:'nowrap' }}>
-                            {u.date_joined ? new Date(u.date_joined).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : '—'}
+                            {u.date_joined ? fmtDate(u.date_joined) : '—'}
                         </span>
                     </div>
                 ))}
@@ -498,8 +501,6 @@ function CourseModal({ course, teachers, onClose, onSaved }) {
     const [form, setForm] = useState({
         title:       course?.title || '',
         description: course?.description || '',
-        start_date:  course?.start_date || '',
-        end_date:    course?.end_date || '',
         teacher_id:  course?.teacher?.id ?? '',
     })
     const [saving, setSaving] = useState(false)
@@ -517,8 +518,6 @@ function CourseModal({ course, teachers, onClose, onSaved }) {
         const payload = {
             title:       form.title.trim(),
             description: form.description,
-            start_date:  form.start_date || null,
-            end_date:    form.end_date || null,
             teacher_id:  form.teacher_id === '' ? null : Number(form.teacher_id),
         }
 
@@ -558,17 +557,6 @@ function CourseModal({ course, teachers, onClose, onSaved }) {
                     <textarea value={form.description} onChange={e => set('description', e.target.value)}
                         placeholder="Description (optional)" rows={3}
                         className="form-input" style={{ resize:'vertical', fontFamily:'inherit' }}/>
-
-                    <div style={{ display:'flex', gap:10 }}>
-                        <div style={{ flex:1 }}>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', display:'block', marginBottom:5 }}>Start date</label>
-                            <BSDatePicker value={form.start_date || ''} onChange={v => set('start_date', v)} placeholder="Select start date"/>
-                        </div>
-                        <div style={{ flex:1 }}>
-                            <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', display:'block', marginBottom:5 }}>End date</label>
-                            <BSDatePicker value={form.end_date || ''} onChange={v => set('end_date', v)} placeholder="Select end date"/>
-                        </div>
-                    </div>
 
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', display:'block', marginBottom:5 }}>Assigned teacher</label>
@@ -740,7 +728,7 @@ function ViewMessageModal({ message, onClose, onMarkResolved }) {
                     <div>
                         <p style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', margin:'0 0 4px', textTransform:'uppercase', letterSpacing:'0.05em' }}>Submitted</p>
                         <p style={{ fontSize:12.5, color:'var(--color-text-secondary)', margin:0 }}>
-                            {new Date(message.submitted_at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' })}
+                            {fmtDateTime(message.submitted_at)}
                         </p>
                     </div>
                 </div>
@@ -808,7 +796,7 @@ function MessagesTab({ messages, loading, onView, onMarkRead, onMarkResolved, on
                                         </td>
                                         <td><MessageStatusBadge status={m.status}/></td>
                                         <td style={{ color:'var(--color-text-secondary)', whiteSpace:'nowrap' }}>
-                                            {new Date(m.submitted_at).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' })}
+                                            {fmtDate(m.submitted_at)}
                                         </td>
                                         <td>
                                             <div style={{ display:'flex', gap:6 }}>
@@ -927,7 +915,7 @@ function AnalyticsTab({ users, courses, loading }) {
         })
         const days = Object.keys(byDay).sort()
         return days.map((day, i) => ({
-            date: new Date(day).toLocaleDateString('en-US', { month:'short', day:'numeric' }),
+            date: fmtDate(day),
             total: days.slice(0, i + 1).reduce((sum, d) => sum + byDay[d], 0),
         }))
     }, [users])
@@ -1082,7 +1070,7 @@ function ActivityTab({ users, loading }) {
                                     </p>
                                     <p style={{ fontSize:11, color:'var(--color-text-muted)', margin:'2px 0 0' }}>
                                         {u.date_joined
-                                            ? new Date(u.date_joined).toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric', year:'numeric' })
+                                            ? fmtDate(u.date_joined)
                                             : 'Date unknown'}
                                     </p>
                                 </div>

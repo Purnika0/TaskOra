@@ -16,7 +16,7 @@ import { useToast }       from '../../context/ToastContext.jsx'
 import { useAuth }        from '../../hooks/useAuth.js'
 import tasksService       from '../../services/tasks.service.js'
 import coursesService     from '../../services/courses.service.js'
-import { apiError, priorityColor } from '../../utils/helpers.js'
+import { apiError, priorityColor, fmtDate, fmtDateTime, nepalNow, nepalHour } from '../../utils/helpers.js'
 import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
 import StudentSubmissionWorkspace from "../../components/teacher/StudentSubmissionWorkspace"
@@ -43,9 +43,9 @@ function BSCalWidget({ assignments }) {
     const { today: todayData } = useToday()
     const todayBS = useMemo(() => {
         if (todayData?.today_bs) return todayData.today_bs
-        const t = adToBS(new Date()); return { year:t.year, month:t.month, day:t.day }
+        const t = adToBS(nepalNow()); return { year:t.year, month:t.month, day:t.day }
     }, [todayData])
-    const [cur, setCur] = useState(() => { const t = adToBS(new Date()); return { y:t.year, m:t.month } })
+    const [cur, setCur] = useState(() => { const t = adToBS(nepalNow()); return { y:t.year, m:t.month } })
 
     const todayKey = todayBS?.year && todayBS?.month ? `${todayBS.year}-${todayBS.month}` : null
     const [syncedKey, setSyncedKey] = useState(todayKey)
@@ -529,9 +529,7 @@ return (
                             >
                                 Submitted{" "}
                                 {submission.submitted_at
-                                    ? new Date(
-                                        submission.submitted_at
-                                    ).toLocaleString()
+                                    ? fmtDateTime(submission.submitted_at)
                                     : ""}
                             </p>
 
@@ -795,7 +793,7 @@ const totalPendingRev  = assignments.reduce((s,a) => s + (a.pending_review_count
 const totalApproved    = assignments.reduce((s,a) => s + (a.approved_count || 0), 0)
 const totalRejected    = assignments.reduce((s,a) => s + (a.rejected_count || 0), 0)
 
-const hour         = new Date().getHours()
+const hour         = nepalHour()
 const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 const GRP = {
     'High Performer': { bg:'#e0f7ee', text:'#166534', label:'High Performer', pluralLabel:'High Performers' },
@@ -959,7 +957,7 @@ return (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                                                 {due && (
                                                     <span style={{ fontSize: 10, color: isLate ? '#c0392b' : '#8a7e6e', display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                        <Calendar size={9} /> {due}{isLate && ' (past)'}
+                                                        <Calendar size={9} /> {fmtDate(due)}{isLate && ' (past)'}
                                                     </span>
                                                 )}
                                                 {a.submission_time && (

@@ -39,7 +39,7 @@ function isSuggested(rec) {
     const p = rec.priority
     const hi = p === 'High' || p === 'Critical' || Number(p) >= 4
     if (!hi || !rec.due_date) return false
-    const msLeft = new Date(rec.due_date + 'T23:59:59') - Date.now()
+    const msLeft = new Date(rec.due_date + 'T23:59:59+05:45') - Date.now()
     return msLeft >= 0 && msLeft / 3_600_000 <= 48
 }
 

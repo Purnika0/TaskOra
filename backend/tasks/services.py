@@ -10,7 +10,7 @@ def mark_overdue_tasks():
     """
     from notifications.services import notify_overdue
 
-    today = timezone.now().date()
+    today = timezone.localdate()
 
     newly_overdue = list(
         Task.objects.filter(

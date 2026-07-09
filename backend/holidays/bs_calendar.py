@@ -22,8 +22,9 @@ def bs_to_ad(year, month, day):
 
 
 def today_bs():
-    """Return today's date in BS."""
-    nd = nepali_date.today()
+    """Return today's date in BS, based on Nepal-local (Django timezone-aware) today."""
+    from django.utils import timezone
+    nd = nepali_date.from_datetime_date(timezone.localdate())
     return {
         "year": nd.year,
         "month": nd.month,

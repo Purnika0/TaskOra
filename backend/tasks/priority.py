@@ -20,7 +20,7 @@ class HolidayCountCache:
 
     def __init__(self):
         self._counts = {}
-        self._today = timezone.now().date()
+        self._today = timezone.localdate()
 
     def count_for(self, due_date):
         if not due_date:
@@ -33,7 +33,7 @@ class HolidayCountCache:
 
 
 def _base_score(due_date, priority, estimated_hours, holiday_count):
-    today = timezone.now().date()
+    today = timezone.localdate()
     days_left = (due_date - today).days if due_date else 7
 
     urgency = 1.0 if days_left <= 0 else max(0.0, 1.0 - (days_left / 30))

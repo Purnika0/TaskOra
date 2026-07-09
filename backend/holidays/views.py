@@ -97,8 +97,8 @@ class TodayBSView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        from datetime import date
-        today_ad = date.today()
+        from django.utils import timezone
+        today_ad = timezone.localdate()
         return Response({
             "today_ad": str(today_ad),
             "today_bs": today_bs()
