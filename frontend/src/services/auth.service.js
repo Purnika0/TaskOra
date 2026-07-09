@@ -21,18 +21,11 @@ const authService = {
             const res = await api.post('/api/users/login/', payload)
             tokens = res.data
         } catch (err) {
-<<<<<<< HEAD
             if (err.response?.data?.code === 'email_not_verified') {
-                const detail = err.response.data.detail
+                const data = err.response.data
+                const detail = data.detail
                 const msg = Array.isArray(detail) ? detail[0] : detail
                 const vErr = new Error(msg || 'Please verify your email before logging in.')
-=======
-            const data = err.response?.data
-            const detail = data?.detail
-            const msg = Array.isArray(detail) ? detail[0] : detail
-            if (typeof msg === 'string' && msg.toLowerCase().includes('verify your email')) {
-                const vErr = new Error(msg)
->>>>>>> 80b20bba8d6390731fa7f8e95fcc5b92807289d4
                 vErr.code = 'EMAIL_NOT_VERIFIED'
                 // Backend returns the account's real email — always accurate, unlike
                 // guessing from what was typed (which is unknown if they logged in
