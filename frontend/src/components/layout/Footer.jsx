@@ -2,6 +2,7 @@ import React from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, GraduationCap, LogIn } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
+import { currentBSYear } from '../../utils/helpers.js'
 
 function FtLink({ to, href, children }) {
     const style = {
@@ -107,7 +108,7 @@ export function SiteFooter() {
 
             <div className="ft-bar">
                 <p style={{ fontSize:12, color:'rgba(255,255,255,0.60)', margin:0 }}>
-                    © {new Date().getFullYear()} TaskOra · Academic Task Management System
+                    © {currentBSYear()} TaskOra · Academic Task Management System
                 </p>
             </div>
         </footer>

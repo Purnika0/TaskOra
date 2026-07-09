@@ -15,7 +15,7 @@ import coursesService from '../../services/courses.service.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
-import { apiError } from '../../utils/helpers.js'
+import { apiError, fmtDate } from '../../utils/helpers.js'
 import ReviewModal from '../../components/shared/ReviewSubmissionModal.jsx'
 
 const TABS = [
@@ -207,7 +207,7 @@ export default function SubmissionsInboxPage() {
                                                     </span>
                                                 </td>
                                                 <td className="hide-sm" style={{ fontSize:12, color:'var(--color-text-secondary)' }}>
-                                                    {t.submitted_at ? new Date(t.submitted_at).toLocaleDateString() : '—'}
+                                                    {t.submitted_at ? fmtDate(t.submitted_at) : '—'}
                                                 </td>
                                                 <td>
                                                     {t.status === 'submitted' ? (

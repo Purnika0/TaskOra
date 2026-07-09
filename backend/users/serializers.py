@@ -262,7 +262,10 @@ class VerifiedTokenObtainPairSerializer(TokenObtainPairSerializer):
         data = super().validate(attrs)  # runs normal username/password auth first
         if self.user.role == User.Role.STUDENT and not self.user.is_email_verified:
             raise serializers.ValidationError(
-                {"detail": "Please verify your email before logging in."},
+                {
+                    "detail": "Please verify your email before logging in.",
+                    "email": self.user.email,
+                },
                 code='email_not_verified',
             )
         return data

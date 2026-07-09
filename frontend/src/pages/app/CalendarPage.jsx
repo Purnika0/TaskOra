@@ -5,7 +5,7 @@ import { useToast }                from '../../context/ToastContext.jsx'
 import { useAuth }                 from '../../hooks/useAuth.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import tasksService                from '../../services/tasks.service.js'
-import { apiError, getTaskTitle, getTaskDueDate } from '../../utils/helpers.js'
+import { apiError, getTaskTitle, getTaskDueDate, nepalNow } from '../../utils/helpers.js'
 import {
     BS_MONTH_NAMES, AD_MONTH_NAMES, buildMonthDays,
     daysInBSMonth, adToBS,
@@ -245,12 +245,12 @@ export default function CalendarPage() {
 
     const todayBS = useMemo(() => {
         if (todayData?.today_bs) return todayData.today_bs
-        const t = adToBS(new Date())
+        const t = adToBS(nepalNow())
         return { year:t.year, month:t.month, day:t.day }
     }, [todayData])
 
     const [cur, setCur] = useState(() => {
-        const t = adToBS(new Date())
+        const t = adToBS(nepalNow())
         return { y:t.year, m:t.month }
     })
 

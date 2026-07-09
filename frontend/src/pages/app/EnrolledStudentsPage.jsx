@@ -14,7 +14,7 @@ import coursesService from '../../services/courses.service.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
-import { apiError } from '../../utils/helpers.js'
+import { apiError, fmtDate } from '../../utils/helpers.js'
 
 export default function EnrolledStudentsPage() {
     const { id }   = useParams()
@@ -121,7 +121,7 @@ export default function EnrolledStudentsPage() {
                                             <td className="hide-sm" style={{ fontSize:12, color:'var(--color-text-secondary)' }}>
                                                 <span style={{ display:'inline-flex', alignItems:'center', gap:5 }}>
                                                     <Calendar size={11} style={{ color:'var(--color-text-placeholder)' }}/>
-                                                    {e.enrolled_at ? new Date(e.enrolled_at).toLocaleDateString() : '—'}
+                                                    {e.enrolled_at ? fmtDate(e.enrolled_at) : '—'}
                                                 </span>
                                             </td>
                                             <td>

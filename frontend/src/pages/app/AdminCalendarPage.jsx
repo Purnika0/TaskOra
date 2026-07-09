@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, Plus, Trash2, Pencil, Loader, 
 import { useToday } from '../../hooks/useHolidays.js'
 import { useToast } from '../../context/ToastContext.jsx'
 import holidaysService from '../../services/holidays.service.js'
-import { apiError } from '../../utils/helpers.js'
+import { apiError, fmtDate, nepalNow, todayNepalISO } from '../../utils/helpers.js'
 import BSDatePicker from '../../components/shared/BSDatePicker.jsx'
 import {
     BS_MONTH_NAMES, buildMonthDays, daysInBSMonth, adToBS,
@@ -282,12 +282,12 @@ export default function AdminCalendarPage() {
 
     const todayBS = useMemo(() => {
         if (todayData?.today_bs) return todayData.today_bs
-        const t = adToBS(new Date())
+        const t = adToBS(nepalNow())
         return { year:t.year, month:t.month, day:t.day }
     }, [todayData])
 
     const [cur, setCur] = useState(() => {
-        const t = adToBS(new Date())
+        const t = adToBS(nepalNow())
         return { y:t.year, m:t.month }
     })
 
@@ -374,10 +374,7 @@ export default function AdminCalendarPage() {
 
     useEffect(() => { loadAllHolidays() }, [loadAllHolidays])
 
-    const todayISO = useMemo(() => {
-        const t = new Date()
-        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
-    }, [])
+    const todayISO = useMemo(() => todayNepalISO(), [])
 
     const upcomingHolidays = useMemo(() => {
         return allHolidays
@@ -575,8 +572,7 @@ export default function AdminCalendarPage() {
                 ) : (
                     upcomingHolidays.map((h, i) => {
                         const typeInfo = HOLIDAY_TYPES.find(t => t.value === h.holiday_type)
-                        const d = new Date(`${h.date}T00:00:00`)
-                        const dateLabel = d.toLocaleDateString('en-US', { weekday:'short', day:'numeric', month:'short', year:'numeric' })
+                        const dateLabel = fmtDate(h.date)
                         return (
                             <div key={h.id}
                                 style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 18px', borderTop: i === 0 ? 'none' : '1px solid var(--color-border)' }}>

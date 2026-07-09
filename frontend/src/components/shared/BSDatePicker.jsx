@@ -8,6 +8,7 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
+import { nepalNow, todayNepalISO } from '../../utils/helpers.js'
 
 const RED = '#DC2626'
 
@@ -17,8 +18,7 @@ function adISOToBS(adISO) {
 }
 
 function todayISO() {
-    const t = new Date()
-    return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`
+    return todayNepalISO()
 }
 
 // value/onChange: AD ISO date string ('YYYY-MM-DD')
@@ -31,7 +31,7 @@ export default function BSDatePicker({ value, onChange, placeholder = 'Select da
 
     const [cur, setCur] = useState(() => {
         if (value) { const bs = adISOToBS(value); return { y: bs.year, m: bs.month } }
-        const t = adToBS(new Date()); return { y: t.year, m: t.month }
+        const t = adToBS(nepalNow()); return { y: t.year, m: t.month }
     })
 
     useEffect(() => {

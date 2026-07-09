@@ -7,6 +7,7 @@ import {
     AlertCircle,
     Send,
 } from "lucide-react"
+import { fmtDateTime } from "../../utils/helpers.js"
 
 export default function ReviewPanel({
     submission,
@@ -194,7 +195,7 @@ export default function ReviewPanel({
                     >
                         <Calendar size={14} />
                         {submission.submitted_at
-                            ? new Date(submission.submitted_at).toLocaleString()
+                            ? fmtDateTime(submission.submitted_at)
                             : "Not submitted yet"}
                     </div>
                 </div>

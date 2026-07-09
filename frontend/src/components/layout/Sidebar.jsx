@@ -50,7 +50,7 @@ export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
         >
             {/* Brand */}
             <div style={{ display:'flex', alignItems:'center', gap:10, padding: collapsed ? '16px 12px' : '16px 14px', borderBottom:'1px solid rgba(255,255,255,0.10)', flexShrink:0 }}>
-                <div style={{ width:30, height:30, borderRadius:8, background:'var(--color-primary)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
                     <GraduationCap size={14} color="#fff"/>
                 </div>
                 {!collapsed && (

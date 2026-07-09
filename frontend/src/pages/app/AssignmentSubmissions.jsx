@@ -9,7 +9,7 @@ import tasksService from '../../services/tasks.service.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
-import { apiError } from '../../utils/helpers.js'
+import { apiError, fmtDate } from '../../utils/helpers.js'
 import ReviewModal from '../../components/shared/ReviewSubmissionModal.jsx'
 
 const TABS = [
@@ -75,7 +75,7 @@ export default function AssignmentSubmissions() {
                 <div>
                     <h2 className="page-title">{assignment ? assignment.title : 'Submissions'}</h2>
                     <p className="page-subtitle">
-                        {assignment ? `${assignment.course_name} · Due ${assignment.due_date}` : ''}
+                        {assignment ? `${assignment.course_name} · Due ${fmtDate(assignment.due_date)}` : ''}
                     </p>
                 </div>
             </div>
@@ -138,7 +138,7 @@ export default function AssignmentSubmissions() {
                                                     </span>
                                                 </td>
                                                 <td className="hide-sm" style={{ fontSize:12, color:'var(--color-text-secondary)' }}>
-                                                    {t.submitted_at ? new Date(t.submitted_at).toLocaleDateString() : '—'}
+                                                    {t.submitted_at ? fmtDate(t.submitted_at) : '—'}
                                                 </td>
                                                 <td>
                                                     {t.status === 'submitted' ? (

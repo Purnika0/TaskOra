@@ -35,7 +35,7 @@ const coursesService = {
 
     // Teacher: create a new course
     async create(payload) {
-        // payload: { title, description?, start_date?, end_date? }
+        // payload: { title, description? } — dates are auto-stamped server-side, not user-set
         const { data } = await api.post('/api/courses/', payload)
         return data
     },

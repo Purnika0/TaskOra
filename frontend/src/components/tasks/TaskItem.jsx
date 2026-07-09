@@ -17,7 +17,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { ChevronDown, ChevronUp, Upload, Paperclip, MessageSquare } from 'lucide-react'
 import {
     getTaskTitle, getTaskDueDate, priorityColor, priorityLabel,
-    deadlinePill, statusBadge, isOverdue, isActionable as isActionableFallback,
+    deadlinePill, statusBadge, isOverdue, isActionable as isActionableFallback, fmtDate,
 } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor, urgencyBg } from '../../utils/urgencyLabel.js'
 
@@ -209,7 +209,7 @@ export default function TaskItem({ task, onSubmit, index, compact = false }) {
                             </div>
                         </div>
                     </td>
-                    <td className="pr-3" style={{ fontSize: 12, color: '#8a7e6e', whiteSpace: 'nowrap' }}>{dueDate || '—'}</td>
+                    <td className="pr-3" style={{ fontSize: 12, color: '#8a7e6e', whiteSpace: 'nowrap' }}>{fmtDate(dueDate)}</td>
                     <td>
                         <span style={{
                             display: 'inline-flex', fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 99,

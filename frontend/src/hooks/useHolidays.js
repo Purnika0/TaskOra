@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import holidaysService from '../services/holidays.service.js'
-import { BS_MONTHS } from '../utils/helpers.js'
+import { BS_MONTHS, todayNepalISO } from '../utils/helpers.js'
 
 export function useToday() {
   const [today,   setToday]   = useState(null)   // { today_ad, today_bs }
@@ -42,7 +42,7 @@ export function useUpcomingHolidays() {
     useEffect(() => {
     holidaysService.getAll()
         .then(data => {
-        const today = new Date().toISOString().split('T')[0]
+        const today = todayNepalISO()
         const upcoming = data.filter(h => h.date >= today).slice(0, 5)
         setHolidays(upcoming)
         })

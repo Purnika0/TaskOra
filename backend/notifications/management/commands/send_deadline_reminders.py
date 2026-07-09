@@ -35,7 +35,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         window_hours = options['hours']
-        now = timezone.now()
+        now = timezone.localtime(timezone.now())
         cutoff_date = (now + timedelta(hours=window_hours)).date()
 
         # Pending tasks whose assignment is due today or within the reminder

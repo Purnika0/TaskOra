@@ -49,7 +49,7 @@ class StudentWeeklyProgressView(APIView):
             student=request.user
         ).values_list('course_id', flat=True)
 
-        today = timezone.now().date()
+        today = timezone.localdate()
         data  = []
 
         for i in range(6, -1, -1):
