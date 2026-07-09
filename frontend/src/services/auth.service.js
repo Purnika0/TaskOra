@@ -21,26 +21,24 @@ const authService = {
             const res = await api.post('/api/users/login/', payload)
             tokens = res.data
         } catch (err) {
-            const data = err.response?.data;
-            const rawCode = data?.code;
-            const codeVal = Array.isArray(rawCode) ? rawCode[0] : rawCode;
-
+            const data = err.response?.data
+            const rawCode = data?.code
+            const codeVal = Array.isArray(rawCode) ? rawCode[0] : rawCode
             if (codeVal === 'email_not_verified') {
-                const detail = data?.detail;
-                const msg = Array.isArray(detail) ? detail[0] : detail;
-
-                const vErr = new Error(
-                    msg || 'Please verify your email before logging in.'
-                );
-                vErr.code = 'EMAIL_NOT_VERIFIED';
-
-                // Backend returns the account's real email.
-                const rawEmail = data?.email;
-                const emailVal = Array.isArray(rawEmail) ? rawEmail[0] : rawEmail;
-                vErr.email = emailVal || (isEmail ? cred : undefined);
-
-                throw vErr;
+                const detail = data.detail
+                const msg = Array.isArray(detail) ? detail[0] : detail
+                const vErr = new Error(msg || 'Please verify your email before logging in.')
+                vErr.code = 'EMAIL_NOT_VERIFIED'
+                // Backend returns the account's real email — always accurate, unlike
+                // guessing from what was typed (which is unknown if they logged in
+                // with their username instead of their email).
+                const rawEmail = data?.email
+                const emailVal = Array.isArray(rawEmail) ? rawEmail[0] : rawEmail
+                vErr.email = emailVal || (isEmail ? cred : undefined)
+                throw vErr
             }
+            throw err
+        }
 
         setTokens(tokens)
         const { data: user } = await api.get('/api/users/me/')
