@@ -1,3 +1,4 @@
+"""Email-sending helpers for the users app (currently just OTP delivery)."""
 from django.conf import settings
 from django.core.mail import send_mail
 

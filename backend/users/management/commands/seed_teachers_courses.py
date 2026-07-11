@@ -1,9 +1,6 @@
 """
 PKMC BIT — Teachers & Courses Seed Command
 ===========================================
-Place this file at:
-    any_app/management/commands/seed_teachers_courses.py
-
 Run with:
     python manage.py seed_teachers_courses           # create teachers & courses
     python manage.py seed_teachers_courses --clear   # delete seeded data and re-create

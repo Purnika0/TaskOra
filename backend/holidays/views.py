@@ -1,3 +1,8 @@
+"""
+Holiday CRUD (admin-only writes, any authenticated user can read) plus
+BS-calendar-specific endpoints: creating a holiday by BS date, today's
+date in both calendars, and a full BS month view with holidays marked.
+"""
 from rest_framework import generics, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -5,8 +10,7 @@ from rest_framework.response import Response
 from .models import Holiday
 from .serializers import HolidaySerializer
 from users.permissions import IsAdmin
-from nepali_datetime import date as nepali_date
-from .bs_calendar import bs_to_ad, today_bs, ad_to_bs
+from .bs_calendar import bs_to_ad, today_bs
 
 class HolidayListCreateView(generics.ListCreateAPIView):
     """
@@ -14,7 +18,6 @@ class HolidayListCreateView(generics.ListCreateAPIView):
     POST — Admin only.
     """
     serializer_class = HolidaySerializer
-    # queryset = Holiday.objects.all().order_by('date')
 
     def get_permissions(self):
         if self.request.method == 'POST':
@@ -122,6 +125,10 @@ class BSMonthCalendarView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
+        # BS months don't have a fixed length (unlike AD months), so instead
+        # of hardcoding day counts we just keep converting day 1, 2, 3...
+        # to AD until bs_to_ad() raises (day out of range for that month),
+        # which tells us exactly where the month ends.
         days = []
         day = 1
         while True:

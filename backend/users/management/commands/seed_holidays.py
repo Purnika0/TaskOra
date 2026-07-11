@@ -1,9 +1,6 @@
 """
 PKMC BIT — Holidays Seed Command
 ===================================
-Place this file at:
-    any_app/management/commands/seed_holidays.py
-
 Run with:
     python manage.py seed_holidays           # seed holidays
     python manage.py seed_holidays --clear   # delete all holidays and re-seed

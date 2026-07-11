@@ -1,3 +1,9 @@
+"""
+Auth and account-management endpoints: registration, login, profile,
+password change/reset, OTP verification, and admin-only user management
+(listing, promoting, creating teacher accounts). See users/urls.py for the
+exact routes.
+"""
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response

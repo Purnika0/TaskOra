@@ -1,3 +1,4 @@
+"""Notification read serializer, including a computed deep-link target per notification type."""
 from rest_framework import serializers
 from .models import Notification
 

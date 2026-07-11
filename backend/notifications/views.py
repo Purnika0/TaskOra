@@ -1,3 +1,4 @@
+"""In-app notification inbox: list, unread count (for the bell badge), mark read/unread, and delete/clear."""
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -17,8 +18,8 @@ class NotificationListView(generics.ListAPIView):
     with a specific `recipient`.
 
     Optional query params:
-      ?unread=true   → only unread notifications
-      ?limit=50      → cap the number returned (default 50, max 100)
+        ?unread=true   → only unread notifications
+        ?limit=50      → cap the number returned (default 50, max 100)
     """
     serializer_class   = NotificationSerializer
     permission_classes = [IsAuthenticated]

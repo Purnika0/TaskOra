@@ -1,9 +1,6 @@
 """
 PKMC BIT — Students Seed Command
 ==================================
-Place this file at:
-    any_app/management/commands/seed_students.py
-
 Run with:
     python manage.py seed_students           # create students
     python manage.py seed_students --clear   # delete seeded students and re-create

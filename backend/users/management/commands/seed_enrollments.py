@@ -1,9 +1,6 @@
 """
 PKMC BIT — Enrollments Seed Command
 =====================================
-Place this file at:
-    any_app/management/commands/seed_enrollments.py
-
 Run with:
     python manage.py seed_enrollments           # enroll students
     python manage.py seed_enrollments --clear   # delete seeded enrollments and re-create

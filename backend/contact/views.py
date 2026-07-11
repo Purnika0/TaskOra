@@ -1,3 +1,4 @@
+"""Public contact-form submission (no auth) and admin-only inbox management."""
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response

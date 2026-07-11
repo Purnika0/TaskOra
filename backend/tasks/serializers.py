@@ -1,3 +1,9 @@
+"""
+Serializers for assignments and tasks. AssignmentSerializer is the teacher-
+authored "template"; TaskSerializer is a student's live view of it, with
+priority_score always recomputed rather than read from the stored column
+(see the comment on that field for why).
+"""
 from rest_framework import serializers
 from django.utils import timezone
 from .models import Assignment, Task

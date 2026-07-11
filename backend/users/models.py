@@ -1,3 +1,11 @@
+"""
+Core identity models for TaskOra.
+
+User extends Django's built-in AbstractUser with a role (student/teacher/
+admin) and email-verification state. OTP backs both email verification at
+signup and the forgot-password flow — both use the same one-time-code
+mechanism, distinguished only by `purpose`.
+"""
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -12,9 +20,15 @@ class User(AbstractUser):
         TEACHER = 'teacher', 'Teacher'
         ADMIN   = 'admin',   'Admin'
 
+    # Django's default User.email isn't unique or required — we need both,
+    # since email is how OTPs get delivered and how login-by-email works.
     email              = models.EmailField(unique=True)
     role               = models.CharField(max_length=10, choices=Role.choices, default=Role.STUDENT)
     full_name          = models.CharField(max_length=255, blank=True)
+    
+    # Gates login (see users/views.py VerifiedLoginView) until the signup
+    # OTP has been confirmed. Teacher accounts are admin-created and are
+    # marked verified immediately, so this mainly applies to students.
     is_email_verified  = models.BooleanField(default=False)
 
     def __str__(self):
@@ -22,6 +36,11 @@ class User(AbstractUser):
 
 
 class OTP(models.Model):
+    """
+    A single-use, time-limited one-time code, used for both email
+    verification and password reset. Only the hash of the code is ever
+    persisted — the raw digits exist just long enough to be emailed out.
+    """
     class Purpose(models.TextChoices):
         EMAIL_VERIFICATION = 'email_verification', 'Email Verification'
         PASSWORD_RESET     = 'password_reset',     'Password Reset'
@@ -37,13 +56,16 @@ class OTP(models.Model):
         ordering = ['-created_at']
 
     def save(self, *args, **kwargs):
-        # Auto-set expiry to 5 minutes from creation
+        # Auto-set expiry to 5 minutes from creation, unless the caller
+        # already supplied one (generate() below always does, so this
+        # mainly exists as a safety net for any other creation path).
         if not self.expires_at:
             self.expires_at = timezone.now() + timedelta(minutes=5)
         super().save(*args, **kwargs)
 
     @staticmethod
     def _hash(code):
+        """One-way hash for a raw code — mirrors how passwords are never stored in plaintext."""
         return hashlib.sha256(code.encode()).hexdigest()
 
     @property
@@ -52,6 +74,7 @@ class OTP(models.Model):
 
     @property
     def is_valid(self):
+        """An OTP is usable only if it hasn't already been consumed and hasn't timed out."""
         return not self.is_used and not self.is_expired
 
     def check_code(self, code):
@@ -68,6 +91,9 @@ class OTP(models.Model):
         raw_code is only available here — send it via email immediately.
         It is never stored or retrievable again after this call.
         """
+        # Requesting a new code makes any earlier unused one for the same
+        # purpose dead on arrival, so a user can't have two valid codes
+        # floating around (e.g. two "resend code" clicks in a row).
         cls.objects.filter(
             user=user, purpose=purpose, is_used=False
         ).update(is_used=True)

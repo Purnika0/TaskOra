@@ -1,3 +1,9 @@
+"""
+Custom auth backend (login with username OR email) and a custom email
+backend (forces IPv4 SMTP, since some dev machines/networks silently fail
+on Gmail's IPv6 address). Both are wired up in taskora/settings.py under
+AUTHENTICATION_BACKENDS and EMAIL_BACKEND respectively.
+"""
 import smtplib
 import socket
 

@@ -8,6 +8,10 @@ def mark_overdue_tasks():
     Marks all pending tasks whose assignment due date has passed, and
     notifies each affected student. Returns the number of updated tasks.
     """
+    # Imported locally rather than at module level, matching the app's
+    # existing convention of deferring notifications.services imports to
+    # call time (this specific import didn't test as circular, but keeping
+    # the pattern consistent with the rest of the codebase).
     from notifications.services import notify_overdue
 
     today = timezone.localdate()

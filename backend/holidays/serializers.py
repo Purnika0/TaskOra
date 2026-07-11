@@ -1,3 +1,4 @@
+"""Holiday serializer — adds the BS-calendar equivalent alongside the stored AD date."""
 from rest_framework import serializers
 from .models import Holiday
 from .bs_calendar import ad_to_bs

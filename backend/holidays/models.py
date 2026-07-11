@@ -1,3 +1,9 @@
+"""
+Holiday dates (Nepali public holidays/festivals/etc.), stored in AD (the
+Gregorian calendar) even though they're displayed in BS to users — see
+bs_calendar.py for the conversion. Feeds into tasks/priority.py's urgency
+scoring (holiday_bump) so upcoming holidays nudge task priority up.
+"""
 from django.db import models
 
 class Holiday(models.Model):

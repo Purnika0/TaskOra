@@ -1,3 +1,9 @@
+"""
+Assignment = a piece of work a teacher creates for a course (the "template").
+Task = one student's personal instance of an Assignment (their submission,
+status, and score). This split lets one Assignment fan out into many Tasks
+(one per enrolled student) without duplicating the assignment's own data.
+"""
 from django.db import models
 from users.models import User
 from courses.models import Course
@@ -58,7 +64,12 @@ class Task(models.Model):
         Assignment, on_delete=models.CASCADE, related_name='tasks'
     )
 
-    # Smart priority score calculated at task creation
+    # Snapshot of the urgency score at the moment this Task was created.
+    # NOT the authoritative value shown to users — since urgency changes
+    # as the due date approaches, the live score is always recomputed via
+    # tasks/priority.py's calculate_priority_score() wherever it's displayed
+    # or sorted on. This stored value is effectively just a fallback/record
+    # of the initial score, kept for reference rather than live use.
     priority_score = models.FloatField(default=0.0)
 
     # Status lifecycle: pending → submitted → completed (or overdue)
@@ -83,7 +94,8 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = [('student', 'assignment')]
+        # A student can only have one Task per Assignment (re-joining a
+        # course, for instance, must not create duplicates).
         constraints = [
             models.UniqueConstraint(
                 fields=['student', 'assignment'],

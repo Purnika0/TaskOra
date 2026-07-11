@@ -1,5 +1,10 @@
+"""
+AD (Gregorian) <-> BS (Bikram Sambat, the Nepali calendar) conversion
+helpers, wrapping the nepali-datetime package. Everything is stored in AD
+in the database; these convert only at the point of display/input so the
+underlying date math (due dates, holiday ranges, etc.) stays simple.
+"""
 from nepali_datetime import date as nepali_date
-from datetime import date as ad_date
 
 
 def ad_to_bs(ad):

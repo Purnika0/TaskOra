@@ -1,9 +1,6 @@
 """
 PKMC BIT — Delete Duplicate Holidays Command
 ==============================================
-Place this file at:
-    any_app/management/commands/delete_duplicate_holidays.py
-
 Run with:
     python manage.py delete_duplicate_holidays
 

@@ -1,3 +1,17 @@
+"""
+Two teacher-facing ML features, both computed live (nothing persisted):
+
+- cluster_students(): capacity-constrained K-Means grouping students into
+    High Performer / Average / At-Risk tiers (see that function's docstring
+    for why plain K-Means wasn't enough on its own).
+- detect_outliers(): Isolation Forest + Z-score flagging of students whose
+    behaviour stands out from their classmates, with human-readable reasons.
+
+Both build their feature set from build_student_features() below, which is
+the single source of truth for what "student behaviour" means numerically
+in this app (completion/submission rates, timing, pending/overdue/rejected
+counts).
+"""
 from sklearn.cluster import KMeans
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
@@ -5,10 +19,8 @@ from scipy.optimize import linear_sum_assignment
 from scipy import stats
 import numpy as np
 import pandas as pd
-from django.utils import timezone
 from tasks.models import Task
 from users.models import User
-from courses.models import Enrollment 
 from django.db.models import Prefetch
 
 
@@ -16,6 +28,13 @@ def build_student_features(teacher):
     """
     Build a feature DataFrame for students enrolled in the
     authenticated teacher's courses only.
+
+    Counts/rates are computed in Python over prefetched tasks rather than
+    via DB-level aggregation (Count/annotate), since avg_days_early needs
+    per-task date arithmetic (completed_at vs the task's own assignment's
+    due_date) that doesn't reduce to a single SQL aggregate. The Prefetch
+    below still keeps this to one query for tasks across all students
+    rather than one query per student.
     """
     students = User.objects.filter(
         role=User.Role.STUDENT,
@@ -139,6 +158,14 @@ def cluster_students(teacher):
     n = len(df)
     kmeans = KMeans(n_clusters=3, random_state=42, n_init=10)
     kmeans.fit(scaled)
+    # Known edge case: if two or more students end up with *identical*
+    # feature vectors (same completion/submission rates, same counts,
+    # etc.), K-Means can converge to fewer than 3 distinct centroids for
+    # very small n. The capacity-splitting logic below assumes exactly 3
+    # columns come back from kmeans.transform() and will raise/misbehave
+    # if that assumption doesn't hold. Not expected with real student data
+    # (task histories are rarely bit-for-bit identical), but worth knowing
+    # if this is ever tested against artificially uniform seed/demo data.
 
     # Rank the 3 fitted centroids by the average completion_rate of the
     # students nearest to them, so we know which centroid represents which

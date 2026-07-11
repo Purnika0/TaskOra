@@ -1,10 +1,14 @@
+"""
+Course CRUD (teacher/admin), join-by-code and leave/unenroll flows (student), 
+and the enrolled-students roster view. See courses/urls.py for routes.
+"""
 from rest_framework import generics, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from .models import Course, Enrollment
 from .serializers import CourseSerializer, CourseWriteSerializer, EnrollmentSerializer, JoinCourseSerializer
-from users.permissions import IsTeacher, IsAdmin, IsStudent
+from users.permissions import IsStudent
 from tasks.models import Assignment, Task
 from tasks.priority import calculate_priority_score
 from django.db import transaction
@@ -101,7 +105,7 @@ class JoinCourseView(APIView):
             tasks_to_create = []
 
             for assignment in existing_assignments:
-                 # Skip if task already exists for this student (safety check)
+                # Skip if task already exists for this student (safety check)
                 already_exists = Task.objects.filter(
                     student=request.user,
                     assignment=assignment
@@ -119,7 +123,6 @@ class JoinCourseView(APIView):
 
             if tasks_to_create:
                 Task.objects.bulk_create(tasks_to_create)
-        # ─────────────────────────────────────────────────────────────────
 
         notify_student_enrolled(course, request.user)
         return Response(

@@ -1,3 +1,10 @@
+"""
+Per-email (not per-IP) rate limits for OTP endpoints, since the attack this
+guards against is someone brute-forcing/spamming a specific account rather
+than one IP hitting the API too often. Actual rates (5/hour for requests,
+10/hour for verify attempts) are configured in taskora/settings.py under
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'].
+"""
 from rest_framework.throttling import SimpleRateThrottle
 
 

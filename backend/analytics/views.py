@@ -1,3 +1,14 @@
+"""
+Read-only analytics endpoints. Student-facing views summarize their own
+progress; teacher-facing views summarize their courses/assignments/students.
+
+Note: several views here run one or more count() queries per item in a
+loop (per assignment, per course, or per student) rather than a single
+aggregated query. This is simple and correct, but means the query count
+scales with the number of assignments/courses/students rather than being
+constant — fine at TaskOra's current class sizes, worth revisiting with
+Django's annotate()/aggregate() if data volume grows significantly.
+"""
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from django.utils import timezone

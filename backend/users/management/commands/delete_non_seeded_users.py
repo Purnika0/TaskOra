@@ -1,9 +1,6 @@
 """
 Delete Non-Seeded Test Users
 ===============================
-Place this file at:
-    any_app/management/commands/delete_non_seeded_users.py
-
 Run with:
     python manage.py delete_non_seeded_users           # preview + delete
     python manage.py delete_non_seeded_users --dry-run  # preview only, no deletion

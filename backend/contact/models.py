@@ -1,3 +1,4 @@
+"""A message submitted through the public Contact page — visible to admins only (see views.py)."""
 from django.db import models
 
 

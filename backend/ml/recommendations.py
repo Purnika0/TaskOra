@@ -1,7 +1,11 @@
+"""
+Personalized task recommendations via item-based collaborative filtering:
+"students similar to you have completed X, and you haven't yet" — see
+get_task_recommendations()'s docstring for the full algorithm.
+"""
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
-from tasks.models import Task
-from users.models import User
+from tasks.models import Task, Assignment
 from courses.models import Enrollment
 
 
@@ -47,7 +51,6 @@ def get_task_recommendations(student):
     # ----------------------------------------------------------------
     # Step 2: Get all assignments in this batch's courses
     # ----------------------------------------------------------------
-    from tasks.models import Assignment
     assignment_ids = list(
         Assignment.objects.filter(course_id__in=enrolled_course_ids)
         .values_list('id', flat=True)

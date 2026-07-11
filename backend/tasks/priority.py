@@ -36,11 +36,26 @@ def _base_score(due_date, priority, estimated_hours, holiday_count):
     today = timezone.localdate()
     days_left = (due_date - today).days if due_date else 7
 
+    # Urgency ramps up linearly over the last 30 days before a task is due,
+    # hitting 1.0 the moment it's overdue (days_left <= 0).
     urgency = 1.0 if days_left <= 0 else max(0.0, 1.0 - (days_left / 30))
+    
+    # PriorityLevel is 1..5 — normalize to 0..1 so it's comparable to the
+    # other components before weighting.
     priority_norm = (priority - 1) / 4
+    
+    # Heavier tasks nudge priority up too, capped at 10 hours so a single
+    # very long task can't dominate the score on workload alone.
     workload_norm = min(estimated_hours / 10, 1.0)
+    
+    # Small nudge upward if public holidays fall between now and the due
+    # date, since those days effectively aren't available to work on it.
+    # Capped at 0.2 so it's a tiebreaker, not a dominant factor.
     holiday_bump = min(holiday_count * 0.05, 0.2)
 
+    # Weighted sum: urgency matters most, then teacher-assigned priority,
+    # then workload, with the holiday bump added on top (uncapped weight,
+    # but the bump itself is already capped at 0.2 above).
     score = (
         urgency       * 0.50 +
         priority_norm * 0.30 +

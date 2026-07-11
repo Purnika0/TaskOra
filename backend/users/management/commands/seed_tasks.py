@@ -1,9 +1,6 @@
 """
 PKMC BIT — Tasks Seed Command (Updated)
 =========================================
-Place this file at:
-    any_app/management/commands/seed_tasks.py
-
 Run with:
     python manage.py seed_tasks           # create tasks
     python manage.py seed_tasks --clear   # delete all assignment-based tasks and re-create
@@ -240,7 +237,7 @@ class Command(BaseCommand):
         self.stdout.write(f"  Tasks created      : {total_created}")
         self.stdout.write(f"  Already existed    : {total_skipped}")
         self.stdout.write(f"  Grand total        : {total_created + total_skipped}")
-        self.stdout.write(f"\n  Student personas assigned:")
+        self.stdout.write("\n  Student personas assigned:")
         self.stdout.write(f"    Excellent  : {persona_counts['excellent']} students")
         self.stdout.write(f"    Fast       : {persona_counts['fast']} students")
         self.stdout.write(f"    Average    : {persona_counts['average']} students")

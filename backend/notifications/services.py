@@ -1,3 +1,10 @@
+"""
+One function per notification "event" in the app (new assignment, student
+enrolled, teacher account created, etc.), each building its own
+title/message and creating (or bulk-creating, for fan-out cases) the
+Notification row(s) directly — no signals, so every trigger point is a
+plain, traceable function call from views.py/services.py elsewhere.
+"""
 from django.utils import timezone
 from .models import Notification
 from users.models import User
@@ -204,7 +211,7 @@ def notify_admins_new_course(course, created_by=None):
             notif_type=Notification.Type.NEW_COURSE_CREATED,
             title='New course created',
             message=(f"\"{course.title}\" was created by {_display_name(created_by)}."
-                      if created_by else f"\"{course.title}\" was created."),
+                        if created_by else f"\"{course.title}\" was created."),
             course=course,
         )
         for admin in _admin_recipients(exclude_user=created_by)

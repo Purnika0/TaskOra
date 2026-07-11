@@ -11,4 +11,6 @@ class ContactMessageAdmin(admin.ModelAdmin):
     ordering       = ['-submitted_at']
 
     def has_add_permission(self, request):
-        return False 
+        # Contact messages only ever come from the public form — admins
+        # shouldn't be able to fabricate one from the Django admin.
+        return False

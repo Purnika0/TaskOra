@@ -1,7 +1,4 @@
 """
-Place this file at:
-    any_app/management/commands/delete_test_users.py
-
 Run with:
     python manage.py delete_test_users
 """

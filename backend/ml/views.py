@@ -1,9 +1,7 @@
+"""Thin API wrappers around the ml app's three features — see recommendations.py and clustering.py for the actual logic."""
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
 from users.permissions import IsStudent, IsTeacher
-from tasks.models import Task
 from .recommendations import get_task_recommendations
 from .clustering import cluster_students, detect_outliers
 

@@ -1,3 +1,4 @@
+"""Public submission serializer plus an admin-only, status-only update serializer for the same model."""
 from rest_framework import serializers
 from .models import ContactMessage
 

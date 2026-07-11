@@ -1,7 +1,17 @@
+"""
+Serializers for the users app: registration, profile management, and the
+full OTP lifecycle (email verification + forgot-password), plus a patched
+JWT login serializer that accepts username OR email and blocks login for
+unverified student accounts.
+
+Three separate serializers exist for reading/updating/promoting a user
+(UserSerializer, UpdateUserSerializer, PromoteUserSerializer) rather than
+one shared one, so each endpoint only exposes exactly the fields it's
+meant to (e.g. only admins should be able to change `role`).
+"""
 from rest_framework import serializers
 from django.contrib.auth.password_validation import validate_password
 from .models import User, OTP
-from django.utils import timezone
 from .utils import send_otp_email
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -114,6 +124,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 
 class ResendOTPSerializer(serializers.Serializer):
+    """Used for both 'resend verification code' and 'resend reset code'."""
     email   = serializers.EmailField()
     purpose = serializers.ChoiceField(choices=OTP.Purpose.choices)
 

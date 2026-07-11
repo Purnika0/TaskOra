@@ -1,9 +1,6 @@
 """
 Check Recommendation Coverage
 ================================
-Place this file at:
-    any_app/management/commands/check_recommendations.py
-
 Run with:
     python manage.py check_recommendations
 """
