@@ -1,17 +1,16 @@
 import React from 'react'
-import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Clock, Users, SearchX, ListOrdered, UsersRound } from 'lucide-react'
+import { BarChart3, TrendingUp, AlertTriangle, CheckCircle2, Users, SearchX, ListOrdered, UsersRound } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts'
 import {
-    useStudentSummary, useWeeklyProgress, useCourseWorkload,
     useTaskProgress, useStudentGroups, useOutliers, useStudentRanking,
     useCourseOverview,
 } from '../../hooks/useAnalytics.js'
 import { useAuth }            from '../../hooks/useAuth.js'
 import { DashboardFooter }    from '../../components/layout/Footer.jsx'
 import { LoadingBlock }       from '../../components/shared/Loader.jsx'
-import { useTasks }           from '../../hooks/useTasks.js'
-import { isOverdue, fmtDate }          from '../../utils/helpers.js'
+import { fmtDate }            from '../../utils/helpers.js'
 import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
+import StudentAnalyticsPage from './StudentAnalyticsPage.jsx'
 
 // ── Metric card ───────────────────────────────────────────────
 function MetricCard({ icon, label, value, sub, accent }) {
@@ -621,68 +620,18 @@ export default function AnalyticsPage() {
     const { user } = useAuth()
     const isTeacher = user?.role === 'teacher'
 
-    const { data:summary,  loading:sl }  = useStudentSummary()
-    const { data:weekly,   loading:wl }  = useWeeklyProgress()
-    const { data:workload, loading:cl }  = useCourseWorkload()
-    const { tasks }                       = useTasks()
-    const overdueCount = tasks.filter(isOverdue).length
+    // Student analytics now lives in its own dedicated component/page.
+    if (!isTeacher) return <StudentAnalyticsPage/>
 
     return (
         <div style={{ display:'flex', flexDirection:'column', gap:18 }} className="anim-fade-in">
 
         <div className="page-header">
             <div>
-            <h2 className="page-title">{isTeacher ? 'Analytics' : 'My Analytics'}</h2>
+            <h2 className="page-title">Analytics</h2>
             <p className="page-subtitle">Live data from your academic activity</p>
             </div>
         </div>
-
-        {/* ── Student analytics ── */}
-        {!isTeacher && (
-            <>
-            <div className="stat-grid stagger">
-                <MetricCard icon={<TrendingUp/>}    label="Completion Rate" value={`${summary?.completion_rate ?? 0}%`} sub={`${summary?.completed ?? 0} tasks done`}            accent="#3cb87a"/>
-                <MetricCard icon={<CheckCircle2/>}  label="Completed"       value={summary?.completed ?? 0}             sub={`of ${summary?.total ?? 0} total`}                    accent="#3b6fd4"/>
-                <MetricCard icon={<Clock/>}         label="Pending"         value={summary?.pending ?? 0}               sub="to complete"                                           accent="#d4a93c"/>
-                <MetricCard icon={<AlertTriangle/>} label="Overdue"         value={overdueCount}                         sub={overdueCount > 0 ? 'needs attention' : 'all on track'} accent="#e05252"/>
-            </div>
-
-            {/* Weekly bar chart */}
-            <Section title="Tasks Completed — Last 7 Days" icon={<BarChart3/>} loading={wl}>
-                {(weekly || []).length === 0 && !wl ? (
-                <p style={{ fontSize:13, color:'#b0a898' }}>No data yet. Complete some tasks to see your progress.</p>
-                ) : (
-                <div style={{ display:'flex', alignItems:'flex-end', gap:6, height:96 }}>
-                    {(() => {
-                    const max = Math.max(...(weekly || []).map(x => x.completed), 1)
-                    return (weekly || []).map((d, i) => (
-                        <div key={i} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
-                        <span style={{ fontSize:10, fontWeight:700, color:'#1a1f35' }}>{d.completed}</span>
-                        <div style={{ width:'100%', background:'#f0ece4', borderRadius:'4px 4px 0 0', position:'relative', height:64 }}>
-                            <div style={{ position:'absolute', bottom:0, left:0, right:0, borderRadius:'4px 4px 0 0', background:'#1a1f35', transition:'height 0.6s ease', height:`${(d.completed / max) * 64}px` }}/>
-                        </div>
-                        <span style={{ fontSize:9, color:'#b0a898', whiteSpace:'nowrap' }}>{d.date?.slice(5)}</span>
-                        </div>
-                    ))
-                    })()}
-                </div>
-                )}
-            </Section>
-
-            {/* Course workload */}
-            <Section title="Course Workload" icon={<BarChart3/>} loading={cl}>
-                {(workload || []).length === 0 && !cl ? (
-                <p style={{ fontSize:13, color:'#b0a898' }}>Join a course to see your workload breakdown.</p>
-                ) : (
-                <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                    {(workload || []).map((c, i) => (
-                    <Bar key={i} label={c.course} value={c.pending} max={Math.max(c.total, 1)}/>
-                    ))}
-                </div>
-                )}
-            </Section>
-            </>
-        )}
 
         {/* ── Teacher analytics ── */}
         {isTeacher && (

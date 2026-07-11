@@ -182,9 +182,3 @@ export function buildMonthDays(bsYear, bsMonth) {
         }
     })
 }
-
-// Nepali digit formatter
-const NE_DIGITS = ['०','१','२','३','४','५','६','७','८','९']
-export function toNepaliNum(n) {
-    return String(n).split('').map(c => NE_DIGITS[+c] ?? c).join('')
-}

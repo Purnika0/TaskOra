@@ -62,6 +62,24 @@ class Notification(models.Model):
             models.Index(fields=['recipient', 'is_read']),
             models.Index(fields=['recipient', '-created_at']),
         ]
+        constraints = [
+            # Guards against duplicate "overdue" notifications for the same
+            # task. mark_overdue_tasks() is triggered opportunistically by
+            # OverdueSyncMiddleware on incoming requests (throttled, but not
+            # locked), so two requests in different worker processes could
+            # both see the same task as newly-overdue before either commits
+            # its status update. This DB-level constraint (paired with
+            # notify_overdue()'s get_or_create) makes that race harmless —
+            # only one such notification can ever exist per task, regardless
+            # of how many times notify_overdue() is called for it. Scoped to
+            # ASSIGNMENT_OVERDUE only, since other notif_types (e.g. deadline
+            # reminders) are allowed to fire more than once per task.
+            models.UniqueConstraint(
+                fields=['task', 'notif_type'],
+                condition=models.Q(notif_type='assignment_overdue'),
+                name='unique_overdue_notification_per_task',
+            ),
+        ]
 
     def __str__(self):
         return f"[{self.notif_type}] → {self.recipient.username}: {self.title}"

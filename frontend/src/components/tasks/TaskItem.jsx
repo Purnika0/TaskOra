@@ -13,11 +13,11 @@
 //
 // Subtasks removed entirely — no subtask model/endpoint exists on the backend.
 
-import React, { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import { ChevronDown, ChevronUp, Upload, Paperclip, MessageSquare } from 'lucide-react'
 import {
     getTaskTitle, getTaskDueDate, priorityColor, priorityLabel,
-    deadlinePill, statusBadge, isOverdue, isActionable as isActionableFallback, fmtDate,
+    deadlinePill, statusBadge, isOverdue, fmtDate,
 } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor, urgencyBg } from '../../utils/urgencyLabel.js'
 

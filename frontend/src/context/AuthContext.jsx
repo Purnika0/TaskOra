@@ -30,9 +30,9 @@
     //  can display "Unauthorized login for this portal".
     // ─────────────────────────────────────────────────────────────────────────────
 
-    import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
+    import { createContext, useState, useEffect, useCallback, useRef } from 'react'
     import authService from '../services/auth.service.js'
-    import { getAccessToken, getRefreshToken, clearTokens } from '../services/api.js'
+    import { getAccessToken, clearTokens } from '../services/api.js'
 
     export const AuthContext = createContext(null)
 
@@ -48,7 +48,6 @@
 
         const stored = authService.getStoredUser()   // sync, uses cached role
         const token  = getAccessToken()
-        const refresh = getRefreshToken()
 
         if (stored && token) {
         setUser(stored)                             // instant optimistic restore

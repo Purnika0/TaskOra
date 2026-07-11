@@ -13,7 +13,7 @@ import coursesService      from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker         from '../../components/shared/BSDatePicker.jsx'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, fmtDate, fmtDateTime } from '../../utils/helpers.js'
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, fmtDate } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { TASK_TYPES, PRIORITY_CHOICES } from '../../constants/assignmentChoices.js'
 
@@ -304,7 +304,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                             <Paperclip size={11} style={{ marginRight:4, verticalAlign:'middle' }}/>Assignment File (PDF / DOC / DOCX)
                         </label>
                         <div style={{ border:'2px dashed var(--color-border)', borderRadius:10, padding:'16px', textAlign:'center', background:'var(--color-surface-subtle)', cursor:'pointer' }}
-                             onClick={() => document.getElementById('mgmt-asgn-file-input').click()}>
+                                onClick={() => document.getElementById('mgmt-asgn-file-input').click()}>
                             <input id="mgmt-asgn-file-input" type="file" accept={ALLOWED_EXT} onChange={handleFile} style={{ display:'none' }}/>
                             {file ? (
                                 <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center' }}>
@@ -316,7 +316,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                                 <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
                                     <FileText size={16} style={{ color:'var(--color-primary)' }}/>
                                     <a href={assignment.file} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-                                       style={{ fontSize:13, color:'var(--color-primary)', fontWeight:600, textDecoration:'underline' }}>
+                                        style={{ fontSize:13, color:'var(--color-primary)', fontWeight:600, textDecoration:'underline' }}>
                                         {assignment.file_name || 'View current file'}
                                     </a>
                                     <span style={{ fontSize:11, color:'var(--color-text-secondary)' }}>· click to replace</span>
@@ -361,7 +361,7 @@ function DeleteAssignmentModal({ assignment, deleting, onCancel, onConfirm }) {
                     Delete Assignment
                 </h3>
                 <p style={{ fontSize:13, color:'var(--color-text-secondary)', lineHeight:1.55, margin:'0 0 22px' }}>
-                    Are you sure you want to delete this assignment? This action cannot be undone.
+                    Are you sure you want to delete this assignment?
                 </p>
                 <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                     <button onClick={onCancel} disabled={deleting} className="btn-secondary">Cancel</button>
@@ -376,7 +376,7 @@ function DeleteAssignmentModal({ assignment, deleting, onCancel, onConfirm }) {
 }
 
 function StudentAssignments() {
-    const { tasks, loading, error, stats, refetch, submitAssignment, setTasks } = useTasks()
+    const { tasks, loading, error, stats, refetch, submitAssignment } = useTasks()
     const isStudent = true // this component only ever renders for students; kept so existing JSX below is untouched
 
     const [searchParams, setSearchParams] = useSearchParams()
@@ -475,7 +475,7 @@ function StudentAssignments() {
 
             {/* Stats strip — Total first, Rejected before Overdue, matching the Dashboard */}
             <div className="stat-grid stagger">
-                <StatCard label="Total"     value={stats.total}     icon={<Layers/>}       accent="#6d4fc2"/>
+                <StatCard label="Total Assignments" value={stats.total}     icon={<ClipboardList/>}       accent="#6d4fc2"/>
                 <StatCard label="Completed" value={stats.completed} icon={<CheckCircle2/>} accent="#3cb87a"/>
                 <StatCard label="Submitted" value={stats.submitted} icon={<Send/>}         accent="#3b6fd4"/>
                 <StatCard label="Pending"   value={stats.pending}   icon={<Clock/>}        accent="#d4a93c"/>

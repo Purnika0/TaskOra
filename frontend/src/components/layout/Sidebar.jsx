@@ -1,9 +1,8 @@
-import React from 'react'
 import { NavLink } from 'react-router-dom'
 import {
     LayoutDashboard, CalendarDays, BookOpen, BarChart3,
-    Settings, LogOut, Users, ShieldCheck,
-    GraduationCap, ClipboardList, Upload, UserCircle,
+    Settings, LogOut, ShieldCheck,
+    GraduationCap, ClipboardList, Upload, Sparkles,
 } from 'lucide-react'
 
 const NAV = {
@@ -26,7 +25,8 @@ const NAV = {
         { to: '/app/courses',        icon: <BookOpen size={15}/>,        label: 'My Courses'   },
         { to: '/app/assignments',    icon: <ClipboardList size={15}/>,   label: 'Assignments'  },
         { to: '/app/calendar',       icon: <CalendarDays size={15}/>,    label: 'Calendar'     },
-        { to: '/app/recommendations',icon: <BarChart3 size={15}/>,       label: 'Recommendations' },
+        { to: '/app/analytics',      icon: <BarChart3 size={15}/>,       label: 'Analytics'       },
+        { to: '/app/recommendations',icon: <Sparkles size={15}/>,        label: 'Recommendations' },
         { to: '/app/settings',       icon: <Settings size={15}/>,        label: 'Settings'        },
     ],
 }

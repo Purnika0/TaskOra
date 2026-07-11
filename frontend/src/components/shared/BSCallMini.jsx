@@ -1,4 +1,4 @@
- import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
     import { useToday } from '../../hooks/useHolidays.js'
     import {
     BS_MONTH_NAMES, buildMonthDays, daysInBSMonth, adToBS,
@@ -154,5 +154,5 @@
             </div>
         </div>
         </div>
-    )
-    }
+)
+}

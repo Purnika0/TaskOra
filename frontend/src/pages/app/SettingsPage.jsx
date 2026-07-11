@@ -1,5 +1,5 @@
 // src/pages/app/SettingsPage.jsx
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { LogOut, User, Trash2, Settings, Lock, KeyRound, Mail, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { useAuth }     from '../../hooks/useAuth.js'
 import { useToast }    from '../../context/ToastContext.jsx'

@@ -11,7 +11,7 @@
 // OTP before they can log in. Login also redirects here if the backend
 // reports the account as unverified.
 
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
 import {
     User, Lock, Mail, Eye, EyeOff,

@@ -29,7 +29,12 @@ class Course(models.Model):
     # (e.g. an admin creates it before deciding who teaches it) — see
     # notifications/services.py's notify_student_left_course, which
     # deliberately no-ops for courses in this state.
-    teacher = models.ForeignKey(User, on_delete=models.CASCADE, related_name='courses', null=True, blank=True)
+    # on_delete=SET_NULL (not CASCADE): a course can legitimately have no
+    # teacher (see the null=True note above), and that's exactly the state
+    # a course should fall back to if its teacher's account is deleted —
+    # not disappear along with every enrollment, assignment, and task
+    # underneath it.
+    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, related_name='courses', null=True, blank=True)
     join_code = models.CharField(max_length=8, unique=True, default=generate_join_code)
     
     # Not exposed via the API — auto-stamped at creation, never shown or settable in the frontend.

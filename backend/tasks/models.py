@@ -37,7 +37,7 @@ class Assignment(models.Model):
     description = models.TextField(blank=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assignments')
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_assignments')
-    due_date = models.DateField()
+    due_date = models.DateField(db_index=True)
     task_type = models.CharField(max_length=20, choices=TaskType.choices, default=TaskType.ASSIGNMENT)
     estimated_hours = models.FloatField(default=1.0)
     priority = models.IntegerField(choices=PriorityLevel.choices, default=PriorityLevel.MEDIUM)
@@ -77,6 +77,7 @@ class Task(models.Model):
         max_length=20,
         choices=Status.choices,
         default=Status.PENDING,
+        db_index=True,
     )
 
     # Student submission

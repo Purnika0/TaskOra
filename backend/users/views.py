@@ -5,6 +5,7 @@ password change/reset, OTP verification, and admin-only user management
 exact routes.
 """
 from rest_framework import generics, status
+from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -83,6 +84,17 @@ class MeView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    def delete(self, request):
+        user = request.user
+        # Guard against locking the app out of admin access entirely.
+        if user.role == 'admin' and not User.objects.filter(role='admin').exclude(pk=user.pk).exists():
+            return Response(
+                {"detail": "You are the only admin account and cannot delete it. Promote another user to admin first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        user.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class ChangePasswordView(APIView):
     """
@@ -147,6 +159,16 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset           = User.objects.all()
     serializer_class   = UpdateUserSerializer
     permission_classes = [IsAdmin]
+
+    def perform_destroy(self, instance):
+        # Same guard as MeView.delete: never allow the last admin account to
+        # be removed, whether that happens via self-service deletion or here
+        # (an admin deleting another user) via the admin panel.
+        if instance.role == 'admin' and not User.objects.filter(role='admin').exclude(pk=instance.pk).exists():
+            raise ValidationError(
+                {"detail": "This is the only admin account and cannot be deleted. Promote another user to admin first."}
+            )
+        instance.delete()
 
 
 class PromoteUserView(APIView):

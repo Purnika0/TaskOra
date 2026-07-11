@@ -1,21 +1,21 @@
 // src/pages/portal/LegalPage.jsx
     // Public legal / terms page — no login required.
 
-    import React, { useState } from 'react'
-    import { Link } from 'react-router-dom'
-    import { useAuth } from '../../hooks/useAuth.js'
-    import { 
-    ArrowRight, 
-    GraduationCap, 
-    ShieldCheck, 
-    AlertTriangle, 
-    ScrollText,
-    BadgeInfo,
-    Landmark
-    } from 'lucide-react'
-    import { SiteFooter } from '../../components/layout/Footer.jsx'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../../hooks/useAuth.js'
+import { 
+ArrowRight, 
+GraduationCap, 
+ShieldCheck, 
+AlertTriangle, 
+ScrollText,
+BadgeInfo,
+Landmark
+} from 'lucide-react'
+import { SiteFooter } from '../../components/layout/Footer.jsx'
 
-    function PubNav({ user }) {
+function PubNav({ user }) {
     return (
         <nav style={{ background: '#fff', borderBottom: '1px solid var(--color-border)', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
@@ -264,5 +264,5 @@
 
         <SiteFooter />
         </div>
-    )
-    }
+)
+}

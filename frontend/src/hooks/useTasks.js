@@ -1,9 +1,6 @@
 // src/hooks/useTasks.js
-// UPDATED per backend integration guide:
-//   • is_completed boolean REMOVED — replaced by status: 'pending'|'submitted'|'completed'|'overdue'
-//   • toggleComplete REMOVED — students submit via submitAssignment()
-//   • addTask / updateTask / deleteTask (personal) REMOVED — personal tasks no longer exist
-//   • stats now reflects 4 states: pending, submitted, completed, overdue
+// Fetches and manages the current student's assigned tasks. Task status is
+// a 5-state string: pending | submitted | completed | rejected | overdue.
 
 import { useState, useEffect, useCallback } from 'react'
 import tasksService from '../services/tasks.service.js'
@@ -97,20 +94,4 @@ export function useTasks() {
         // setTasks exposed for optimistic UI updates
         setTasks,
     }
-}
-
-// Smart priority list hook
-export function useSmartPriority() {
-    const [tasks,   setTasks]   = useState([])
-    const [loading, setLoading] = useState(true)
-    const [error,   setError]   = useState(null)
-
-    useEffect(() => {
-        tasksService.getSmartPriority()
-            .then(d => setTasks(Array.isArray(d) ? d : []))
-            .catch(err => setError(err.response?.data?.detail || 'Failed to load'))
-            .finally(() => setLoading(false))
-    }, [])
-
-    return { tasks, loading, error }
 }

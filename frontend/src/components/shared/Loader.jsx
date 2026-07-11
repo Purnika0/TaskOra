@@ -1,6 +1,5 @@
 // src/components/shared/Loader.jsx — pure CSS, no Tailwind classes
 
-import React from 'react'
 
 // ── Spinner ──────────────────────────────────────────────────
 export function Spinner({ size=20, color='#0F172A' }) {

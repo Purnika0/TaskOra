@@ -81,6 +81,14 @@ const authService = {
 
     logout() { clearTokens() },
 
+    // ── Delete own account (self-service, Settings page) ───────────────────
+    // Backend guards against deleting the last remaining admin account.
+    async deleteAccount() {
+        const { data } = await api.delete('/api/users/me/')
+        clearTokens()
+        return data
+    },
+
     getStoredUser() {
         try {
             const s = sessionStorage.getItem(TOKEN_KEYS.user)

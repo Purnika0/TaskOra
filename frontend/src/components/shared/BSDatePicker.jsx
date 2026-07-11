@@ -5,7 +5,7 @@
 // just displays and lets the user browse in BS instead of the native
 // English/Gregorian date widget.
 
-import React, { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
 import { nepalNow, todayNepalISO } from '../../utils/helpers.js'

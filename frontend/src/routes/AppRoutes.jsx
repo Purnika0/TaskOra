@@ -3,7 +3,6 @@
 // Logged-in users still land on "/" and see the marketing page with a
 // "Go to Dashboard" CTA instead of being auto-redirected into /app.
 
-import React from 'react'
 import { Routes, Route, Navigate, Link } from 'react-router-dom'
 import { useAuth }              from '../hooks/useAuth.js'
 import ProtectedRoute           from './ProtectedRoute.jsx'

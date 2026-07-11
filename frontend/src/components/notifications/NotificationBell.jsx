@@ -3,7 +3,7 @@
 // most recent notifications. Clicking a notification marks it read and
 // navigates to the relevant page (assignments / submissions).
 
-import React, { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Bell, CheckCheck, Inbox } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'

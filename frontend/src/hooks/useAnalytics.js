@@ -3,7 +3,7 @@
 // useApiData now exposes a `refetch` callback so pages can
 // re-request data after user actions (e.g. completing tasks).
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import analyticsService from '../services/analytics.service.js'
 import mlService        from '../services/ml.service.js'
 

@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { ChevronLeft, ChevronRight, CalendarDays, Plus, Trash2, Loader, Info } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { ChevronLeft, ChevronRight, CalendarDays, Trash2, Loader, Info } from 'lucide-react'
 import { useToday, useBSCalendar }  from '../../hooks/useHolidays.js'
 import { useToast }                from '../../context/ToastContext.jsx'
 import { useAuth }                 from '../../hooks/useAuth.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import tasksService                from '../../services/tasks.service.js'
-import { apiError, getTaskTitle, getTaskDueDate, nepalNow } from '../../utils/helpers.js'
+import { getTaskTitle, nepalNow } from '../../utils/helpers.js'
 import {
     BS_MONTH_NAMES, AD_MONTH_NAMES, buildMonthDays,
     daysInBSMonth, adToBS,

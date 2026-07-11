@@ -5,7 +5,7 @@
 //   const ok = await confirm({ title: 'Delete task?', message: '...', danger: true })
 //   if (ok) doDelete()
 
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 
 const ConfirmContext = createContext(null)

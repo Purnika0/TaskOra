@@ -3,13 +3,13 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
 Plus, Users, AlertTriangle, TrendingUp,
-ChevronLeft, ChevronRight, FileText, Eye, Clock,
+ChevronLeft, ChevronRight, FileText, Clock,
 CheckCircle2, X, Calendar, Upload, BookOpen,
-ClipboardList, BarChart3, ThumbsUp, ThumbsDown,
+ClipboardList,
 Paperclip, RefreshCw, XCircle, ArrowRight, Trash2
 } from 'lucide-react'
 import { useToday }       from '../../hooks/useHolidays.js'
-import { useCourseOverview, useStudentRanking, useStudentGroups, useOutliers } from '../../hooks/useAnalytics.js'
+import { useStudentRanking, useStudentGroups, useOutliers } from '../../hooks/useAnalytics.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import { useToast }       from '../../context/ToastContext.jsx'

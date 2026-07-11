@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, CalendarDays, Plus, Trash2, Pencil, Loader, X } from 'lucide-react'
 import { useToday } from '../../hooks/useHolidays.js'
 import { useToast } from '../../context/ToastContext.jsx'

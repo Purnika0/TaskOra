@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import holidaysService from '../services/holidays.service.js'
-import { BS_MONTHS, todayNepalISO } from '../utils/helpers.js'
+import { todayNepalISO } from '../utils/helpers.js'
 
 export function useToday() {
   const [today,   setToday]   = useState(null)   // { today_ad, today_bs }
@@ -52,4 +52,3 @@ export function useUpcomingHolidays() {
 
     return { holidays, loading }
 }
- 

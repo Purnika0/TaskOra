@@ -3,8 +3,8 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
     // Auth-aware navbar: shows Sign In OR logged-in user dropdown.
     // Fully responsive with proper mobile layout.
 
-    import React, { useState, useRef, useEffect } from 'react'
-    import { Link, useNavigate }  from 'react-router-dom'
+    import { useState, useRef, useEffect } from 'react'
+    import { Link }  from 'react-router-dom'
     import { useAuth }             from '../../hooks/useAuth.js'
     import { useToast }            from '../../context/ToastContext.jsx'
     import contactService          from '../../services/contact.service.js'

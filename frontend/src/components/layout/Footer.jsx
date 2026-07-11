@@ -1,4 +1,3 @@
-import React from 'react'
 import { Link } from 'react-router-dom'
 import { Mail, GraduationCap, LogIn } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -22,7 +21,7 @@ function FtLink({ to, href, children }) {
 }
 
 export function SiteFooter() {
-    const { user, logout } = useAuth()
+    const { user } = useAuth()
 
     return (
         <footer style={{

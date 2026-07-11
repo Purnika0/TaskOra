@@ -2,7 +2,7 @@
 // Full notification history — reachable from the bell dropdown's "View all"
 // link, and directly via /app/notifications. Available to every role.
 
-import React, { useState, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { CheckCheck, Trash2, Inbox, Eraser } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'

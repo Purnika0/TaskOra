@@ -7,7 +7,7 @@
 // of that student's tasks/submissions for this course (enforced on the
 // backend) — this page only ever lists currently-enrolled students.
 
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Users, UserMinus, Calendar } from 'lucide-react'
 import coursesService from '../../services/courses.service.js'

@@ -1,5 +1,5 @@
 // src/App.jsx
-import React, { Suspense } from 'react'
+import { Suspense } from 'react'
 import { BrowserRouter }   from 'react-router-dom'
 import { AuthProvider }    from './context/AuthContext.jsx'
 import { ToastProvider }   from './context/ToastContext.jsx'

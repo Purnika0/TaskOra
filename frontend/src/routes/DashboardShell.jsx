@@ -13,8 +13,8 @@
 // sticks to the bottom of the viewport on short pages and flows naturally
 // after long pages. No role logic changed.
 
-import React, { useState } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
+import { Outlet } from 'react-router-dom'
 import { BookOpen, GraduationCap } from 'lucide-react'
 import Sidebar        from '../components/layout/Sidebar.jsx'
 import { SiteFooter } from '../components/layout/Footer.jsx'
@@ -42,7 +42,6 @@ function HamburgerIcon() {
 
 export default function DashboardShell() {
     const { user, logout } = useAuth()
-    const navigate = useNavigate()
     const [collapsed,  setCollapsed]  = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
 

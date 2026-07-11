@@ -7,7 +7,7 @@
 // reviewing behaves identically whether you get here from an assignment
 // card or from this inbox.
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, Inbox } from 'lucide-react'
 import tasksService from '../../services/tasks.service.js'

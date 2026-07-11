@@ -1,8 +1,8 @@
 // src/pages/app/CoursesPage.jsx — pure CSS, no Tailwind classes
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, GraduationCap, Hash, BookOpen, User, Pencil, Trash2, ListChecks, LogOut, Users } from 'lucide-react'
+import { Plus, GraduationCap, Hash, User, Pencil, Trash2, ListChecks, LogOut, Users } from 'lucide-react'
 import { useAuth }        from '../../hooks/useAuth.js'
 import { useToast }       from '../../context/ToastContext.jsx'
 import coursesService     from '../../services/courses.service.js'

@@ -5,7 +5,7 @@
 //   • getTaskTitle() updated — personal tasks removed, assignment nested object is primary
 //   • deadlinePill() updated to use status field
 
-import { adToBS, BS_MONTH_NAMES, toNepaliNum } from './bsCalendar.js'
+import { adToBS, BS_MONTH_NAMES } from './bsCalendar.js'
 
 // ── "Today" in Nepal local time ──────────────────────────────────────────────
 // Never use `new Date().toISOString()` for "today's date" — that reads UTC,
@@ -62,9 +62,6 @@ export function getTaskTitle(task) {
 // ── Due date ────────────────────────────────────────────────────────────────
 export function getTaskDueDate(task) {
     return task.due_date || task.assignment?.due_date || null
-}
-export function getTaskDueDateBS(task) {
-    return task.due_date_bs || null
 }
 
 // ── Status helpers (5-state) ────────────────────────────────────────────────
@@ -175,27 +172,6 @@ export function fmtDateTime(s) {
 export function currentBSYear() {
     return adToBS(nepalNow()).year
 }
-
-// Same as fmtDate but with Nepali digits and an explicit "BS" suffix —
-// use where AD/BS could otherwise be ambiguous to the reader.
-export function fmtDateBSFull(s) {
-    if (!s) return '—'
-    try {
-        const [y, m, d] = s.split('-').map(Number)
-        const bs = adToBS(new Date(y, m - 1, d))
-        const mn = BS_MONTH_NAMES[bs.month - 1]
-        return `${toNepaliNum(bs.day)} ${mn?.ne} ${toNepaliNum(bs.year)} (${bs.day} ${mn?.en} ${bs.year} BS)`
-    } catch {
-        return s
-    }
-}
-
-// ── BS month names ────────────────────────────────────────────────────────────
-export const BS_MONTHS = [
-    'Baisakh', 'Jestha', 'Ashadh', 'Shrawan',
-    'Bhadra', 'Ashwin', 'Kartik', 'Mangsir',
-    'Poush', 'Magh', 'Falgun', 'Chaitra',
-]
 
 // ── API error extractor ───────────────────────────────────────────────────────
 export function apiError(err) {

@@ -126,15 +126,22 @@ def notify_deadline_reminder(task):
 
 def notify_overdue(task):
     assignment = task.assignment
-    Notification.objects.create(
-        recipient=task.student,
-        notif_type=Notification.Type.ASSIGNMENT_OVERDUE,
-        title='Assignment overdue',
-        message=f"\"{assignment.title}\" ({assignment.course.title}) was due "
-                f"{assignment.due_date.strftime('%d %b %Y')} and is now overdue.",
-        course=assignment.course,
-        assignment=assignment,
+    # get_or_create (not create): paired with the unique constraint on
+    # (task, notif_type='assignment_overdue') in the model, this guarantees
+    # a task can never end up with more than one overdue notification, even
+    # if mark_overdue_tasks() is triggered concurrently for the same task
+    # (e.g. two requests landing in different worker processes at once).
+    Notification.objects.get_or_create(
         task=task,
+        notif_type=Notification.Type.ASSIGNMENT_OVERDUE,
+        defaults=dict(
+            recipient=task.student,
+            title='Assignment overdue',
+            message=f"\"{assignment.title}\" ({assignment.course.title}) was due "
+                    f"{assignment.due_date.strftime('%d %b %Y')} and is now overdue.",
+            course=assignment.course,
+            assignment=assignment,
+        ),
     )
 
 

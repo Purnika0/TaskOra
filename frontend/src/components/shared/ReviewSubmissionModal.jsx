@@ -6,7 +6,7 @@
 // Keeping this in one place means both pages always show the exact same
 // submission content (text / file / feedback) and reviewing behavior.
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Paperclip, MessageSquare, Check, X } from 'lucide-react'
 import tasksService from '../../services/tasks.service.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'

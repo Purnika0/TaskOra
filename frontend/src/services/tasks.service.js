@@ -20,12 +20,6 @@ const tasksService = {
         return data
     },
 
-    // Smart priority ordering (Cosine Similarity)
-    async getSmartPriority() {
-        const { data } = await api.get('/api/tasks/my/smart-priority/')
-        return data
-    },
-
     // ── Student: submit assignment ───────────────────────────────────────────
     // PATCH /api/tasks/<id>/submit/
     // Body: multipart/form-data — at least one of submission_file or submission_text required

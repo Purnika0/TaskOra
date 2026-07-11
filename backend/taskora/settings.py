@@ -74,6 +74,11 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
+    # Keeps Task.status in sync with due dates on every request cycle
+    # (throttled internally) since no external scheduler is configured.
+    # See tasks/middleware.py for details.
+    'tasks.middleware.OverdueSyncMiddleware',
 ]
 
 # Frontend runs on a different origin (Vite dev server) than the API during

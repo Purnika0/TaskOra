@@ -2,7 +2,7 @@
 // Teacher-only: view every student's submission for one assignment and approve/reject it.
 // Reached from AssignmentManagement.jsx's "Submissions" button → /app/assignments/:id/submissions
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import tasksService from '../../services/tasks.service.js'

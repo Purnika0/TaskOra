@@ -15,12 +15,12 @@
 // Deduplication: by task_type + type composite key
 // Stable React keys: composite key, not array index
 
-import React, { useMemo, useCallback } from 'react'
+import { useMemo } from 'react'
 import { Link }                              from 'react-router-dom'
 import { TrendingUp, Layers, AlertCircle, Star, Zap, RefreshCw } from 'lucide-react'
 import { useRecommendations }                from '../../hooks/useAnalytics.js'
 import { DashboardFooter }                   from '../../components/layout/Footer.jsx'
-import { LoadingBlock, ErrorBlock }          from '../../components/shared/Loader.jsx'
+import { ErrorBlock }                        from '../../components/shared/Loader.jsx'
 
 // ── ML type → UI mapping ──────────────────────────────────────
 // Cosine similarity output    → Trending

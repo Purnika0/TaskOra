@@ -12,11 +12,23 @@ import { DashboardFooter }                 from '../../components/layout/Footer.
 import { LoadingBlock, ErrorBlock }        from '../../components/shared/Loader.jsx'
 import { useToast }                        from '../../context/ToastContext.jsx'
 import tasksService                        from '../../services/tasks.service.js'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, nepalNow, nepalHour, todayNepalISO, fmtDate } from '../../utils/helpers.js'
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, nepalNow, nepalHour, todayNepalISO } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS }            from '../../utils/bsCalendar.js'
 
 const DOW_LABELS = ['S','M','T','W','T','F','S']
+
+// ── Convert a plain AD 'YYYY-MM-DD' date string to a short BS date string
+// (e.g. "15 Shrawan 2083"), interpreted in Nepal local time (+05:45) —
+// same convention as BSCalWidget below — so every date shown on this
+// dashboard (calendar grid, holidays, upcoming assignments) reads in the
+// same Nepali/BS format instead of mixing BS and raw AD strings.
+function formatBSDate(iso) {
+    if (!iso) return 'No date'
+    const bs = adToBS(new Date(`${iso}T00:00:00+05:45`))
+    const monthName = BS_MONTH_NAMES[bs.month - 1]
+    return `${bs.day} ${monthName?.en || ''} ${bs.year}`
+}
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon, accent }) {
@@ -187,7 +199,6 @@ function UpcomingWidget({ tasks }) {
                 : <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                     {upcoming.map(t => {
                         const due = getTaskDueDate(t)
-                        const d   = daysUntil(due)
                         const color = statusColor(t)
                         const bg    = statusBg(t)
                         return (
@@ -196,7 +207,7 @@ function UpcomingWidget({ tasks }) {
                                     <p style={{ fontSize:12, fontWeight:600, color:'var(--color-text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                         {getTaskTitle(t)}
                                     </p>
-                                    <p style={{ fontSize:10, color:'var(--color-text-placeholder)', margin:'1px 0 0' }}>{due||'No date'}</p>
+                                    <p style={{ fontSize:10, color:'var(--color-text-placeholder)', margin:'1px 0 0' }}>{formatBSDate(due)}</p>
                                 </div>
                                 <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', background:bg, color, borderRadius:99, whiteSpace:'nowrap' }}>
                                     {statusLabel(t)}
@@ -542,7 +553,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                                         </div>
 
                                         <span style={{ fontSize:11.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, whiteSpace:'nowrap' }}>
-                                            {fmtDate(due)}
+                                            {formatBSDate(due)}
                                             {urgent && d !== null && d < 0 && <span style={{ display:'block', fontSize:10 }}>({Math.abs(d)}d late)</span>}
                                         </span>
 
