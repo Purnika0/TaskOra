@@ -69,16 +69,6 @@ const coursesService = {
     async unenrollStudent(id, studentId) {
         await api.delete(`/api/courses/${id}/students/${studentId}/`)
     },
-
-    // NOTE: no matching backend route in courses/urls.py currently (only
-    // '', '<pk>/', 'join/', 'my/', '<pk>/students/' exist) — the join code
-    // is already returned on the course object itself via CourseSerializer.
-    // Kept here in case this becomes a real endpoint later; calling it as-is
-    // will 404 against the current backend.
-    async getEnrollmentCode(id) {
-        const { data } = await api.get(`/api/courses/${id}/enrollment-code/`)
-        return data
-    },
 }
 
 export default coursesService

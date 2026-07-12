@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
     import { useToday } from '../../hooks/useHolidays.js'
     import {
-    BS_MONTH_NAMES, buildMonthDays, daysInBSMonth, adToBS,
+    BS_MONTH_NAMES, buildMonthDays, adToBS,
     } from '../../utils/bsCalendar.js'
     import { nepalNow } from '../../utils/helpers.js'
 

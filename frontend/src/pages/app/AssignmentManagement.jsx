@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
     Search, RefreshCw, Upload, X, FileText, Send, MessageSquare,
     Paperclip, ChevronDown, Plus, Pencil, Trash2, ClipboardList, Users, Calendar,
-    Layers, CheckCircle2, Clock, XCircle, AlertCircle,
+    CheckCircle2, Clock, XCircle, AlertCircle,
 } from 'lucide-react'
 import { useTasks, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { useAuth }         from '../../hooks/useAuth.js'
@@ -361,7 +361,7 @@ function DeleteAssignmentModal({ assignment, deleting, onCancel, onConfirm }) {
                     Delete Assignment
                 </h3>
                 <p style={{ fontSize:13, color:'var(--color-text-secondary)', lineHeight:1.55, margin:'0 0 22px' }}>
-                    Are you sure you want to delete this assignment?
+                    Are you sure you want to delete <strong>{getTaskTitle(assignment)}</strong>? This action cannot be undone.
                 </p>
                 <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                     <button onClick={onCancel} disabled={deleting} className="btn-secondary">Cancel</button>
