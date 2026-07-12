@@ -1,7 +1,6 @@
 // src/components/shared/Loader.jsx — pure CSS, no Tailwind classes
 
-
-// ── Spinner ──────────────────────────────────────────────────
+// Spinner
 export function Spinner({ size=20, color='#0F172A' }) {
     return (
         <svg
@@ -15,7 +14,7 @@ export function Spinner({ size=20, color='#0F172A' }) {
     )
 }
 
-// ── Full-page loader ─────────────────────────────────────────
+// Full-page loader
 export function PageLoader() {
     return (
         <div style={{
@@ -29,7 +28,7 @@ export function PageLoader() {
     )
 }
 
-// ── Inline skeleton block ────────────────────────────────────
+// Inline skeleton block
 export function LoadingBlock({ rows=3 }) {
     return (
         <div style={{ display:'flex', flexDirection:'column', gap:8 }} aria-label="Loading content">
@@ -45,7 +44,7 @@ export function LoadingBlock({ rows=3 }) {
     )
 }
 
-// ── Inline error block ───────────────────────────────────────
+// Inline error block
 export function ErrorBlock({ message, onRetry }) {
     return (
         <div style={{

@@ -95,12 +95,11 @@ import { useState, useEffect, useMemo } from 'react'
                 cur.m       === todayBS.month &&
                 cur.y       === todayBS.year
 
-            // 1. Force Sunday to also trigger the holiday styling
+            // Sundays are treated as holidays for styling, same as Saturdays.
             let cls = 'cal-day'
             if (isToday)       cls += ' today'
-            if (day.isHoliday || day.isSun) cls += ' holiday'   // Saturday also gets holiday class
+            if (day.isHoliday || day.isSun) cls += ' holiday'
 
-            // 2. Update the tooltip to reflect Sunday holidays
             const holidayTooltip = day.holidayTitle 
                 || (day.isSat || day.isSun ? 'Weekend' : undefined)
 
@@ -110,7 +109,6 @@ import { useState, useEffect, useMemo } from 'react'
                     className={cls}
                     title={holidayTooltip}
                     style={{
-                    // Remove numColor override for Sundays so the .holiday CSS takes over
                     color: isToday ? undefined : (day.isHoliday || day.isSun ? undefined : undefined),
                     flexDirection: 'column',
                     gap: 0,
@@ -119,9 +117,7 @@ import { useState, useEffect, useMemo } from 'react'
                     fontSize: 11,
                     }}
                 >
-                    {/* BS number — primary */}
                     <span style={{ lineHeight: 1 }}>{day.bsDay}</span>
-                    {/* AD number — secondary */}
                     <span style={{
                     fontSize: 7, lineHeight: 1, marginTop: 1,
                     opacity: isToday ? 0.65 : 0.22,
@@ -144,7 +140,6 @@ import { useState, useEffect, useMemo } from 'react'
             Holiday
             </div>
             <div className="cal-legend-item">
-            {/* Updated to a solid blue dot */}
             <span className="cal-legend-dot" style={{ background:'var(--color-blue)' }}/>
             Today
             </div>

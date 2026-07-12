@@ -1,6 +1,3 @@
-// src/pages/portal/LegalPage.jsx
-    // Public legal / terms page — no login required.
-
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
@@ -24,6 +21,12 @@ function PubNav({ user }) {
             </div>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: 'var(--color-text)' }}>TaskOra</span>
         </Link>
+        <div className="pub-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Link to="/" className="pub-nav-link">Home</Link>
+            <Link to="/#features" className="pub-nav-link">Features</Link>
+            <Link to="/about" className="pub-nav-link">About Us</Link>
+            <Link to="/contact" className="pub-nav-link">Contact Us</Link>
+        </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             {user ? (
                 <Link to="/app" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff', textDecoration: 'none', borderRadius: 8, background: 'var(--color-primary)' }}>
@@ -41,6 +44,14 @@ function PubNav({ user }) {
     }
 
     const LEGAL_CSS = `
+    .pub-nav-link {
+        font-size:13px; color:var(--color-text-secondary); text-decoration:none;
+        padding:6px 12px; border-radius:8px;
+        transition:background 0.13s, color 0.13s;
+        font-family:var(--font-body); font-weight:500;
+    }
+    .pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
+    @media (max-width:640px) { .pub-nav-links { display:none; } }
     .legal-layout { display:grid; grid-template-columns:260px 1fr; gap:40px; }
     .legal-aside  { position:sticky; top:100px; height:fit-content; }
     @media (max-width:820px) {
@@ -55,7 +66,7 @@ function PubNav({ user }) {
     const [activeTab, setActiveTab] = useState('terms')
 
     const legalSections = [
-        { id: 'terms', label: 'Terms of Service', icon: <ScrollText size={16} /> },
+        { id: 'terms', label: 'Terms and Conditions ', icon: <ScrollText size={16} /> },
         { id: 'privacy', label: 'Privacy Policy', icon: <ShieldCheck size={16} /> },
         { id: 'disclaimer', label: 'Disclaimer', icon: <BadgeInfo size={16} /> }
     ]
@@ -73,10 +84,10 @@ function PubNav({ user }) {
                 <Landmark size={16} /> Academic Trust Center
                 </div>
                 <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: '32px', color: 'var(--color-text)', margin: 0, letterSpacing: '-0.02em' }}>
-                Terms, Privacy &amp; Policies
+                Terms , Privacy &amp; Policies
                 </h1>
                 <p style={{ fontSize: 14, color: 'var(--color-text-secondary)', margin: '8px 0 0', maxWidth: 520, lineHeight: 1.6 }}>
-                This page outlines TaskOra's Terms of Service, Privacy Policy, and Disclaimer.
+                This page outlines TaskOra's Terms and Conditions, Privacy Policy, and Disclaimer.
                 </p>
                 <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: '8px 0 0' }}>Last updated: {updated}</p>
             </div>
@@ -247,7 +258,7 @@ function PubNav({ user }) {
 
             {/* Quick Call to Action Footer inside Content card */}
             <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--color-border)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-            <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>By creating an account or using TaskOra, you acknowledge that you have read, understood, and agreed to these Terms of Service, Privacy Policy, and Disclaimer.</span>
+            <span style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>By creating an account or using TaskOra, you acknowledge that you have read, understood, and agreed to these Terms and Conditions, Privacy Policy, and Disclaimer.</span>
             {user ? (
                 <Link to="/app" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, color: 'var(--color-primary)', fontWeight: 600, fontSize: 14, textDecoration: 'none' }}>
                 Go to Dashboard <ArrowRight size={14} />

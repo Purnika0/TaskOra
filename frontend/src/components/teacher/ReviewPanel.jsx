@@ -40,7 +40,6 @@ export default function ReviewPanel({
         )
     }
 
-    // Consistent Status Mapping Logic
     const statusInfo = (() => {
         if (!submission.submitted_at || submission.status === "pending" || submission.status === "assigned") {
             return {
@@ -79,7 +78,9 @@ export default function ReviewPanel({
         }
     })()
 
-    // Consistent Student Name Formatting Logic
+    // Usernames may be dotted with a numeric suffix (e.g. "john.doe.3");
+    // fall back to a title-cased version of the username when no display
+    // name is set.
     const rawUsername = submission.student_username || "";
     const formattedName = rawUsername
         ? rawUsername
@@ -103,7 +104,6 @@ export default function ReviewPanel({
                 width: 360,
                 minWidth: 360,
                 maxWidth: 360,
-                // These rules prevent parent layout stretching from breaking the boundaries
                 height: "100%",
                 position: "relative",
                 display: "flex",
@@ -114,7 +114,6 @@ export default function ReviewPanel({
                 overflow: "hidden", 
             }}
         >
-            {/* Inner Wrapper absolute-anchored to isolate from leaking container height */}
             <div
                 style={{
                     position: "absolute",
@@ -127,9 +126,6 @@ export default function ReviewPanel({
                     boxSizing: "border-box",
                 }}
             >
-                {/* ======================================== */}
-                {/* Student Information Section (Fixed Top) */}
-                {/* ======================================== */}
                 <div
                     style={{
                         padding: 24,
@@ -200,9 +196,6 @@ export default function ReviewPanel({
                     </div>
                 </div>
 
-                {/* ======================================== */}
-                {/* Feedback Section (Scrolls Internally) */}
-                {/* ======================================== */}
                 <div
                     style={{
                         flex: 1,
@@ -219,12 +212,12 @@ export default function ReviewPanel({
                         value={feedback}
                         onChange={(e) => setFeedback(e.target.value)}
                         placeholder="Write feedback for the student..."
-                        rows={6} // Set small base rows; auto-overflow will handle text expansion safely
+                        rows={6}
                         disabled={!isPendingReview}
                         style={{
                             width: "100%",
                             maxWidth: "100%",
-                            resize: "none", // Prevent manual dragging from exploding the layout
+                            resize: "none",
                             padding: 12,
                             borderRadius: 10,
                             border: "1px solid #ddd",
@@ -248,9 +241,6 @@ export default function ReviewPanel({
                     </div>
                 </div>
 
-                {/* ======================================== */}
-                {/* Footer Action Buttons (Anchored to Floor) */}
-                {/* ======================================== */}
                 {isPendingReview ? (
                     <div
                         style={{

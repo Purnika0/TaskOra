@@ -1,5 +1,3 @@
-// src/constants/assignmentChoices.js
-//
 // Single source of truth for the two fields on Assignment that both
 // assignment-creation forms (AssignmentManagement.jsx and
 // TeacherDashboard.jsx) need to render identically, matching the backend
@@ -22,7 +20,7 @@ export const TASK_TYPES = [
 // Must match Assignment.PriorityLevel.choices in models.py exactly.
 // This is the teacher-set *importance* (static, set once). It is distinct
 // from Task.priority_score, the system-computed *urgency* — see
-// src/utils/priorityLabel.js for that one.
+// src/utils/urgencyLabel.js for that one.
 export const PRIORITY_CHOICES = [
     { value: 1, label: 'Low'         },
     { value: 2, label: 'Medium-Low'  },

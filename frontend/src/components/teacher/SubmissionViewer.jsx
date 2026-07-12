@@ -66,11 +66,7 @@ export default function SubmissionViewer({ submission }) {
             }}
         >
 
-            {/* ================================================= */}
-
             {/* TOP BAR */}
-
-            {/* ================================================= */}
 
             <div
                 style={{
@@ -155,11 +151,7 @@ export default function SubmissionViewer({ submission }) {
 
             </div>
 
-            {/* ================================================= */}
-
             {/* PREVIEW */}
-
-            {/* ================================================= */}
 
             <div
 
@@ -511,5 +503,4 @@ export default function SubmissionViewer({ submission }) {
         </div>
 
     )
-
 }

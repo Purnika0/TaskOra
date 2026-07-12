@@ -1,21 +1,40 @@
-// src/pages/portal/AboutPage.jsx
 // Public page — no login required.
-// Professional educational website styling with customized header labels and refined feature copy.
 
 import { Link } from 'react-router-dom'
 import { ArrowRight, GraduationCap } from 'lucide-react'
 import { SiteFooter } from '../../components/layout/Footer.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
 
+const PUB_NAV_CSS = `
+.pub-nav-link {
+    font-size:13px; color:var(--color-text-secondary); text-decoration:none;
+    padding:6px 12px; border-radius:8px;
+    transition:background 0.13s, color 0.13s;
+    font-family:var(--font-body); font-weight:500;
+}
+a.pub-nav-link:visited { color:var(--color-text-secondary); }
+.pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
+.pub-nav-link.active { font-weight:700; }
+a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
+@media (max-width:640px) { .pub-nav-links { display:none; } }
+`
+
 function PubNav({ user }) {
     return (
         <nav style={{ background: '#fff', borderBottom: '1px solid var(--color-border)', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
+            <style>{PUB_NAV_CSS}</style>
             <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
                 <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <GraduationCap size={15} color="#fff"/>
                 </div>
                 <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>TaskOra</span>
             </Link>
+            <div className="pub-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Link to="/" className="pub-nav-link">Home</Link>
+                <Link to="/#features" className="pub-nav-link">Features</Link>
+                <Link to="/about" className="pub-nav-link active" onClick={e => e.currentTarget.blur()}>About Us</Link>
+                <Link to="/contact" className="pub-nav-link" onClick={e => e.currentTarget.blur()}>Contact Us</Link>
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {user ? (
                     <Link to="/app" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff', textDecoration: 'none', borderRadius: 8, background: 'var(--color-primary)' }}>

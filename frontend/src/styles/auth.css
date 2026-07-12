@@ -220,6 +220,12 @@
     margin: 0 auto 18px;
     /* Soft premium brand-color glow instead of heavy grey drop-shadows */
     box-shadow: 0 6px 16px rgba(77, 127, 232, 0.25); 
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+}
+.auth-logo-wrap:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(77, 127, 232, 0.35);
 }
 
 /* ── Responsive ── */

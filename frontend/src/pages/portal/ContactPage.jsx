@@ -36,7 +36,7 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
     )
     }
 
-    // ── Auth-aware user menu ───────────────────────────────────────
+    // Auth-aware user menu
     function UserMenu({ user, logout }) {
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
@@ -163,6 +163,17 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             @media (max-width: 400px) {
             .ct-nav-right .ct-register { display: none !important; }
             }
+            .pub-nav-link {
+            font-size:13px; color:var(--color-text-secondary); text-decoration:none;
+            padding:6px 12px; border-radius:8px;
+            transition:background 0.13s, color 0.13s;
+            font-family:var(--font-body); font-weight:500;
+            }
+            a.pub-nav-link:visited { color:var(--color-text-secondary); }
+            .pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
+            .pub-nav-link.active { font-weight:700; }
+            a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
+            @media (max-width:640px) { .pub-nav-links { display:none; } }
         `}</style>
 
         {/* Navbar */}
@@ -175,6 +186,13 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                 TaskOra
             </span>
             </Link>
+
+            <div className="pub-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Link to="/" className="pub-nav-link">Home</Link>
+                <Link to="/#features" className="pub-nav-link">Features</Link>
+                <Link to="/about" className="pub-nav-link" onClick={e => e.currentTarget.blur()}>About Us</Link>
+                <Link to="/contact" className="pub-nav-link active" onClick={e => e.currentTarget.blur()}>Contact Us</Link>
+            </div>
 
             <div className="ct-nav-right">
             {user ? (

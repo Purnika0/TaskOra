@@ -1,28 +1,15 @@
-// src/pages/app/StudentAnalyticsPage.jsx
-// Student-facing analytics dashboard — polished "productivity dashboard"
-// layout (frontend-only refinement, no backend/business-logic changes):
-//
-//   Summary cards                — quick-glance totals (unchanged)
-//   Course Progress              — modern subject cards: name, completion %,
-//                                   progress bar, status counts, icon, hover
-//                                   lift, rounded corners, subtle shadow
-//   Weekly Progress / Recent     — side by side on desktop, stacked on
-//   Activity                       mobile. Weekly Progress is now a clean
-//                                   vertical bar chart (last 7 days).
-//
-// "Overall Performance" and "Upcoming Deadlines" sections have been
-// removed per the redesign brief. All data still comes from the student's
-// own task list (useTasks) plus the existing student analytics endpoints
-// (weekly-progress, course-workload) — no backend changes were made or
-// are needed, and no calculations changed, only presentation.
+// Student-facing analytics dashboard: summary cards, per-course progress,
+// weekly completion chart, and recent activity. All data comes from the
+// student's own task list (useTasks) plus the student analytics endpoints
+// (weekly-progress, course-workload).
 //
 // Styling is self-contained: every class below is prefixed `sap-` (Student
 // Analytics Page) and scoped under `.sap-page`, so it can't leak into or
 // clash with any other page's styles. Colors are pulled from the app's
 // design tokens (tokens.css) for page chrome, and from the same
 // statusBadge()/deadlinePill() palette used everywhere else tasks are shown
-// (TaskItem, dashboards, etc.) for status-specific colors — so a status
-// means the same color here as it does anywhere else in TaskOra.
+// for status-specific colors, so a status means the same color here as it
+// does anywhere else in TaskOra.
 
 import React from 'react'
 import {
@@ -35,9 +22,8 @@ import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock } from '../../components/shared/Loader.jsx'
 import { getTaskTitle, fmtDateTime } from '../../utils/helpers.js'
 
-// ── Status color palette — identical values to statusBadge()/deadlinePill()
-// in utils/helpers.js, so every status chip in the app (task lists,
-// dashboards, this page) reads the same color. ──────────────────────────
+// Mirrors statusBadge()/deadlinePill() in utils/helpers.js so every status
+// chip in the app uses the same color.
 const STATUS_META = {
     completed: { label: 'Completed', color: '#166534', bg: '#e0f7ee', accent: '#3cb87a', icon: <CheckCircle2 /> },
     submitted: { label: 'Submitted', color: '#1e40af', bg: '#eff3fd', accent: '#3b6fd4', icon: <Send /> },
@@ -46,10 +32,8 @@ const STATUS_META = {
     overdue:   { label: 'Overdue',   color: '#991b1b', bg: '#fde8e8', accent: '#e05252', icon: <AlertTriangle /> },
 }
 
-// ── Derive a course's overall status from its own task breakdown.
-// Deliberately simple and explainable — no hidden scoring model, just the
-// same signals a student would look at themselves: how much is done, and
-// whether anything is overdue or was sent back for revision.
+// Derives a course's overall status from its task breakdown, prioritizing
+// overdue and rejected tasks over raw completion rate.
 function deriveCourseStatus({ total, completed, overdue, rejected }) {
     if (total === 0) return { label: 'No Tasks Yet', color: '#64748B', bg: '#F1F5F9' }
     const rate = completed / total
@@ -60,7 +44,6 @@ function deriveCourseStatus({ total, completed, overdue, rejected }) {
     return { label: 'Getting Started', color: '#92400e', bg: '#fff8e6' }
 }
 
-// ── Metric card (summary cards — kept as-is) ─────────────────────
 function MetricCard({ icon, label, value, sub, accent }) {
     return (
         <div className="sap-metric-card">
@@ -76,7 +59,6 @@ function MetricCard({ icon, label, value, sub, accent }) {
     )
 }
 
-// ── Section wrapper ───────────────────────────────────────────
 function Section({ title, icon, badge, children, loading, full }) {
     return (
         <div className={`sap-card${full ? ' sap-card-full' : ''}`}>
@@ -101,10 +83,6 @@ function EmptyRow({ message, icon }) {
     )
 }
 
-// ── Course Progress card ─────────────────────────────────────────
-// A modern subject card: icon + course name, derived status pill, a single
-// progress bar for overall completion, and a small stat grid with the
-// exact counts behind that percentage.
 function CourseCard({ course }) {
     const total     = course.total || 0
     const completed = course.completed || 0
@@ -168,7 +146,6 @@ function CourseCard({ course }) {
     )
 }
 
-// ── Recent activity row (unchanged) ─────────────────────────────
 function ActivityRow({ event }) {
     const meta = STATUS_META[event.type]
     return (
@@ -184,19 +161,17 @@ function ActivityRow({ event }) {
     )
 }
 
-// ── Convert a plain YYYY-MM-DD date (as returned by the weekly-progress
+// Converts a plain YYYY-MM-DD date (as returned by the weekly-progress
 // endpoint) to a short weekday label, read in Nepal time — the same
-// timezone convention the rest of the app's calendar/date displays use
-// (see todayNepalISO() in utils/helpers.js), so "today" on this chart
-// lines up with "today" everywhere else in TaskOra. ─────────────────────
+// timezone convention used elsewhere in the app (see todayNepalISO() in
+// utils/helpers.js), so "today" here matches "today" everywhere else.
 function nepaliWeekdayLabel(dateStr) {
     if (!dateStr) return ''
     const d = new Date(`${dateStr}T00:00:00+05:45`)
     return new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kathmandu', weekday: 'short' }).format(d)
 }
 
-// ── Build an SVG path for a bar with rounded top corners only (a proper
-// rectangular bar — no oval/pill shape). ─────────────────────────────
+// Builds an SVG path for a bar with rounded top corners only.
 function topRoundedBarPath(x, y, w, h, r) {
     const radius = Math.min(r, w / 2, h)
     if (h <= 0) return ''
@@ -212,11 +187,8 @@ function topRoundedBarPath(x, y, w, h, r) {
     `
 }
 
-// ── Weekly Progress — real bar chart (SVG), last 7 days ─────────────────
-// A proper bar chart: baseline axis, three horizontal gridlines, rounded
-// bar tops in the TaskOra primary color, and a hover/tap tooltip showing
-// the exact value per day. Scales to its container via viewBox, so it
-// stays crisp and responsive at any width without recalculating pixels.
+// SVG bar chart of tasks completed per day (last 7 days). Scales to its
+// container via viewBox so it stays crisp and responsive at any width.
 function WeeklyBarChart({ data }) {
     const [hovered, setHovered] = React.useState(null)
 
@@ -306,7 +278,6 @@ function WeeklyBarChart({ data }) {
     )
 }
 
-// ── Full-page empty state for brand-new students ────────────────
 function NoDataState() {
     return (
         <div className="sap-card sap-welcome">
@@ -321,9 +292,6 @@ function NoDataState() {
     )
 }
 
-// ═══════════════════════════════════════════════════════════════
-// MAIN COMPONENT
-// ═══════════════════════════════════════════════════════════════
 export default function StudentAnalyticsPage() {
     const { tasks, stats, loading } = useTasks()
     const { data: weekly, loading: weeklyLoading } = useWeeklyProgress()
@@ -367,7 +335,7 @@ export default function StudentAnalyticsPage() {
                 .sap-badge { font-size:10.5px; font-weight:700; color:var(--color-text-muted); background:var(--color-surface-subtle); border-radius:99px; padding:2px 9px; }
                 .sap-card-body { padding:18px; }
 
-                /* Two-column layout — Weekly Progress / Recent Activity, kept the same height */
+                /* Two-column layout — Weekly Progress / Recent Activity */
                 .sap-2col { display:grid; grid-template-columns:1fr 1fr; gap:18px; align-items:stretch; }
                 .sap-2col .sap-card { display:flex; flex-direction:column; height:100%; }
                 .sap-2col .sap-card-body { flex:1; display:flex; flex-direction:column; }
@@ -392,12 +360,11 @@ export default function StudentAnalyticsPage() {
                 .sap-progress-track { flex:1; height:8px; border-radius:99px; overflow:hidden; background:var(--color-border); }
                 .sap-progress-fill { height:100%; border-radius:99px; transition:width .5s ease; }
                 .sap-progress-pct { font-size:12.5px; font-weight:800; color:var(--color-text); width:36px; text-align:right; flex-shrink:0; }
-                .sap-course-stat-grid { display:grid; grid-template-columns:repeat(5, 1fr); gap:6px; }
-                @media (max-width:520px) { .sap-course-stat-grid { grid-template-columns:repeat(3, 1fr); } }
-                .sap-course-stat { display:flex; flex-direction:column; align-items:center; gap:3px; background:var(--color-surface-subtle); border-radius:var(--radius-sm); padding:9px 4px; transition:background .15s ease; }
+                .sap-course-stat-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(54px, 1fr)); gap:6px; }
+                .sap-course-stat { display:flex; flex-direction:column; align-items:center; gap:3px; background:var(--color-surface-subtle); border-radius:var(--radius-sm); padding:9px 4px; min-width:0; transition:background .15s ease; }
                 .sap-course-card:hover .sap-course-stat { background:var(--color-surface-subtle); }
                 .sap-course-stat-count { font-size:13px; font-weight:800; color:var(--color-text); font-family:var(--font-display); line-height:1; }
-                .sap-course-stat-label { font-size:9px; color:var(--color-text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.02em; text-align:center; line-height:1.2; }
+                .sap-course-stat-label { font-size:9px; color:var(--color-text-muted); font-weight:600; text-transform:uppercase; letter-spacing:.02em; text-align:center; line-height:1.2; overflow-wrap:break-word; word-break:break-word; max-width:100%; }
 
                 /* List rows (recent activity) */
                 .sap-list-row { display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--color-border); }
@@ -443,7 +410,7 @@ export default function StudentAnalyticsPage() {
                 <NoDataState />
             ) : (
                 <>
-                    {/* Summary cards — kept as-is */}
+                    {/* Summary cards */}
                     <div className="sap-metric-grid stagger">
                         <MetricCard icon={<TrendingUp />} label="Completion Rate" value={`${stats.progress}%`} sub={`${stats.completed} of ${stats.total} tasks`} accent="#5452e4" />
                         <MetricCard icon={STATUS_META.completed.icon} label="Completed" value={stats.completed} sub="reviewed & approved" accent={STATUS_META.completed.accent} />
@@ -454,8 +421,7 @@ export default function StudentAnalyticsPage() {
                         <MetricCard icon={STATUS_META.overdue.icon} label="Overdue" value={stats.overdue} sub={stats.overdue > 0 ? 'needs attention' : 'all on track'} accent={STATUS_META.overdue.accent} />
                     </div>
 
-                    {/* Course Progress — modern subject cards using the
-                        existing course-workload endpoint. */}
+                    {/* Course Progress */}
                     <Section title="Course Progress" icon={<GraduationCap />} loading={courseLoading}
                         badge={courseWorkload?.length ? `${courseWorkload.length} course${courseWorkload.length > 1 ? 's' : ''}` : undefined}>
                         {!courseLoading && (!courseWorkload || courseWorkload.length === 0) ? (
@@ -467,8 +433,7 @@ export default function StudentAnalyticsPage() {
                         )}
                     </Section>
 
-                    {/* Weekly Progress + Recent Activity — side by side on
-                        desktop, stacked on mobile. */}
+                    {/* Weekly Progress + Recent Activity */}
                     <div className="sap-2col">
                         <Section title="Weekly Progress" icon={<TrendingUp />} loading={weeklyLoading}
                             badge={weeklyLoading ? undefined : `${weeklyTotal} this week`}>

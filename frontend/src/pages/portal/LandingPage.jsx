@@ -1,8 +1,5 @@
-// src/pages/portal/LandingPage.jsx
-// Simplified and polished landing page for TaskOra (Students & Educators)
-
 import { useState, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import { SiteFooter } from '../../components/layout/Footer.jsx'
 import {
@@ -10,9 +7,7 @@ import {
     Users, BookOpen, Upload, ClipboardList, ThumbsUp
 } from 'lucide-react'
 
-// ─────────────────────────────────────────────────────────────────────────────
 // STYLES
-// ─────────────────────────────────────────────────────────────────────────────
 const LP_CSS = `
 .lp-nav {
     position:sticky; top:0; z-index:100;
@@ -27,9 +22,10 @@ const LP_CSS = `
     transition:background 0.13s, color 0.13s;
     font-family:var(--font-body); font-weight:500;
 }
+a.lp-nav-link:visited { color:var(--color-text-secondary); }
 .lp-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
 
-/* ── Hero section ── */
+/* Hero section */
 .lp-hero {
     background:var(--color-surface-subtle);
     border-bottom:1px solid var(--color-border);
@@ -102,7 +98,7 @@ const LP_CSS = `
 }
 .lp-section-sub { font-size:14px; color:var(--color-text-secondary); line-height:1.7; margin:0; }
 
-/* ── Features ── */
+/* Features */
 .lp-features {
     display:grid; grid-template-columns:1.2fr 1fr; gap:14px;
 }
@@ -123,7 +119,7 @@ const LP_CSS = `
     display:flex; align-items:center; justify-content:center;
 }
 
-/* ── Benefits Grid (Responsive) ── */
+/* Benefits Grid (Responsive) */
 .lp-benefits-grid {
     display:grid;
     grid-template-columns:repeat(3, 1fr);
@@ -230,11 +226,20 @@ function DashboardMockup() {
 
 export default function LandingPage() {
     const { user } = useAuth()
+    const location = useLocation()
     const [menuOpen, setMenuOpen] = useState(false)
     const menuRef = useRef(null)
     const menuBtnRef = useRef(null)
 
     const ctaLabel = user ? 'Go to Dashboard' : 'Get Started'
+
+    // Scroll to the target section when arriving with a hash in the URL
+    // (e.g. a "Features" link from another page navigating to /#features).
+    useEffect(() => {
+        if (!location.hash) return
+        const el = document.getElementById(location.hash.slice(1))
+        el?.scrollIntoView({ behavior: 'smooth' })
+    }, [location.hash])
 
     // Close on Escape, lock body scroll, move focus into the menu on open,
     // and restore focus to the hamburger button on close.
@@ -275,13 +280,13 @@ export default function LandingPage() {
                         style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
                         Features
                     </a>
-                    <Link to="/about" onClick={() => setMenuOpen(false)}
+                    <Link to="/about" onClick={e => { setMenuOpen(false); e.currentTarget.blur() }}
                         style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
-                        About
+                        About Us
                     </Link>
-                    <Link to="/contact" onClick={() => setMenuOpen(false)}
+                    <Link to="/contact" onClick={e => { setMenuOpen(false); e.currentTarget.blur() }}
                         style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
-                        Contact
+                        Contact Us
                     </Link>
                     <div style={{ marginTop:20, display:'flex', flexDirection:'column', gap:10 }}>
                         <Link to={user ? '/app' : '/auth?view=signup'} onClick={() => setMenuOpen(false)}
@@ -292,7 +297,7 @@ export default function LandingPage() {
                 </div>
             )}
 
-            {/* ── Navbar ── */}
+            {/* Navbar */}
             <nav className="lp-nav">
                 <Link to="/" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
                     <div style={{ width:32, height:32, borderRadius:9, background:'var(--color-navy)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
@@ -304,8 +309,8 @@ export default function LandingPage() {
                 <div className="lp-nav-links" style={{ display:'flex', alignItems:'center', gap:2 }}>
                     <Link to="/" className="lp-nav-link">Home</Link>
                     <a href="#features" className="lp-nav-link">Features</a>
-                    <Link to="/about" className="lp-nav-link">About</Link>
-                    <Link to="/contact" className="lp-nav-link">Contact</Link>
+                    <Link to="/about" className="lp-nav-link" onClick={e => e.currentTarget.blur()}>About Us</Link>
+                    <Link to="/contact" className="lp-nav-link" onClick={e => e.currentTarget.blur()}>Contact Us</Link>
                 </div>
 
                 <div style={{ display:'flex', alignItems:'center', gap:8 }}>
@@ -328,7 +333,7 @@ export default function LandingPage() {
                 </div>
             </nav>
 
-            {/* ── Hero Section ── */}
+            {/* Hero Section */}
             <section className="lp-hero">
                 <div className="lp-hero-inner">
                     <div>
@@ -354,7 +359,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ── Key Features Section ── */}
+            {/* Key Features Section */}
             <section className="lp-section" id="features">
                 <div className="lp-section-head">
                     <h2 className="lp-section-title">Everything You Need to Stay Organized Throughout the Semester</h2>
@@ -382,7 +387,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ── Benefits Section ── */}
+            {/* Benefits Section */}
             <section style={{ background:'var(--color-surface-subtle)', borderTop:'1px solid var(--color-border)', borderBottom:'1px solid var(--color-border)' }}>
                 <div className="lp-section" id="benefits">
                 <div className="lp-section-head center">
@@ -401,7 +406,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ── Call to Action Section ── */}
+            {/* Call to Action Section */}
             <section style={{ 
                 background: 'var(--color-primary-light)', 
                 borderTop: '1px solid var(--color-border)',
@@ -447,7 +452,7 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* ── Footer Section (Deep brand color) ── */}
+            {/* Footer Section (Deep brand color) */}
             <div style={{ background: 'var(--color-navy)', color: '#FFFFFF' }}>
                 <SiteFooter />
             </div>

@@ -404,9 +404,9 @@ export default function AuthPage({ initialView }) {
     if (view === 'login') return (
         <div className="auth-root">
             <div className="login-card">
-                <div className="auth-logo-wrap" aria-hidden="true">
+                <Link to="/" className="auth-logo-wrap" aria-label="Go to home page">
                     <GraduationCap size={22} color="#ffffff"/>
-                </div>
+                </Link>
                 <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, color:'var(--color-text)', fontSize:22, textAlign:'center', margin:'0 0 6px', letterSpacing:'-0.02em' }}>
                     Welcome back
                 </h1>
