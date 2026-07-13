@@ -15,7 +15,6 @@ const PUB_NAV_CSS = `
 }
 a.pub-nav-link:visited { color:var(--color-text-secondary); }
 .pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
-.pub-nav-link.active { font-weight:700; }
 a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
 @media (max-width:640px) { .pub-nav-links { display:none; } }
 .pub-nav-toggle { display:none; background:none; border:none; cursor:pointer; padding:6px; color:var(--color-text); align-items:center; justify-content:center; }

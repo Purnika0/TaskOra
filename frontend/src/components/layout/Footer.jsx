@@ -55,7 +55,7 @@ export function SiteFooter() {
                 <div>
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                         <div style={{ width:28, height:28, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                            <img src="/logo.png" alt="TaskOra logo" width={28} height={28} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
+                            <img src="/logo2.png" alt="TaskOra logo" width={28} height={28} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                         </div>
                         <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'#fff', letterSpacing:'-0.01em' }}>
                             TaskOra

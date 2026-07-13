@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import { SiteFooter } from '../../components/layout/Footer.jsx'
 import {
-    GraduationCap, BarChart3, ArrowRight, Menu, X,
+    BarChart3, ArrowRight, Menu, X,
     Users, BookOpen, Upload, ClipboardList, ThumbsUp
 } from 'lucide-react'
 
@@ -36,9 +36,9 @@ a.lp-nav-link:visited { color:var(--color-text-secondary); }
     display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center;
 }
 .lp-eyebrow {
-    display:inline-flex; align-items:center; gap:6px;
+    display:inline-flex; align-items:center; gap:7px;
     color:var(--color-primary); background:var(--color-primary-light);
-    font-size:11px; font-weight:700; padding:5px 12px;
+    font-size:12.5px; font-weight:700; padding:6px 14px;
     border-radius:99px; margin-bottom:18px;
     font-family:var(--font-display); letter-spacing:0.04em;
     text-transform:uppercase;
@@ -337,7 +337,7 @@ export default function LandingPage() {
             <section className="lp-hero">
                 <div className="lp-hero-inner">
                     <div>
-                        <span className="lp-eyebrow"><GraduationCap size={12}/> Smart Assignment Management</span>
+                        <span className="lp-eyebrow"><img src="/logo.png" alt="" width={16} height={16} style={{ borderRadius:4, objectFit:'cover' }}/> Smart Assignment Management</span>
                         <h1 className="lp-h1">
                             Manage Every Assignment,<br/><em>Meet Every Deadline.</em>
                         </h1>

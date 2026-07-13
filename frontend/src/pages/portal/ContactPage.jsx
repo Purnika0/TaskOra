@@ -172,7 +172,6 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             }
             a.pub-nav-link:visited { color:var(--color-text-secondary); }
             .pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
-            .pub-nav-link.active { font-weight:700; }
             a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
             @media (max-width:640px) { .pub-nav-links { display:none; } }
             .pub-nav-toggle { display:none; background:none; border:none; cursor:pointer; padding:6px; color:var(--color-text); align-items:center; justify-content:center; }
@@ -217,9 +216,9 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                     Register
                 </Link>
                 <Link to="/auth?view=login"
-                    style={{ fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', padding:'7px 14px', borderRadius:8, background:'var(--color-text)', fontFamily:'var(--font-display)', transition:'background 0.15s', letterSpacing:'-0.01em' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-primary)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-text)')}
+                    style={{ fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', padding:'7px 14px', borderRadius:8, background:'var(--color-primary)', fontFamily:'var(--font-display)', transition:'background 0.15s', letterSpacing:'-0.01em' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-primary-hover)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-primary)')}
                 >
                     Sign In
                 </Link>
@@ -256,7 +255,7 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             {/* Left info panel */}
             <div className="ct-left" style={{ background:'var(--color-navy)', padding:'36px 28px', display:'flex', flexDirection:'column', gap:24, color:'#fff' }}>
                 <div>
-                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:17, margin:'0 0 8px', letterSpacing:'-0.01em' }}>
+                <h2 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:17, margin:'0 0 8px', letterSpacing:'-0.01em', color:'#fff' }}>
                     Get in touch
                 </h2>
                 <p style={{ fontSize:12, color:'rgba(255,255,255,0.85)', lineHeight:1.75, margin:0 }}>
