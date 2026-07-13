@@ -8,7 +8,7 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
     import { useAuth }             from '../../hooks/useAuth.js'
     import { useToast }            from '../../context/ToastContext.jsx'
     import contactService          from '../../services/contact.service.js'
-    import { GraduationCap, Mail, Phone, MapPin, CheckCircle2, ChevronDown, LayoutDashboard, LogOut, ArrowRight } from 'lucide-react'
+    import { Mail, Phone, MapPin, CheckCircle2, ChevronDown, LayoutDashboard, LogOut, ArrowRight, Menu, X } from 'lucide-react'
 
     const inp = {
     width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'10px 12px',
@@ -109,6 +109,7 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
     const [errs, setErrs] = useState({})
     const [busy, setBusy] = useState(false)
     const [sent, setSent] = useState(false)
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -174,13 +175,22 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             .pub-nav-link.active { font-weight:700; }
             a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
             @media (max-width:640px) { .pub-nav-links { display:none; } }
+            .pub-nav-toggle { display:none; background:none; border:none; cursor:pointer; padding:6px; color:var(--color-text); align-items:center; justify-content:center; }
+            @media (max-width:640px) { .pub-nav-toggle { display:flex; } }
+            .pub-nav-mobile-menu {
+            position:absolute; top:100%; left:0; right:0;
+            background:#fff; border-bottom:1px solid var(--color-border);
+            box-shadow:0 8px 24px rgba(15,23,42,0.10);
+            display:flex; flex-direction:column; padding:8px; gap:2px; z-index:49;
+            }
+            .pub-nav-mobile-menu .pub-nav-link { padding:10px 14px; }
         `}</style>
 
         {/* Navbar */}
         <header style={{ padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, borderBottom:'1px solid rgba(26,31,53,0.06)' }}>
             <Link to="/" style={{ display:'flex', alignItems:'center', gap:9, textDecoration:'none', flexShrink:0 }}>
-            <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,var(--color-navy),var(--color-primary))', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <GraduationCap size={15} color="#fff" />
+            <div style={{ width:32, height:32, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                <img src="/logo.png" alt="TaskOra logo" width={32} height={32} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
             </div>
             <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'var(--color-text)', letterSpacing:'-0.01em' }}>
                 TaskOra
@@ -216,6 +226,17 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
                 </>
             )}
             </div>
+            <button className="pub-nav-toggle" onClick={() => setMobileMenuOpen(o => !o)} aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileMenuOpen}>
+                {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
+            </button>
+            {mobileMenuOpen && (
+                <div className="pub-nav-mobile-menu">
+                    <Link to="/" className="pub-nav-link" onClick={() => setMobileMenuOpen(false)}>Home</Link>
+                    <Link to="/#features" className="pub-nav-link" onClick={() => setMobileMenuOpen(false)}>Features</Link>
+                    <Link to="/about" className="pub-nav-link" onClick={() => setMobileMenuOpen(false)}>About Us</Link>
+                    <Link to="/contact" className="pub-nav-link active" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
+                </div>
+            )}
         </header>
 
         {/* Page heading */}

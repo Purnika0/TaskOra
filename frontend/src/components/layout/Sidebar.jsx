@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom'
 import {
     LayoutDashboard, CalendarDays, BookOpen, BarChart3,
     Settings, LogOut, ShieldCheck,
-    GraduationCap, ClipboardList, Upload, Sparkles,
+    ClipboardList, Upload, Sparkles,
 } from 'lucide-react'
 
 const NAV = {
@@ -50,8 +50,8 @@ export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
         >
             {/* Brand */}
             <div style={{ display:'flex', alignItems:'center', gap:10, padding: collapsed ? '16px 12px' : '16px 14px', borderBottom:'1px solid rgba(255,255,255,0.10)', flexShrink:0 }}>
-                <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                    <GraduationCap size={14} color="#fff"/>
+                <div style={{ width:30, height:30, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                    <img src="/logo.png" alt="TaskOra logo" width={30} height={30} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                 </div>
                 {!collapsed && (
                     <div style={{ overflow:'hidden' }}>

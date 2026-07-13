@@ -405,7 +405,7 @@ export default function AuthPage({ initialView }) {
         <div className="auth-root">
             <div className="login-card">
                 <Link to="/" className="auth-logo-wrap" aria-label="Go to home page">
-                    <GraduationCap size={22} color="#ffffff"/>
+                    <img src="/logo.png" alt="TaskOra logo" width={48} height={48} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                 </Link>
                 <h1 style={{ fontFamily:'var(--font-display)', fontWeight:800, color:'var(--color-text)', fontSize:22, textAlign:'center', margin:'0 0 6px', letterSpacing:'-0.02em' }}>
                     Welcome back
@@ -474,8 +474,8 @@ export default function AuthPage({ initialView }) {
             <div className="signup-split">
                 <div className="signup-left">
                     <div>
-                        <div style={{ width:40, height:40, borderRadius:10, background:'rgba(255,255,255,0.13)', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:18 }}>
-                            <GraduationCap size={18} style={{ color:'#fff' }}/>
+                        <div style={{ width:40, height:40, borderRadius:10, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:18 }}>
+                            <img src="/logo.png" alt="TaskOra logo" width={40} height={40} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                         </div>
                         <h2 style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:20, color:'#fff', margin:'0 0 10px', letterSpacing:'-0.02em' }}>
                             TaskOra

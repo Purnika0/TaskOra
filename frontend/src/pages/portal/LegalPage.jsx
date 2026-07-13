@@ -3,21 +3,23 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
 import { 
 ArrowRight, 
-GraduationCap, 
 ShieldCheck, 
 AlertTriangle, 
 ScrollText,
 BadgeInfo,
-Landmark
+Landmark,
+Menu,
+X
 } from 'lucide-react'
 import { SiteFooter } from '../../components/layout/Footer.jsx'
 
 function PubNav({ user }) {
+    const [open, setOpen] = useState(false)
     return (
         <nav style={{ background: '#fff', borderBottom: '1px solid var(--color-border)', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50, boxShadow: '0 1px 3px rgba(15,23,42,0.06)' }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-            <div style={{ width: 30, height: 30, borderRadius: 8, background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <GraduationCap size={14} color="#fff" />
+            <div style={{ width: 30, height: 30, borderRadius: 8, overflow:'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src="/logo.png" alt="TaskOra logo" width={30} height={30} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
             </div>
             <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: 'var(--color-text)' }}>TaskOra</span>
         </Link>
@@ -38,7 +40,18 @@ function PubNav({ user }) {
                     <Link to="/auth?view=signup" style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff', textDecoration: 'none', borderRadius: 8, background: 'var(--color-primary)' }}>Sign Up</Link>
                 </>
             )}
+            <button className="pub-nav-toggle" onClick={() => setOpen(o => !o)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>
+                {open ? <X size={20}/> : <Menu size={20}/>}
+            </button>
         </div>
+        {open && (
+            <div className="pub-nav-mobile-menu">
+                <Link to="/" className="pub-nav-link" onClick={() => setOpen(false)}>Home</Link>
+                <Link to="/#features" className="pub-nav-link" onClick={() => setOpen(false)}>Features</Link>
+                <Link to="/about" className="pub-nav-link" onClick={() => setOpen(false)}>About Us</Link>
+                <Link to="/contact" className="pub-nav-link" onClick={() => setOpen(false)}>Contact Us</Link>
+            </div>
+        )}
         </nav>
     )
     }
@@ -52,6 +65,15 @@ function PubNav({ user }) {
     }
     .pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
     @media (max-width:640px) { .pub-nav-links { display:none; } }
+    .pub-nav-toggle { display:none; background:none; border:none; cursor:pointer; padding:6px; color:var(--color-text); align-items:center; justify-content:center; }
+    @media (max-width:640px) { .pub-nav-toggle { display:flex; } }
+    .pub-nav-mobile-menu {
+        position:absolute; top:100%; left:0; right:0;
+        background:#fff; border-bottom:1px solid var(--color-border);
+        box-shadow:0 8px 24px rgba(15,23,42,0.10);
+        display:flex; flex-direction:column; padding:8px; gap:2px; z-index:49;
+    }
+    .pub-nav-mobile-menu .pub-nav-link { padding:10px 14px; }
     .legal-layout { display:grid; grid-template-columns:260px 1fr; gap:40px; }
     .legal-aside  { position:sticky; top:100px; height:fit-content; }
     @media (max-width:820px) {

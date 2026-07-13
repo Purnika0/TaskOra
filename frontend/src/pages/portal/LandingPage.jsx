@@ -265,8 +265,8 @@ export default function LandingPage() {
                 <div className="lp-mobile-menu" ref={menuRef} role="dialog" aria-modal="true" aria-label="Site menu">
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                            <div style={{ width:30, height:30, borderRadius:8, background:'rgba(255,255,255,0.14)', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                                <GraduationCap size={14} color="#fff"/>
+                            <div style={{ width:30, height:30, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                                <img src="/logo.png" alt="TaskOra logo" width={30} height={30} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                             </div>
                             <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:16, color:'#fff' }}>TaskOra</span>
                         </div>
@@ -300,8 +300,8 @@ export default function LandingPage() {
             {/* Navbar */}
             <nav className="lp-nav">
                 <Link to="/" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
-                    <div style={{ width:32, height:32, borderRadius:9, background:'var(--color-navy)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                        <GraduationCap size={15} color="#fff"/>
+                    <div style={{ width:32, height:32, borderRadius:9, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        <img src="/logo.png" alt="TaskOra logo" width={32} height={32} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                     </div>
                     <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:17, color:'var(--color-text)', letterSpacing:'-0.02em' }}>TaskOra</span>
                 </Link>

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Mail, GraduationCap, LogIn } from 'lucide-react'
+import { Mail, LogIn } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
 import { currentBSYear } from '../../utils/helpers.js'
 
@@ -41,7 +41,7 @@ export function SiteFooter() {
                     border-top: 1px solid rgba(255,255,255,0.08);
                     padding: 14px 24px; max-width: 1040px; margin: 0 auto;
                     display: flex; align-items: center;
-                    justify-content: space-between; flex-wrap: wrap; gap: 10px;
+                    justify-content: center; flex-wrap: wrap; gap: 10px;
                 }
                 .ft-col-title {
                     font-size: 10px; font-weight: 700;
@@ -54,8 +54,8 @@ export function SiteFooter() {
             <div className="ft-wrap">
                 <div>
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
-                        <div style={{ width:28, height:28, borderRadius:8, background:'rgba(255,255,255,0.18)', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                            <GraduationCap size={13} color="#fff"/>
+                        <div style={{ width:28, height:28, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                            <img src="/logo.png" alt="TaskOra logo" width={28} height={28} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
                         </div>
                         <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'#fff', letterSpacing:'-0.01em' }}>
                             TaskOra
