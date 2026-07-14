@@ -7,6 +7,7 @@ signup and the forgot-password flow — both use the same one-time-code
 mechanism, distinguished only by `purpose`.
 """
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 from datetime import timedelta
@@ -30,6 +31,25 @@ class User(AbstractUser):
     # OTP has been confirmed. Teacher accounts are admin-created and are
     # marked verified immediately, so this mainly applies to students.
     is_email_verified  = models.BooleanField(default=False)
+
+    def save(self, *args, **kwargs):
+        # TaskOra allows exactly one admin account, provisioned only via
+        # `python manage.py create_admin` (see users/management/commands/).
+        # This is the last line of defense against a second admin slipping
+        # in through the Django admin site, a shell, or a future API bug —
+        # the API-level blocks live in RegisterSerializer, PromoteUserSerializer,
+        # and UpdateUserSerializer, but this guard holds even if those are
+        # ever bypassed.
+        if self.role == User.Role.ADMIN:
+            other_admin_exists = User.objects.filter(
+                role=User.Role.ADMIN
+            ).exclude(pk=self.pk).exists()
+            if other_admin_exists:
+                raise ValidationError(
+                    "Only one admin account is allowed in TaskOra. "
+                    "Delete the existing admin first if you need to replace it."
+                )
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.username} ({self.role})"

@@ -9,6 +9,10 @@ import ProtectedRoute           from './ProtectedRoute.jsx'
 import DashboardShell           from './DashboardShell.jsx'
 import LandingPage              from '../pages/portal/LandingPage.jsx'
 import AuthPage                 from '../pages/auth/AuthPage.jsx'
+// Hidden Admin Portal login — intentionally NOT linked from any Navbar,
+// Sidebar, Footer, or the public AuthPage. Reachable only by knowing the
+// "/portal-admin" URL directly. See AdminLoginPage.jsx for details.
+import AdminLoginPage           from '../pages/auth/AdminLoginPage.jsx'
 import ContactPage              from '../pages/portal/ContactPage.jsx'
 import AboutPage                from '../pages/portal/AboutPage.jsx'
 import LegalPage                from '../pages/portal/LegalPage.jsx'
@@ -74,6 +78,20 @@ export default function AppRoutes() {
             }/>
             <Route path="/reset-password" element={
                 <AuthLayout><AuthPage initialView="reset"/></AuthLayout>
+            }/>
+
+            {/* ── Hidden Admin Portal — deliberately not linked anywhere in the UI.
+                Only reachable by navigating directly to this URL. An admin who
+                is already signed in goes straight to /app/admin; anyone else
+                who is already signed in (teacher/student) is bounced to their
+                own dashboard via RoleRedirect rather than being shown this
+                login form at all. ───────────────────────────────────────── */}
+            <Route path="/portal-admin" element={
+                user
+                    ? (user.role === 'admin'
+                        ? <Navigate to="/app/admin" replace/>
+                        : <Navigate to="/app" replace/>)
+                    : <AuthLayout><AdminLoginPage/></AuthLayout>
             }/>
 
             {/* ── Protected app shell ──────────────────────────────────── */}

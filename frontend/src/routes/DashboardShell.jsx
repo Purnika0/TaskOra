@@ -1,21 +1,19 @@
 // src/routes/DashboardShell.jsx
 //
-// App shell: Sidebar + Topbar + scrollable <Outlet> + SiteFooter.
-// DashboardShell itself has NO role-based rendering logic — it only provides
-// the layout frame.  Role decisions are entirely handled by:
+// App shell: Sidebar + Topbar + scrollable <Outlet> + SiteFooter (Student/Teacher only).
+// DashboardShell has one small piece of role-based rendering — whether
+// SiteFooter shows (hidden for Admin) — everything else is layout-only.
+// Which URL maps to which component, and role access itself, are still
+// entirely handled by:
 //   • AppRoutes.jsx  (which URL maps to which component)
 //   • ProtectedRoute (enforces allowedRoles before any component mounts)
 //
-// This means the <Outlet /> here will ONLY ever render whatever component
-// AppRoutes assigned — it cannot accidentally render the wrong dashboard.
-//
-// FIX: SiteFooter now sits alongside a flex:1 content-inner wrapper so it
-// sticks to the bottom of the viewport on short pages and flows naturally
-// after long pages. No role logic changed.
+// The <Outlet /> here will ONLY ever render whatever component AppRoutes
+// assigned — it cannot accidentally render the wrong dashboard.
 
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
-import { BookOpen, GraduationCap } from 'lucide-react'
+import { BookOpen, GraduationCap, ShieldCheck } from 'lucide-react'
 import Sidebar        from '../components/layout/Sidebar.jsx'
 import { SiteFooter } from '../components/layout/Footer.jsx'
 import { useAuth }    from '../hooks/useAuth.js'
@@ -26,6 +24,7 @@ import NotificationBell from '../components/notifications/NotificationBell.jsx'
 // avatar stays visually consistent with the login screen instead of
 // introducing a new icon.
 function RoleAvatarIcon({ role }) {
+    if (role === 'admin')   return <ShieldCheck size={14} color="#ffffff" strokeWidth={2.25}/>
     if (role === 'student') return <BookOpen size={14} color="#ffffff" strokeWidth={2.25}/>
     return <GraduationCap size={14} color="#ffffff" strokeWidth={2.25}/>
 }
@@ -105,12 +104,16 @@ export default function DashboardShell() {
 
                 {/* Main content — <Outlet /> renders whatever AppRoutes assigned for this URL.
                     content-inner is the flex:1 wrapper that pushes SiteFooter to the bottom
-                    on short pages, and lets it flow naturally after long pages. */}
+                    on short pages, and lets it flow naturally after long pages.
+                    SiteFooter is intentionally omitted for Admin — the admin dashboard is
+                    an internal tool, not a page visitors browse, so the marketing-style
+                    footer (About/Contact/Legal links) doesn't belong there. Student and
+                    Teacher dashboards keep it as before. */}
                 <main className="content">
                     <div className="content-inner">
                         <Outlet/>
                     </div>
-                    <SiteFooter/>
+                    {user?.role !== 'admin' && <SiteFooter/>}
                 </main>
             </div>
         </div>

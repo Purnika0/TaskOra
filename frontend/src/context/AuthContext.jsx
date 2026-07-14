@@ -1,4 +1,4 @@
-    // src/context/AuthContext.jsx
+// src/context/AuthContext.jsx
     //
     // ── loading=true GUARANTEES ───────────────────────────────────────────────────
     //
@@ -24,10 +24,14 @@
     //  4. setLoading(false) — RoleRedirect fires → navigates to correct dashboard
     //
     // ── RBAC portal gate ─────────────────────────────────────────────────────────
-    //  portalRole is forwarded straight to authService.login().
-    //  If the backend role doesn't match the tab the user selected, authService
-    //  throws { code: 'ROLE_MISMATCH' }. AuthContext re-throws it so AuthPage
-    //  can display "Unauthorized login for this portal".
+    //  portalRole is forwarded straight to authService.login(). It is 'student'
+    //  or 'teacher' from the public AuthPage tabs, or 'admin' from the separate,
+    //  unlisted Admin Portal login (pages/auth/AdminLoginPage.jsx) — never
+    //  reachable from the public login screen or any nav/menu.
+    //  If the backend role doesn't match the portal the credentials were
+    //  submitted to, authService throws { code: 'ROLE_MISMATCH' }. AuthContext
+    //  re-throws it so the calling login screen can display
+    //  "Unauthorized login for this portal".
     // ─────────────────────────────────────────────────────────────────────────────
 
     import { createContext, useState, useEffect, useCallback, useRef } from 'react'
@@ -77,7 +81,8 @@
     }, [])
 
     // ── login ─────────────────────────────────────────────────────────────────
-    // portalRole: 'student' | 'teacher' — the tab selected on the login screen.
+    // portalRole: 'student' | 'teacher' | 'admin' — which login surface the
+    //   credentials came from ('admin' only ever comes from AdminLoginPage).
     //   Forwarded to authService.login() for strict portal-role enforcement.
     //   If the backend role doesn't match the portal, authService throws
     //   { code: 'ROLE_MISMATCH' } and we re-throw so AuthPage can show the

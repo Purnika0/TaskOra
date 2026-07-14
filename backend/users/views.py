@@ -86,10 +86,13 @@ class MeView(APIView):
 
     def delete(self, request):
         user = request.user
-        # Guard against locking the app out of admin access entirely.
+        # Guard against locking the app out of admin access entirely. Since
+        # TaskOra allows exactly one admin (created only via `python manage.py
+        # create_admin`), there is no "promote someone else first" path —
+        # deleting the only admin has to be blocked outright.
         if user.role == 'admin' and not User.objects.filter(role='admin').exclude(pk=user.pk).exists():
             return Response(
-                {"detail": "You are the only admin account and cannot delete it. Promote another user to admin first."},
+                {"detail": "You are the only admin account and cannot delete it."},
                 status=status.HTTP_400_BAD_REQUEST
             )
         user.delete()
@@ -163,10 +166,11 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     def perform_destroy(self, instance):
         # Same guard as MeView.delete: never allow the last admin account to
         # be removed, whether that happens via self-service deletion or here
-        # (an admin deleting another user) via the admin panel.
+        # (an admin deleting another user) via the admin panel. There is no
+        # "promote a successor first" path — see PromoteUserSerializer.
         if instance.role == 'admin' and not User.objects.filter(role='admin').exclude(pk=instance.pk).exists():
             raise ValidationError(
-                {"detail": "This is the only admin account and cannot be deleted. Promote another user to admin first."}
+                {"detail": "This is the only admin account and cannot be deleted."}
             )
         instance.delete()
 

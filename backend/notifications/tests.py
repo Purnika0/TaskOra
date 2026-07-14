@@ -75,12 +75,11 @@ class NotificationServiceTests(TestCase):
         )
 
     def test_admin_notified_new_teacher_excludes_creating_admin(self):
+        # TaskOra allows exactly one admin account (see User.save()), so the
+        # creating admin here is necessarily the only admin — the fan-out
+        # should exclude them and end up notifying nobody.
         creating_admin = User.objects.create_user(
             username='admin1', email='admin1@example.com',
-            password='pass12345', role=User.Role.ADMIN,
-        )
-        other_admin = User.objects.create_user(
-            username='admin2', email='admin2@example.com',
             password='pass12345', role=User.Role.ADMIN,
         )
         new_teacher = User.objects.create_user(
@@ -95,16 +94,15 @@ class NotificationServiceTests(TestCase):
                 notif_type=Notification.Type.NEW_TEACHER_REGISTERED
             ).values_list('recipient_id', flat=True)
         )
-        self.assertIn(other_admin.id, recipients)
         self.assertNotIn(creating_admin.id, recipients)
+        self.assertEqual(recipients, set())
 
-    def test_admin_notified_new_course_includes_all_admins_when_no_creator_given(self):
-        admin1 = User.objects.create_user(
+    def test_admin_notified_new_course_includes_the_admin_when_no_creator_given(self):
+        # With no creator to exclude, the sole admin should still receive
+        # the notification (single-admin equivalent of the old "all admins"
+        # fan-out check).
+        admin = User.objects.create_user(
             username='admin3', email='admin3@example.com',
-            password='pass12345', role=User.Role.ADMIN,
-        )
-        admin2 = User.objects.create_user(
-            username='admin4', email='admin4@example.com',
             password='pass12345', role=User.Role.ADMIN,
         )
         notify_admins_new_course(self.course, created_by=None)
@@ -114,7 +112,7 @@ class NotificationServiceTests(TestCase):
                 notif_type=Notification.Type.NEW_COURSE_CREATED
             ).values_list('recipient_id', flat=True)
         )
-        self.assertEqual(recipients, {admin1.id, admin2.id})
+        self.assertEqual(recipients, {admin.id})
 
     def test_student_left_course_noop_when_course_has_no_teacher(self):
         unassigned_course = Course.objects.create(title='BIT402', teacher=None)

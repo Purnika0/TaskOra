@@ -60,16 +60,41 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UpdateUserSerializer(serializers.ModelSerializer):
+    """
+    Admin only — edit any user's own account fields, including role.
+    Setting role to 'admin' is blocked: see PromoteUserSerializer for why.
+    """
     class Meta:
         model  = User
         fields = ['username', 'email', 'full_name', 'role', 'is_active']
 
+    def validate_role(self, value):
+        if value == User.Role.ADMIN:
+            raise serializers.ValidationError(
+                "Users cannot be assigned the admin role. TaskOra allows only "
+                "one admin account, created via the create_admin management command."
+            )
+        return value
+
 
 class PromoteUserSerializer(serializers.ModelSerializer):
-    """Admin only — change any user's role."""
+    """
+    Admin only — change any user's role between student and teacher.
+    Promoting to 'admin' is blocked here: TaskOra allows exactly one admin
+    account, created only via `python manage.py create_admin`. Enforced
+    again at the model level (User.save()) as a backstop.
+    """
     class Meta:
         model  = User
         fields = ['role']
+
+    def validate_role(self, value):
+        if value == User.Role.ADMIN:
+            raise serializers.ValidationError(
+                "Users cannot be promoted to admin. TaskOra allows only one "
+                "admin account, created via the create_admin management command."
+            )
+        return value
 
 
 class CreateTeacherSerializer(serializers.ModelSerializer):

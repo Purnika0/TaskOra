@@ -1,9 +1,115 @@
 from datetime import timedelta
+from io import StringIO
 
+from django.core.exceptions import ValidationError
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import TestCase
 from django.utils import timezone
 
 from users.models import User, OTP
+from users.serializers import PromoteUserSerializer, UpdateUserSerializer
+
+
+class SingleAdminEnforcementTests(TestCase):
+    """
+    TaskOra allows exactly one admin account. Covers the model-level guard
+    (User.save()) and the two serializer-level guards that would otherwise
+    let an admin turn another user into a second admin.
+    """
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username='the_admin', email='the_admin@example.com',
+            password='pass12345', role=User.Role.ADMIN,
+        )
+        self.teacher = User.objects.create_user(
+            username='some_teacher', email='some_teacher@example.com',
+            password='pass12345', role=User.Role.TEACHER,
+        )
+
+    def test_creating_second_admin_via_model_raises(self):
+        second = User(
+            username='second_admin', email='second_admin@example.com',
+            role=User.Role.ADMIN,
+        )
+        second.set_password('pass12345')
+        with self.assertRaises(ValidationError):
+            second.save()
+
+    def test_existing_admin_can_still_be_saved(self):
+        """The guard must exclude the instance's own pk, or an admin could never update their own profile."""
+        self.admin.full_name = 'Updated Name'
+        self.admin.save()  # should not raise
+        self.admin.refresh_from_db()
+        self.assertEqual(self.admin.full_name, 'Updated Name')
+
+    def test_promote_user_serializer_rejects_admin_role(self):
+        serializer = PromoteUserSerializer(self.teacher, data={'role': 'admin'}, partial=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('role', serializer.errors)
+
+    def test_promote_user_serializer_allows_student_teacher_roles(self):
+        serializer = PromoteUserSerializer(self.teacher, data={'role': 'student'}, partial=True)
+        self.assertTrue(serializer.is_valid())
+
+    def test_update_user_serializer_rejects_admin_role(self):
+        serializer = UpdateUserSerializer(self.teacher, data={'role': 'admin'}, partial=True)
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('role', serializer.errors)
+
+
+class CreateAdminCommandTests(TestCase):
+    """Covers the `create_admin` management command that replaces manual createsuperuser + DB edits."""
+
+    def test_creates_admin_when_none_exists(self):
+        call_command(
+            'create_admin',
+            username='new_admin', email='new_admin@example.com',
+            password='Str0ng!Passw0rd',
+            stdout=StringIO(),
+        )
+        admin = User.objects.get(username='new_admin')
+        self.assertEqual(admin.role, User.Role.ADMIN)
+        self.assertTrue(admin.is_superuser)
+        self.assertTrue(admin.is_staff)
+        self.assertTrue(admin.check_password('Str0ng!Passw0rd'))
+
+    def test_refuses_when_admin_already_exists(self):
+        User.objects.create_user(
+            username='existing_admin', email='existing_admin@example.com',
+            password='pass12345', role=User.Role.ADMIN,
+        )
+        with self.assertRaises(CommandError):
+            call_command(
+                'create_admin',
+                username='another_admin', email='another_admin@example.com',
+                password='Str0ng!Passw0rd',
+                stdout=StringIO(),
+            )
+        self.assertEqual(User.objects.filter(role=User.Role.ADMIN).count(), 1)
+
+    def test_rejects_weak_password(self):
+        with self.assertRaises(CommandError):
+            call_command(
+                'create_admin',
+                username='weak_admin', email='weak_admin@example.com',
+                password='123',
+                stdout=StringIO(),
+            )
+        self.assertFalse(User.objects.filter(username='weak_admin').exists())
+
+    def test_rejects_duplicate_username(self):
+        User.objects.create_user(
+            username='taken', email='taken_original@example.com', password='pass12345',
+        )
+        with self.assertRaises(CommandError):
+            call_command(
+                'create_admin',
+                username='taken', email='new_email@example.com',
+                password='Str0ng!Passw0rd',
+                stdout=StringIO(),
+            )
 
 
 class OTPModelTests(TestCase):

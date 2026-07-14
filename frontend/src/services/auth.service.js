@@ -7,7 +7,9 @@ const authService = {
     },
 
     // Accept username OR email — detect by presence of "@"
-    // portalRole: 'student' | 'teacher' — the login tab the user selected.
+    // portalRole: 'student' | 'teacher' | 'admin' — which login surface the
+    //   credentials were submitted from (the public Student/Teacher tabs, or
+    //   the separate, unlisted Admin Portal login).
     //   Omit (or pass undefined) to skip portal enforcement (e.g. session restore).
     async login({ credential, password, portalRole }) {
         const cred = credential.trim()
@@ -46,6 +48,9 @@ const authService = {
         // ── Strict portal-role gate ──────────────────────────────────────────────
         // Only enforced when portalRole is supplied (i.e. during an interactive login).
         // Session restore (getMe) does NOT pass portalRole, so it skips this gate.
+        // Each portal accepts ONLY its own matching backend role — the Teacher
+        // portal no longer doubles as a back door for admin accounts. Admins
+        // authenticate exclusively through the separate, unlisted Admin Portal.
         if (portalRole) {
             const backendRole = user.role
 
@@ -53,8 +58,10 @@ const authService = {
                 portalRole === 'student'
                     ? backendRole === 'student'
                     : portalRole === 'teacher'
-                        ? backendRole === 'teacher' || backendRole === 'admin'
-                        : true
+                        ? backendRole === 'teacher'
+                        : portalRole === 'admin'
+                            ? backendRole === 'admin'
+                            : false
 
             if (!isAllowed) {
                 clearTokens()
