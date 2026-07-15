@@ -31,80 +31,6 @@ a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
 .pub-nav-mobile-menu .pub-nav-link { padding:10px 14px; }
 `
 
-function AboutMockup() {
-    const stats = [
-        { label: 'Total Assignments', value: '4', accent: '#6d4fc2' },
-        { label: 'Completed',         value: '0', accent: '#3cb87a' },
-        { label: 'Submitted',         value: '0', accent: '#3b6fd4' },
-        { label: 'Pending',           value: '4', accent: '#d4a93c' },
-        { label: 'Rejected',          value: '0', accent: '#e05252' },
-        { label: 'Overdue',           value: '0', accent: '#e05252' },
-    ]
-    return (
-        <div style={{ background: '#fff', border: '1px solid var(--color-border)', borderRadius: 14, padding: 14, boxShadow: 'var(--shadow-xl)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-border)' }}/>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-border)' }}/>
-                <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--color-border)' }}/>
-                <div style={{ flex: 1 }}/>
-                <div style={{ fontSize: 8, fontWeight: 700, color: 'var(--color-text-muted)', padding: '3px 10px', borderRadius: 99, border: '1px solid var(--color-border)' }}>Sign In</div>
-                <div style={{ fontSize: 8, fontWeight: 700, color: '#fff', background: 'var(--color-primary)', padding: '3px 10px', borderRadius: 99 }}>Sign Up</div>
-            </div>
-
-            {/* Greeting banner — mirrors StudentDashboard's navy welcome card */}
-            <div style={{ background: 'var(--color-navy)', borderRadius: 10, padding: '12px 14px', marginBottom: 10, position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, background: 'rgba(255,255,255,0.05)', borderRadius: '50%' }}/>
-                <p style={{ fontSize: 7, color: 'rgba(255,255,255,0.6)', margin: '0 0 2px' }}>Good morning,</p>
-                <p style={{ fontSize: 12, fontWeight: 800, color: '#fff', margin: '0 0 3px', fontFamily: 'var(--font-display)' }}>Student Name 📖</p>
-                <p style={{ fontSize: 7, color: 'rgba(255,255,255,0.45)', margin: 0 }}>4 pending · 0 under review · 0 completed</p>
-            </div>
-
-            {/* Stat cards — matches the 6-card status grid */}
-            <div style={{ display: 'flex', gap: 5, marginBottom: 10 }}>
-                {stats.map(s => (
-                    <div key={s.label} style={{ flex: 1, background: '#fff', border: '1px solid var(--color-border)', borderTop: `2px solid ${s.accent}`, borderRadius: 6, padding: '5px 3px' }}>
-                        <p style={{ fontSize: 11, fontWeight: 800, color: 'var(--color-text)', margin: 0, fontFamily: 'var(--font-display)' }}>{s.value}</p>
-                        <p style={{ fontSize: 4.6, color: 'var(--color-text-muted)', margin: '1px 0 0', textTransform: 'uppercase', letterSpacing: '0.02em', lineHeight: 1.2 }}>{s.label}</p>
-                    </div>
-                ))}
-            </div>
-
-            {/* Widget row — BS calendar, Holidays, Upcoming (mirrors the dashboard's widget-grid) */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.3fr 1fr 1fr', gap: 8 }}>
-                <div style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                        <p style={{ fontSize: 8, fontWeight: 700, color: 'var(--color-text)', margin: 0 }}>Baisakh 2082</p>
-                        <span style={{ fontSize: 5.5, fontWeight: 700, color: 'var(--color-primary)', background: 'var(--color-primary-light)', borderRadius: 99, padding: '1px 5px' }}>Today</span>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2, marginBottom: 3 }}>
-                        {['S','M','T','W','T','F','S'].map((d, i) => (
-                            <span key={i} style={{ fontSize: 5, fontWeight: 700, color: 'var(--color-text-placeholder)', textAlign: 'center' }}>{d}</span>
-                        ))}
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 2 }}>
-                        {Array.from({ length: 28 }, (_, i) => (
-                            <span key={i} style={{ fontSize: 6, color: i === 22 ? '#fff' : (i % 7 === 0 ? '#DC2626' : 'var(--color-text-muted)'), background: i === 22 ? 'var(--color-primary)' : 'transparent', borderRadius: '50%', width: 12, height: 12, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{i + 1}</span>
-                        ))}
-                    </div>
-                </div>
-                <div style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 8 }}>
-                    <p style={{ fontSize: 7.5, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 1px' }}>★ Holidays</p>
-                    <p style={{ fontSize: 5.5, color: 'var(--color-text-placeholder)', margin: '0 0 6px' }}>Next 30 days</p>
-                    <p style={{ fontSize: 6.5, fontWeight: 600, color: 'var(--color-text)', margin: '0 0 1px' }}>Republic Day</p>
-                    <p style={{ fontSize: 5.5, color: 'var(--color-text-placeholder)', margin: 0 }}>29 Baisakh</p>
-                </div>
-                <div style={{ border: '1px solid var(--color-border)', borderRadius: 8, padding: 8 }}>
-                    <p style={{ fontSize: 7.5, fontWeight: 700, color: 'var(--color-text)', margin: '0 0 6px' }}>📖 Upcoming</p>
-                    <p style={{ fontSize: 6.5, fontWeight: 600, color: 'var(--color-text)', margin: '0 0 1px' }}>Quiz 1: Data Comm.</p>
-                    <p style={{ fontSize: 5.5, color: 'var(--color-text-placeholder)', margin: '0 0 5px' }}>12 Baisakh</p>
-                    <p style={{ fontSize: 6.5, fontWeight: 600, color: 'var(--color-text)', margin: '0 0 1px' }}>Homework: Networks</p>
-                    <p style={{ fontSize: 5.5, color: 'var(--color-text-placeholder)', margin: 0 }}>15 Baisakh</p>
-                </div>
-            </div>
-        </div>
-    )
-}
-
 function PubNav({ user }) {
     const [open, setOpen] = useState(false)
     return (
@@ -190,9 +116,19 @@ export default function AboutPage() {
                             )}
                         </div>
                     </div>
-                    <div style={{ transform: 'perspective(1400px) rotateY(-10deg) rotateX(4deg)' }}>
-                        <AboutMockup/>
-                    </div>
+                    <img
+                        src="/dashboard-preview.png"
+                        alt="TaskOra student dashboard preview"
+                        style={{
+                            width: '100%',
+                            height: 'auto',
+                            display: 'block',
+                            transform: 'perspective(1400px) rotateY(-10deg) rotateX(4deg)',
+                            transformStyle: 'preserve-3d',
+                            backfaceVisibility: 'hidden',
+                            filter: 'drop-shadow(0 20px 30px rgba(15,23,42,0.15))',
+                        }}
+                    />
                 </div>
             </section>
 
@@ -282,15 +218,11 @@ export default function AboutPage() {
             <section style={{ background: '#fff', padding: '20px 24px 80px' }}>
                 <div style={{ maxWidth: 1000, margin: '0 auto', display: 'grid', gridTemplateColumns: '0.7fr 1.3fr', gap: 48, alignItems: 'center' }}>
                     <div>
-                        <svg viewBox="0 0 200 200" width="100%" style={{ maxWidth: 220 }} fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="85" cy="115" r="62" stroke="#1E1130" strokeWidth="10"/>
-                            <circle cx="85" cy="115" r="42" stroke="#5452E4" strokeWidth="10"/>
-                            <circle cx="85" cy="115" r="21" stroke="#9694F0" strokeWidth="10"/>
-                            <circle cx="85" cy="115" r="7" fill="#1E1130"/>
-                            <path d="M85 115 L156 44" stroke="#1E1130" strokeWidth="10" strokeLinecap="round"/>
-                            <path d="M156 44 L133 41 L159 67 Z" fill="#1E1130"/>
-                            <path d="M156 44 L153 21 L179 47 Z" fill="#1E1130"/>
-                        </svg>
+                        <img
+                            src="/target-icon.png"
+                            alt="Target goal icon"
+                            style={{ width: '100%', maxWidth: 220, height: 'auto', display: 'block' }}
+                        />
                     </div>
                     <div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 26, color: 'var(--color-primary)', letterSpacing: '-0.02em', margin: '0 0 16px' }}>
