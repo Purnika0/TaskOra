@@ -1,5 +1,5 @@
 """
-Personalized task recommendations via item-based collaborative filtering:
+Personalized task recommendations via user-based collaborative filtering:
 "students similar to you have completed X, and you haven't yet" — see
 get_task_recommendations()'s docstring for the full algorithm.
 
@@ -17,7 +17,7 @@ from courses.models import Enrollment
 
 def get_task_recommendations(student):
     """
-    True Collaborative Filtering using a user-item matrix, computed
+    User-based Collaborative Filtering using a user-item matrix, computed
     independently for each course the student is enrolled in.
 
     For every enrolled course:
@@ -29,7 +29,7 @@ def get_task_recommendations(student):
         Steps:
             1. Build the user-item matrix for that course's students
             2. Compute cosine similarity between this student and peers
-               in that course
+               in that course (row-wise, i.e. user-user similarity)
             3. Find assignments completed by similar students but not
                this student
             4. Collect scored recommendations for that course
@@ -65,8 +65,8 @@ def get_task_recommendations(student):
 
 def _get_course_recommendations(student, course_id):
     """
-    Run collaborative filtering scoped to a single course: peers are
-    other students enrolled in this course, and the matrix only
+    Run user-based collaborative filtering scoped to a single course: peers
+    are other students enrolled in this course, and the matrix only
     covers this course's assignments.
     """
 
@@ -117,7 +117,8 @@ def _get_course_recommendations(student, course_id):
             matrix[student_idx_map[sid]][assignment_idx_map[aid]] = 1.0
 
     # ----------------------------------------------------------------
-    # Step 4: Compute cosine similarity
+    # Step 4: Compute cosine similarity between this student's row and
+    # every other student's row (user-user similarity)
     # ----------------------------------------------------------------
     this_student_row = matrix[0].reshape(1, -1)  # student is always index 0
 
@@ -208,7 +209,7 @@ def _get_course_recommendations(student, course_id):
 def _format_recommendation(task, completed_by, similarity_score):
     """Format a task into a recommendation dict."""
     if completed_by == 0:
-        reason = "This task is due soon — get started!"
+        reason = f"You haven't completed any tasks in {task.assignment.course.title.split('(')[0].strip()} yet"
     elif completed_by == 1:
         reason = "A student similar to you has already completed this"
     else:
