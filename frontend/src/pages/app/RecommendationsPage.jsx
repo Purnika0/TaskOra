@@ -15,13 +15,20 @@
 // Deduplication: by task_type + type composite key
 // Stable React keys: composite key, not array index
 
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { Link }                              from 'react-router-dom'
-import { TrendingUp, Layers, AlertCircle, Star, Zap, RefreshCw } from 'lucide-react'
+import { TrendingUp, Layers, AlertCircle, Star, Zap, RefreshCw, BookOpen, ChevronDown } from 'lucide-react'
 import { useRecommendations }                from '../../hooks/useAnalytics.js'
 import { DashboardFooter }                   from '../../components/layout/Footer.jsx'
 import { ErrorBlock }                        from '../../components/shared/Loader.jsx'
+import coursesService                        from '../../services/courses.service.js'
 
+// Course titles carry an optional parenthetical (e.g. "Software Project
+// Management (BIT402)") — recommendations from the backend already strip
+// this, so course names fetched here are normalised the same way to match.
+function normaliseCourseTitle(title) {
+    return (title || '').split('(')[0].trim()
+}
 // ── ML type → UI mapping ──────────────────────────────────────
 // Cosine similarity output    → Trending
 // K-Means cluster output      → Focus
@@ -136,9 +143,57 @@ function CatSection({ catKey, items }) {
     )
 }
 
+// ── Course filter (select box, fetched from backend) ─────────
+// A student can be enrolled in many courses, so a dropdown scales
+// better than a row of pills. Options come from the student's actual
+// enrolled courses (GET /api/courses/my/), not just whichever ones
+// happen to have a recommendation right now.
+function CourseFilter({ courses, selected, onSelect }) {
+    if (courses.length < 2) return null
+    return (
+        <label style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:11, color:'#4a4030', fontWeight:600 }}>
+        <BookOpen size={12} aria-hidden="true"/> Course:
+        <span style={{ position:'relative', display:'inline-flex', alignItems:'center' }}>
+            <select
+            value={selected}
+            onChange={e => onSelect(e.target.value)}
+            style={{
+                appearance:'none', WebkitAppearance:'none', MozAppearance:'none',
+                fontSize:12, fontWeight:600, color:'#1a1f35',
+                background:'#fff', border:'1.5px solid #e2dbd0', borderRadius:8,
+                padding:'6px 28px 6px 11px', cursor:'pointer',
+                fontFamily:'var(--font-body)',
+            }}
+            >
+            <option value="all">All courses</option>
+            {courses.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+            <ChevronDown size={12} style={{ position:'absolute', right:9, pointerEvents:'none', color:'#8a8070' }} aria-hidden="true"/>
+        </span>
+        </label>
+    )
+}
+
 // ── Main page ─────────────────────────────────────────────────
 export default function RecommendationsPage() {
     const { data, loading, error, refetch } = useRecommendations()
+    const [selectedCourse, setSelectedCourse] = useState('all')
+    const [enrolledCourses, setEnrolledCourses] = useState([])
+
+  // Fetch the student's actual enrolled courses for the filter dropdown
+    useEffect(() => {
+        let cancelled = false
+        coursesService.getMyCourses()
+        .then(list => {
+            if (cancelled) return
+            const titles = (Array.isArray(list) ? list : list?.results || [])
+            .map(c => normaliseCourseTitle(c.title))
+            .filter(Boolean)
+            setEnrolledCourses([...new Set(titles)].sort())
+        })
+        .catch(() => { /* filter just won't show if this fails — non-critical */ })
+        return () => { cancelled = true }
+    }, [])
 
   // Normalise + deduplicate + apply smart priority
     const recs = useMemo(() => {
@@ -163,9 +218,23 @@ export default function RecommendationsPage() {
     ]
 }, [data])
 
-const trending = recs.filter(r => !r.type || r.type === 'similar_users')
-const focus    = recs.filter(r => r.type === 'cluster')
-const attn     = recs.filter(r => r.type === 'outlier')
+  // Course options for the dropdown: primarily the student's actual
+  // enrolled courses (from the backend), with any course names found
+  // in the recommendations themselves folded in as a safety net.
+    const courses = useMemo(() => {
+        const fromRecs = recs.map(r => r.course).filter(Boolean)
+        return [...new Set([...enrolledCourses, ...fromRecs])].sort()
+    }, [enrolledCourses, recs])
+
+  // Apply the course filter (if one is selected and still valid)
+    const visibleRecs = useMemo(() => {
+        if (selectedCourse === 'all' || !courses.includes(selectedCourse)) return recs
+        return recs.filter(r => r.course === selectedCourse)
+    }, [recs, courses, selectedCourse])
+
+const trending = visibleRecs.filter(r => !r.type || r.type === 'similar_users')
+const focus    = visibleRecs.filter(r => r.type === 'cluster')
+const attn     = visibleRecs.filter(r => r.type === 'outlier')
 const isCategorised = focus.length > 0 || attn.length > 0
 
 return (
@@ -176,7 +245,7 @@ return (
         <div>
         <h2 className="page-title">Recommendations</h2>
         <p className="page-subtitle">
-            Personalised suggestions powered by Collaborative Filtering · updated each session
+            Personalised suggestions powered by Collaborative Filtering
         </p>
         </div>
         <button onClick={refetch}
@@ -189,6 +258,11 @@ return (
             </button>
         </div>
 
+        {/* Course filter */}
+        {!loading && !error && recs.length > 0 && (
+            <CourseFilter courses={courses} selected={selectedCourse} onSelect={setSelectedCourse}/>
+        )}
+
         {/* Loading skeletons */}
         {loading && (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
@@ -199,7 +273,7 @@ return (
         {/* Error */}
         {!loading && error && <ErrorBlock message={error} onRetry={refetch}/>}
 
-        {/* Empty state */}
+        {/* Empty state — no recommendations at all */}
         {!loading && !error && recs.length === 0 && (
             <div className="white-card" style={{ padding:'52px 24px', textAlign:'center' }}>
             <div style={{ width:52, height:52, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
@@ -218,8 +292,27 @@ return (
             </div>
         )}
 
+        {/* Empty state — recommendations exist, but none for the selected course */}
+        {!loading && !error && recs.length > 0 && visibleRecs.length === 0 && (
+            <div className="white-card" style={{ padding:'52px 24px', textAlign:'center' }}>
+            <div style={{ width:52, height:52, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
+                <BookOpen size={22} style={{ color:'#c0b8ae' }}/>
+            </div>
+            <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:'0 0 6px' }}>
+                No recommendations for {selectedCourse}
+            </p>
+            <p style={{ fontSize:12, color:'#b0a898', maxWidth:300, margin:'0 auto 18px' }}>
+                Try another course, or view all courses instead.
+            </p>
+            <button onClick={() => setSelectedCourse('all')}
+                style={{ display:'inline-flex', alignItems:'center', gap:6, background:'#1a1f35', color:'#fff', padding:'9px 16px', borderRadius:9, fontSize:12, fontWeight:600, fontFamily:'var(--font-display)', border:'none', cursor:'pointer', letterSpacing:'-0.01em' }}>
+                View all courses
+            </button>
+            </div>
+        )}
+
         {/* Recommendation cards */}
-        {!loading && !error && recs.length > 0 && (
+        {!loading && !error && visibleRecs.length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
             {isCategorised ? (
                 <>
@@ -230,7 +323,7 @@ return (
             ) : (
                 // All same type — flat grid, no section headers needed
                 <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
-                {recs.map(r => <RecCard key={recKey(r)} rec={r}/>)}
+                {visibleRecs.map(r => <RecCard key={recKey(r)} rec={r}/>)}
                 </div>
             )}
             </div>
