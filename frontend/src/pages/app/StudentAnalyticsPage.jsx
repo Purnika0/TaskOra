@@ -32,18 +32,6 @@ const STATUS_META = {
     overdue:   { label: 'Overdue',   color: '#991b1b', bg: '#fde8e8', accent: '#e05252', icon: <AlertTriangle /> },
 }
 
-// Derives a course's overall status from its task breakdown, prioritizing
-// overdue and rejected tasks over raw completion rate.
-function deriveCourseStatus({ total, completed, overdue, rejected }) {
-    if (total === 0) return { label: 'No Tasks Yet', color: '#64748B', bg: '#F1F5F9' }
-    const rate = completed / total
-    if (overdue > 0) return { label: 'Needs Attention', color: '#991b1b', bg: '#fde8e8' }
-    if (rejected > 0) return { label: 'Needs Revision', color: '#92400e', bg: '#fff8e6' }
-    if (rate >= 0.85) return { label: 'Excellent', color: '#166534', bg: '#e0f7ee' }
-    if (rate >= 0.55) return { label: 'Good', color: '#1e40af', bg: '#eff3fd' }
-    return { label: 'Getting Started', color: '#92400e', bg: '#fff8e6' }
-}
-
 function MetricCard({ icon, label, value, sub, accent }) {
     return (
         <div className="sap-metric-card">
@@ -89,13 +77,16 @@ function CourseCard({ course }) {
     const submitted = course.submitted || 0
     const pending    = course.pending || 0
     const overdue   = course.overdue || 0
-    // The course-workload endpoint returns completed/submitted/pending/overdue
-    // but not rejected — total includes it though, so derive it as the
-    // remainder to keep every task in the course accounted for.
-    const known    = completed + submitted + pending + overdue
-    const rejected = Math.max(total - known, 0)
-    const rate     = total > 0 ? Math.round((completed / total) * 100) : 0
-    const status   = deriveCourseStatus({ total, completed, overdue, rejected })
+    const rejected  = course.rejected || 0
+    const rate      = total > 0 ? Math.round((completed / total) * 100) : 0
+    // Status (level/label/color) is computed by the backend's
+    // derive_course_status() algorithm — see analytics/views.py — so the
+    // frontend just displays it rather than re-deriving it itself.
+    const status = {
+        label: course.status_label || 'No Assignment',
+        color: course.status_color || '#64748B',
+        bg:    course.status_bg    || '#F1F5F9',
+    }
 
     const stats = [
         { key: 'completed', count: completed },

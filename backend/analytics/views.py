@@ -22,6 +22,89 @@ from users.models import User
 # STUDENT ANALYTICS
 # ---------------------------------------------------------------------------
 
+# Course status levels shown on the Student Analytics page. Three tiers,
+# ranked by priority — the first matching condition wins:
+#
+#   1. no_assignment       total == 0
+#                        (course has no assignments at all yet — neutral,
+#                        not a performance judgment)
+#
+#   2. needs_attention   overdue > 0
+#                        OR rejected > 0
+#                        OR completion rate < LOW_RATE
+#                        i.e. there's a live problem (something overdue or
+#                        sent back) OR the student has only finished a small
+#                        fraction of the course's work so far — most of the
+#                        course is still undone, whether or not any of it
+#                        happens to be overdue yet.
+#
+#   3. excellent         no overdue, no rejected, and
+#                        completed / total >= HIGH_RATE
+#                        ("almost finished all tasks, on time")
+#
+#   4. average           no overdue/rejected, rate is between the two
+#                        thresholds — some done, some left
+#
+# Worked examples that fixed LOW_RATE at 0.20 (not 0.30):
+#   - 2 of 20 done, 0 overdue  → rate 0.10 < 0.20 → Needs Attention
+#     (barely started, most of a large course still undone)
+#   - 1 of 4  done, 0 overdue  → rate 0.25 >= 0.20 → Average
+#   - 2 of 4  done, 0 overdue  → rate 0.50 >= 0.20 → Average
+#     (a small course with a couple of tasks done isn't "barely started"
+#     the way 2/20 is — 0.30 misclassified this case as Needs Attention)
+#   - 9 of 10 done, 0 overdue → rate 0.90 >= HIGH_RATE → Excellent
+#
+# This replaces an earlier 5-label version (Excellent/Good/Getting
+# Started/Needs Revision/Needs Attention) whose "Needs Attention" label
+# fired for ANY overdue count with no regard to how far along the course
+# otherwise was — a course at 50% with one overdue task read identically
+# to a course at 0% with three overdue tasks. It also replaces an
+# in-between version that only checked "has the student done anything at
+# all" (completed + submitted > 0) rather than how much — which let
+# someone who'd finished just 1 of 20 tasks read as "Average" the moment
+# they submitted a single one.
+LOW_RATE  = 0.20
+HIGH_RATE = 0.85
+
+COURSE_STATUS_META = {
+    "no_assignment":     {"label": "No Assignment",       "color": "#64748B", "bg": "#F1F5F9"},
+    "needs_attention": {"label": "Needs Attention",  "color": "#991b1b", "bg": "#fde8e8"},
+    "average":         {"label": "Average",          "color": "#92400e", "bg": "#fff8e6"},
+    "excellent":       {"label": "Excellent",         "color": "#166534", "bg": "#e0f7ee"},
+}
+
+
+def derive_course_status(total, completed, submitted, pending, overdue, rejected):
+    """
+    Implements the 4-level algorithm documented above.
+
+    Input:  task counts for one student in one course
+    Output: (level, meta) where level is one of
+            "no_assignment" | "needs_attention" | "average" | "excellent"
+            and meta is {label, color, bg} for that level
+
+    Algorithm:
+        1. If total == 0: return "no_assignment"
+        2. rate ← completed / total
+        3. If overdue > 0 OR rejected > 0 OR rate < LOW_RATE:
+               return "needs_attention"
+        4. If rate >= HIGH_RATE: return "excellent"
+        5. Otherwise: return "average"
+    """
+    if total == 0:
+        level = "no_assignment"
+    else:
+        rate = completed / total
+        if overdue > 0 or rejected > 0 or rate < LOW_RATE:
+            level = "needs_attention"
+        elif rate >= HIGH_RATE:
+            level = "excellent"
+        else:
+            level = "average"
+
+    return level, COURSE_STATUS_META[level]
+
+
 class StudentTaskSummaryView(APIView):
     """Overall task status summary for the logged-in student."""
     permission_classes = [IsStudent]
@@ -97,6 +180,11 @@ class StudentCourseWorkloadView(APIView):
             submitted = tasks.filter(status=Task.Status.SUBMITTED).count()
             overdue   = tasks.filter(status=Task.Status.OVERDUE).count()
             pending   = tasks.filter(status=Task.Status.PENDING).count()
+            rejected  = tasks.filter(status=Task.Status.REJECTED).count()
+
+            status_level, status_meta = derive_course_status(
+                total, completed, submitted, pending, overdue, rejected
+            )
 
             data.append({
                 "course":    course.title,
@@ -105,6 +193,11 @@ class StudentCourseWorkloadView(APIView):
                 "submitted": submitted,
                 "pending":   pending,
                 "overdue":   overdue,
+                "rejected":  rejected,
+                "status":    status_level,
+                "status_label": status_meta["label"],
+                "status_color": status_meta["color"],
+                "status_bg":    status_meta["bg"],
             })
 
         return Response(data)

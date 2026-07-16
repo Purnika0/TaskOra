@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import {
     Star, BookOpen, Clock, CheckCircle2, ClipboardList, XCircle,
     ChevronLeft, ChevronRight, ChevronDown, Upload, AlertCircle, Send,
-    X, FileText, MessageSquare, Paperclip, Pencil,
+    X, FileText, MessageSquare, Paperclip, Pencil, Circle, Download, Users, Calendar,
 } from 'lucide-react'
 import { useAuth }                         from '../../hooks/useAuth.js'
-import { useTasks, isPending, isOverdue, isRejected, statusLabel, statusBg, statusColor } from '../../hooks/useTasks.js'
+import { useTasks, isPending, isRejected, statusLabel, statusBg, statusColor } from '../../hooks/useTasks.js'
 import { useStudentSummary }               from '../../hooks/useAnalytics.js'
 import { useUpcomingHolidays, useToday }   from '../../hooks/useHolidays.js'
 import { DashboardFooter }                 from '../../components/layout/Footer.jsx'
@@ -14,9 +15,15 @@ import { useToast }                        from '../../context/ToastContext.jsx'
 import tasksService                        from '../../services/tasks.service.js'
 import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, nepalNow, nepalHour, todayNepalISO } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
+import { TASK_TYPES } from '../../constants/assignmentChoices.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS }            from '../../utils/bsCalendar.js'
 
 const DOW_LABELS = ['S','M','T','W','T','F','S']
+
+// Dashboard is a quick-glance summary, not the full assignments workspace —
+// only show a handful of rows here; the rest live on the dedicated
+// Assignments page (/app/assignments), linked to below the table.
+const DASHBOARD_ROW_LIMIT = 5
 
 // ── Convert a plain AD 'YYYY-MM-DD' date string to a short BS date string
 // (e.g. "15 Shrawan 2083"), interpreted in Nepal local time (+05:45) —
@@ -173,20 +180,10 @@ function HolidaysWidget() {
 function UpcomingWidget({ tasks }) {
     const today = todayNepalISO() // 'YYYY-MM-DD', Nepal local
 
-    const upcomingOnly = tasks
+    const upcoming = tasks
         .filter(t => isPending(t) && getTaskDueDate(t) && getTaskDueDate(t) >= today)
         .sort((a,b) => getTaskDueDate(a).localeCompare(getTaskDueDate(b)))
-
-    let upcoming = upcomingOnly.slice(0, 5)
-
-    if (upcoming.length < 5) {
-        const overdueOnly = tasks
-            .filter(isOverdue)
-            .sort((a,b) => (getTaskDueDate(a)||'').localeCompare(getTaskDueDate(b)||'')) // oldest due date first = most overdue
-
-        const needed = 5 - upcoming.length
-        upcoming = [...upcoming, ...overdueOnly.slice(0, needed)]
-    }
+        .slice(0, 5)
 
     return (
         <div className="white-card" style={{ padding:18, height:'100%' }}>
@@ -371,6 +368,12 @@ function getCourseId(t) {
     return t.assignment?.course ?? t.course ?? null
 }
 
+// Same title/subtitle as the empty state on the student-facing Assignments
+// page (StudentAssignments in AssignmentManagement.jsx), so "no data" reads
+// identically in both places.
+const EMPTY_STATE_TITLE = 'No assignments found'
+const EMPTY_STATE_SUBTITLE = 'No assignments in this category.'
+
 function AssignmentTable({ tasks, onSubmit }) {
     const [tab, setTab]                   = useState('all')
     const [courseFocus, setCourseFocus]   = useState('all')
@@ -409,6 +412,15 @@ function AssignmentTable({ tasks, onSubmit }) {
                 return ub - ua
             })
         }
+
+        // On the "All" tab, still-actionable assignments (pending/submitted/
+        // rejected/overdue) should surface before completed ones — completed
+        // work is done and shouldn't crowd out what still needs attention,
+        // especially with the dashboard's 5-row cap. Array.sort is stable,
+        // so the sortBy ordering chosen above is preserved within each group.
+        if (tab === 'all') {
+            base.sort((a, b) => (a.status === 'completed' ? 1 : 0) - (b.status === 'completed' ? 1 : 0))
+        }
         return base
     }, [tasks, tab, courseFocus, sortBy])
 
@@ -427,6 +439,10 @@ function AssignmentTable({ tasks, onSubmit }) {
                 }
                 .at-row-head span { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-placeholder); }
                 @media (max-width:900px) { .at-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .at-row-head { display:none; } }
+                .at-view-all { transition:background-color 0.15s ease, gap 0.15s ease; }
+                .at-view-all:hover { background:color-mix(in srgb, var(--color-primary) 10%, white) !important; gap:11px; }
+                .at-view-all:hover .at-view-all-arrow { background:var(--color-primary); color:#fff; }
+                .at-view-all-arrow { transition:background-color 0.15s ease, color 0.15s ease; }
             `}</style>
             <div className="tab-bar" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:8, borderRadius:14 }}>
                 <div style={{ display:'flex', flexWrap:'wrap' }}>
@@ -461,33 +477,15 @@ function AssignmentTable({ tasks, onSubmit }) {
             <div style={{ background:'var(--color-surface)', borderRadius:14, border:'1px solid var(--color-cream-border)', overflow:'hidden' }}>
                 {filtered.length === 0 ? (
                     <div style={{ padding:'36px 20px', textAlign:'center' }}>
-                        <ClipboardList size={22} style={{ color:'var(--color-text-placeholder)', marginBottom:8 }}/>
-                        <p style={{ fontSize:13, fontWeight:700, color:'var(--color-text)', margin:'0 0 4px' }}>
-                            {(() => {
-                                if (courseFocus !== 'all') return 'No assignments found'
-                                switch (tab) {
-                                    case 'pending':   return 'No pending assignments'
-                                    case 'submitted': return 'Nothing awaiting review'
-                                    case 'completed': return 'No completed assignments yet'
-                                    case 'rejected':  return 'No rejected assignments'
-                                    case 'overdue':   return "You're all caught up"
-                                    default:          return 'No assignments yet'
-                                }
-                            })()}
-                        </p>
-                        <p style={{ fontSize:12, color:'var(--color-text-placeholder)', margin:0 }}>
-                            {(() => {
-                                if (courseFocus !== 'all') return 'Try selecting a different subject to see more assignments.'
-                                switch (tab) {
-                                    case 'pending':   return "You've submitted everything that's due — nice work."
-                                    case 'submitted': return 'Assignments you submit will show up here while your teacher reviews them.'
-                                    case 'completed': return 'Assignments your teacher approves will appear here.'
-                                    case 'rejected':  return 'Assignments sent back for changes will appear here.'
-                                    case 'overdue':   return 'Nothing is past its due date right now.'
-                                    default:          return 'Assignments from your courses will appear here once your teacher adds them.'
-                                }
-                            })()}
-                        </p>
+                        <div style={{
+                            width:44, height:44, borderRadius:'50%', margin:'0 auto 12px',
+                            display:'flex', alignItems:'center', justifyContent:'center',
+                            background:'color-mix(in srgb, var(--color-text-placeholder) 14%, white)',
+                        }}>
+                            <ClipboardList size={20} style={{ color:'var(--color-text-placeholder)' }}/>
+                        </div>
+                        <p style={{ fontSize:13, fontWeight:700, color:'var(--color-text)', margin:'0 0 4px' }}>{EMPTY_STATE_TITLE}</p>
+                        <p style={{ fontSize:12, color:'var(--color-text-placeholder)', margin:0 }}>{EMPTY_STATE_SUBTITLE}</p>
                     </div>
                 ) : (
                     <div style={{ display:'flex', flexDirection:'column' }}>
@@ -500,7 +498,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                             <span>Status</span>
                             <span style={{ textAlign:'right' }}>Action</span>
                         </div>
-                        {filtered.map((t, idx) => {
+                        {filtered.slice(0, DASHBOARD_ROW_LIMIT).map((t, idx) => {
                             const sb        = { label: statusLabel(t), color: statusColor(t), bg: statusBg(t) }
                             const due       = getTaskDueDate(t)
                             const d         = daysUntil(due)
@@ -511,22 +509,32 @@ function AssignmentTable({ tasks, onSubmit }) {
                             const desc      = t.assignment?.description?.trim()
                             const docFile   = t.assignment?.file
                             const docName   = t.assignment?.file_name || 'Document'
-                            const hasDetails = Boolean(desc) || Boolean(docFile)
+                            // Every assignment always has course/teacher/type/due-date info to
+                            // show, so the row is always expandable — matches Assignment Management.
+                            const hasDetails = true
                             const courseName = getCourseName(t)
+                            const teacherName = t.assignment?.teacher_name || 'Unknown Teacher'
+                            const taskTypeLabel = TASK_TYPES.find(tt => tt.value === t.assignment?.task_type)?.label || 'Assignment'
                             const importanceVal = t.assignment?.priority
                             const iColor = priorityColor(importanceVal)
                             const iLabel = priorityLabel(importanceVal)
                             const isDone = t.status === 'completed'
+                            const StatusIcon = t.status === 'completed' ? CheckCircle2
+                                : t.status === 'rejected' ? XCircle
+                                : t.status === 'submitted' ? Clock
+                                : t.status === 'overdue'  ? AlertCircle
+                                : Circle
                             const uScore = t.priority_score
                             const uColor = isDone ? 'var(--color-text-placeholder)' : urgencyColor(uScore)
                             const uLabel = isDone ? '—' : urgencyLabel(uScore)
 
                             return (
-                                <div key={t.id} style={{ padding:'14px 20px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-cream-border)' }}>
+                                <div key={t.id} style={{ padding:'14px 20px 14px 17px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-cream-border)', borderLeft: urgent ? `3px solid ${sb.color}` : '3px solid transparent' }}>
                                     <div className="at-row-grid">
                                         <div
                                             onClick={() => hasDetails && setExpanded(isOpen ? null : t.id)}
                                             style={{ display:'flex', alignItems:'center', gap:6, cursor: hasDetails ? 'pointer' : 'default', minWidth:0 }}>
+                                            <StatusIcon size={11} style={{ color: t.status === 'pending' ? 'var(--color-text-placeholder)' : sb.color, flexShrink:0 }} aria-label={sb.label} title={sb.label}/>
                                             <p style={{ fontSize:12.5, fontWeight:700, color:'var(--color-text)', margin:0, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                                 {getTaskTitle(t)}
                                             </p>
@@ -534,7 +542,10 @@ function AssignmentTable({ tasks, onSubmit }) {
                                                 <ChevronDown size={12} style={{ color:'var(--color-text-placeholder)', flexShrink:0, transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.15s' }}/>
                                             )}
                                             {docFile && (
-                                                <Paperclip size={11} style={{ color:'#6d4fc2', flexShrink:0 }} aria-label="Document attached"/>
+                                                <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:16, height:16, borderRadius:5, background:'#efe7fb', flexShrink:0 }}
+                                                    aria-label="Document attached" title="Document attached">
+                                                    <FileText size={10} style={{ color:'#6d4fc2' }}/>
+                                                </span>
                                             )}
                                         </div>
 
@@ -578,31 +589,93 @@ function AssignmentTable({ tasks, onSubmit }) {
                                         </div>
                                     </div>
 
-                                    {t.teacher_feedback && (
-                                        <div style={{ display:'flex', alignItems:'flex-start', gap:5, marginTop:8, padding:'5px 8px', background:'#eff3fd', borderRadius:7 }}>
-                                            <MessageSquare size={11} style={{ color:'#3b6fd4', marginTop:1, flexShrink:0 }}/>
-                                            <p style={{ fontSize:11, color:'#2c4d8f', margin:0, lineHeight:1.35 }}>{t.teacher_feedback}</p>
-                                        </div>
-                                    )}
-
                                     {isOpen && hasDetails && (
-                                        <div style={{ marginTop:8, padding:'8px 10px', background:'var(--color-surface)', borderRadius:8 }}>
+                                        <div style={{ marginTop:8, padding:'14px 16px', background:'var(--color-surface)', border:'1px solid var(--color-cream-border)', borderRadius:10 }}
+                                            className="anim-fade-in">
+                                            <p style={{ fontSize:13, fontWeight:700, color:'var(--color-text)', margin:'0 0 10px', lineHeight:1.4 }}>
+                                                {getTaskTitle(t)}
+                                            </p>
+
+                                            {/* Key facts — course, teacher, type, due date — always shown
+                                                regardless of whether a description/file is attached */}
+                                            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom: (desc || docFile || t.teacher_feedback) ? 12 : 0 }}>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'#1e40af', background:'#eff3fd', padding:'4px 10px', borderRadius:99 }}>
+                                                    <ClipboardList size={11}/> {courseName}
+                                                </span>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'#4a4238', background:'var(--color-surface-subtle)', border:'1px solid var(--color-cream-border)', padding:'4px 10px', borderRadius:99 }}>
+                                                    <Users size={11}/> {teacherName}
+                                                </span>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'#4a4238', background:'var(--color-surface-subtle)', border:'1px solid var(--color-cream-border)', padding:'4px 10px', borderRadius:99 }}>
+                                                    <FileText size={11}/> {taskTypeLabel}
+                                                </span>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'#4a4238', background:'var(--color-surface-subtle)', border:'1px solid var(--color-cream-border)', padding:'4px 10px', borderRadius:99 }}>
+                                                    <Calendar size={11}/> Due {formatBSDate(due)}
+                                                </span>
+                                            </div>
+
                                             {desc && (
-                                                <p style={{ fontSize:11.5, color:'#4a4238', margin:0, lineHeight:1.5, whiteSpace:'pre-wrap' }}>
-                                                    {desc}
-                                                </p>
+                                                <div style={{ marginBottom: (docFile || t.teacher_feedback) ? 12 : 0 }}>
+                                                    <p style={{ fontSize:10, fontWeight:700, color:'var(--color-text-placeholder)', margin:'0 0 3px', textTransform:'uppercase', letterSpacing:'0.03em' }}>Description</p>
+                                                    <p style={{ fontSize:12, color:'#4a4238', margin:0, lineHeight:1.65, whiteSpace:'pre-wrap' }}>
+                                                        {desc}
+                                                    </p>
+                                                </div>
                                             )}
+
                                             {docFile && (
-                                                <a href={docFile} target="_blank" rel="noreferrer" download
-                                                    style={{ display:'inline-flex', alignItems:'center', gap:6, marginTop: desc?8:0, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
-                                                    <Paperclip size={12}/> Download {docName}
-                                                </a>
+                                                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, padding:'7px 10px', background:'var(--color-surface-subtle)', border:'1px solid var(--color-cream-border)', borderRadius:7, flexWrap:'wrap', marginBottom: t.teacher_feedback ? 12 : 0 }}>
+                                                    <span style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:11.5, fontWeight:600, color:'#4a4238', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                                        <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:6, background:'#efe7fb', flexShrink:0 }}>
+                                                            <FileText size={12} style={{ color:'#6d4fc2' }}/>
+                                                        </span>
+                                                        {docName}
+                                                    </span>
+                                                    <a href={docFile} target="_blank" rel="noreferrer" download
+                                                        style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11.5, fontWeight:700, color:'#fff', background:'var(--color-primary)', padding:'6px 12px', borderRadius:7, textDecoration:'none', flexShrink:0 }}>
+                                                        <Download size={12}/> Download
+                                                    </a>
+                                                </div>
                                             )}
+
+                                            {/* Feedback comes last, after the attachment */}
+                                            {t.teacher_feedback && (() => {
+                                                const isRejectedFb = t.status === 'rejected'
+                                                const isApprovedFb = t.status === 'completed'
+                                                const FbIcon = isRejectedFb ? XCircle : isApprovedFb ? CheckCircle2 : MessageSquare
+                                                const fbTitle = isRejectedFb ? 'Rejected' : isApprovedFb ? 'Accepted' : 'Feedback'
+                                                return (
+                                                    <div style={{ padding:'8px 10px', background:sb.bg, borderLeft:`3px solid ${sb.color}`, borderRadius:6 }}>
+                                                        <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
+                                                            <FbIcon size={12} style={{ color:sb.color, flexShrink:0 }}/>
+                                                            <span style={{ fontSize:11, fontWeight:700, color:sb.color }}>{fbTitle}</span>
+                                                        </div>
+                                                        <p style={{ fontSize:11.5, color:'#4a4238', margin:0, lineHeight:1.45 }}>{t.teacher_feedback}</p>
+                                                    </div>
+                                                )
+                                            })()}
                                         </div>
                                     )}
                                 </div>
                             )
                         })}
+                        {filtered.length > DASHBOARD_ROW_LIMIT && (
+                            <Link to="/app/assignments" className="at-view-all"
+                                style={{
+                                    display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+                                    padding:'13px 20px', fontSize:12.5, fontWeight:700, color:'var(--color-primary)',
+                                    textDecoration:'none', borderTop:'1px solid var(--color-cream-border)',
+                                    background:'color-mix(in srgb, var(--color-primary) 5%, white)',
+                                }}>
+                                <span>View all {filtered.length} assignments</span>
+                                <span className="at-view-all-arrow" style={{
+                                    display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                    width:20, height:20, borderRadius:'50%',
+                                    background:'color-mix(in srgb, var(--color-primary) 16%, white)',
+                                }}>
+                                    <ChevronRight size={12}/>
+                                </span>
+                            </Link>
+                        )}
                     </div>
                 )}
             </div>

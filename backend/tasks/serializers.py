@@ -14,6 +14,7 @@ from holidays.bs_calendar import ad_to_bs
 class AssignmentSerializer(serializers.ModelSerializer):
     due_date_bs = serializers.SerializerMethodField()
     course_name  = serializers.SerializerMethodField()
+    teacher_name = serializers.SerializerMethodField()
 
     submission_count     = serializers.SerializerMethodField()
     pending_review_count = serializers.SerializerMethodField()
@@ -29,7 +30,8 @@ class AssignmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Assignment
         fields = [
-            'id', 'title', 'description', 'course', 'course_name', 'created_by',
+            'id', 'title', 'description', 'course', 'course_name',
+            'created_by', 'teacher_name',
             'due_date', 'due_date_bs', 'task_type',
             'estimated_hours', 'priority', 'priority_label', 'created_at',
             'submission_count', 'pending_review_count', 'approved_count', 'rejected_count',
@@ -42,6 +44,9 @@ class AssignmentSerializer(serializers.ModelSerializer):
     
     def get_course_name(self, obj):
         return obj.course.title
+
+    def get_teacher_name(self, obj):
+        return obj.created_by.full_name or obj.created_by.username
 
     def get_file_name(self, obj):
         if obj.file:

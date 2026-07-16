@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
     Search, RefreshCw, Upload, X, FileText, Send, MessageSquare,
     Paperclip, ChevronDown, Plus, Pencil, Trash2, ClipboardList, Users, Calendar,
-    CheckCircle2, Clock, XCircle, AlertCircle,
+    CheckCircle2, Clock, XCircle, AlertCircle, Download, Circle,
 } from 'lucide-react'
 import { useTasks, statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { useAuth }         from '../../hooks/useAuth.js'
@@ -103,9 +103,16 @@ function SubmitModal({ task, onClose, onSubmitted }) {
 
                 <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
                     {task.teacher_feedback && (
-                        <div style={{ display:'flex', alignItems:'flex-start', gap:6, padding:'8px 10px', background:statusBg(task), borderRadius:8 }}>
-                            <MessageSquare size={12} style={{ color:statusColor(task), marginTop:1, flexShrink:0 }}/>
-                            <p style={{ fontSize:11.5, color:statusColor(task), margin:0, lineHeight:1.4 }}>{task.teacher_feedback}</p>
+                        <div style={{ display:'flex', alignItems:'flex-start', gap:8, padding:'8px 10px', background:'#f4f0fc', borderLeft:'3px solid #6d4fc2', borderRadius:8 }}>
+                            <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:20, height:20, borderRadius:'50%', background:'#e5daf8', flexShrink:0, marginTop:1 }}>
+                                <MessageSquare size={11} style={{ color:'#6d4fc2' }}/>
+                            </span>
+                            <div style={{ minWidth:0 }}>
+                                <p style={{ fontSize:9.5, fontWeight:700, color:'#6d4fc2', margin:'0 0 2px', textTransform:'uppercase', letterSpacing:'0.05em' }}>
+                                    Teacher Feedback
+                                </p>
+                                <p style={{ fontSize:11.5, color:'var(--color-text-secondary)', margin:0, lineHeight:1.4 }}>{task.teacher_feedback}</p>
+                            </div>
                         </div>
                     )}
 
@@ -116,7 +123,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
                     {task.assignment?.file && (
                         <a href={task.assignment.file} target="_blank" rel="noreferrer" download
                             style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'#6d4fc2', background:'#f0e8ff', padding:'8px 10px', borderRadius:8, textDecoration:'none' }}>
-                            <Paperclip size={12}/> Download assignment document: {task.assignment.file_name || 'file'}
+                            <Download size={12}/> Download assignment document: {task.assignment.file_name || 'file'}
                         </a>
                     )}
 
@@ -564,34 +571,46 @@ function StudentAssignments() {
                             const desc   = t.assignment?.description?.trim()
                             const docFile = t.assignment?.file
                             const docName = t.assignment?.file_name || 'Document'
-                            const hasDetails = Boolean(desc) || Boolean(docFile)
+                            // Every assignment has at least course/teacher/type/due-date info to
+                            // show, so the row is always expandable — not just when a
+                            // description or attached document happens to be present.
+                            const hasDetails = true
                             const courseName = getCourseName(t)
+                            const teacherName = t.assignment?.teacher_name || 'Unknown Teacher'
+                            const taskTypeLabel = TASK_TYPES.find(tt => tt.value === t.assignment?.task_type)?.label || 'Assignment'
                             const importanceVal = t.assignment?.priority
                             const iColor = priorityColor(importanceVal)
                             const iLabel = priorityLabel(importanceVal)
                             const isDone = t.status === 'completed'
+                            const StatusIcon = t.status === 'completed' ? CheckCircle2
+                                : t.status === 'rejected' ? XCircle
+                                : t.status === 'submitted' ? Clock
+                                : t.status === 'overdue'  ? AlertCircle
+                                : Circle
                             const uScore = t.priority_score
                             const uColor = isDone ? 'var(--color-text-placeholder)' : urgencyColor(uScore)
                             const uLabel = isDone ? '—' : urgencyLabel(uScore)
 
                             return (
-                                <div key={t.id} style={{ padding:'14px 20px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-border)' }}>
+                                <div key={t.id} style={{ padding:'14px 20px 14px 17px', background: idx % 2 ? 'var(--color-surface-subtle)' : 'var(--color-surface)', borderBottom:'1px solid var(--color-border)', borderLeft: urgent ? `3px solid ${sb.color}` : '3px solid transparent' }}>
                                     <div className="am-row-grid">
                                         <div
-                                            onClick={() => hasDetails && setExpandedId(isOpen ? null : t.id)}
-                                            style={{ display:'flex', alignItems:'center', gap:6, cursor: hasDetails ? 'pointer' : 'default', minWidth:0 }}>
+                                            onClick={() => setExpandedId(isOpen ? null : t.id)}
+                                            style={{ display:'flex', alignItems:'center', gap:6, cursor:'pointer', minWidth:0 }}>
+                                            <StatusIcon size={11} style={{ color: t.status === 'pending' ? 'var(--color-text-placeholder)' : sb.color, flexShrink:0 }} aria-label={sb.label} title={sb.label}/>
                                             <p title={getTaskTitle(t)} style={{ fontSize:12.5, fontWeight:700, color:'var(--color-text)', margin:0, lineHeight:1.35, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                                 {getTaskTitle(t)}
                                             </p>
-                                            {hasDetails && (
-                                                <ChevronDown size={12} style={{ color:'var(--color-text-placeholder)', flexShrink:0, transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.15s' }}/>
-                                            )}
+                                            <ChevronDown size={12} style={{ color:'var(--color-text-placeholder)', flexShrink:0, transform: isOpen ? 'rotate(180deg)' : 'none', transition:'transform 0.15s' }}/>
                                             {docFile && (
-                                                <Paperclip size={11} style={{ color:'#6d4fc2', flexShrink:0 }} aria-label="Document attached"/>
+                                                <span title="Document attached"
+                                                    style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:18, height:18, borderRadius:5, background:'#f0ebfb', flexShrink:0 }}>
+                                                    <FileText size={10} style={{ color:'#6d4fc2' }} aria-label="Document attached"/>
+                                                </span>
                                             )}
                                         </div>
 
-                                        <span style={{ fontSize:11, fontWeight:600, color:'var(--color-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                        <span title={courseName} style={{ fontSize:11, fontWeight:600, color:'var(--color-primary)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                             {courseName}
                                         </span>
 
@@ -631,38 +650,73 @@ function StudentAssignments() {
                                         </div>
                                     </div>
 
-                                    {t.teacher_feedback && (
-                                        <div style={{ display:'flex', alignItems:'flex-start', gap:5, marginTop:8, padding:'5px 8px', background:sb.bg, borderRadius:7 }}>
-                                            <MessageSquare size={11} style={{ color:sb.color, marginTop:1, flexShrink:0 }}/>
-                                            <p style={{ fontSize:11, color:sb.color, margin:0, lineHeight:1.35 }}>{t.teacher_feedback}</p>
-                                        </div>
-                                    )}
-
                                     {isOpen && hasDetails && (
-                                        <div style={{ marginTop:8, padding:'10px 12px', background:'var(--color-surface)', borderRadius:8 }}>
-                                            <p style={{ fontSize:12.5, fontWeight:700, color:'var(--color-text)', margin:'0 0 6px', lineHeight:1.4 }}>
+                                        <div style={{ marginTop:8, padding:'14px 16px', background:'var(--color-surface-subtle)', border:'1px solid var(--color-border)', borderRadius:10 }}
+                                            className="anim-fade-in">
+                                            <p style={{ fontSize:13, fontWeight:700, color:'var(--color-text)', margin:'0 0 10px', lineHeight:1.4 }}>
                                                 {getTaskTitle(t)}
                                             </p>
+
+                                            {/* Key facts — course, teacher, type, due date — always shown
+                                                regardless of whether a description/file is attached */}
+                                            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom: (desc || docFile || t.teacher_feedback) ? 12 : 0 }}>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'var(--color-primary)', background:'var(--color-primary-light)', padding:'4px 10px', borderRadius:99 }}>
+                                                    <ClipboardList size={11}/> {courseName}
+                                                </span>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', background:'var(--color-surface)', border:'1px solid var(--color-border)', padding:'4px 10px', borderRadius:99 }}>
+                                                    <Users size={11}/> {teacherName}
+                                                </span>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', background:'var(--color-surface)', border:'1px solid var(--color-border)', padding:'4px 10px', borderRadius:99 }}>
+                                                    <FileText size={11}/> {taskTypeLabel}
+                                                </span>
+                                                <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', background:'var(--color-surface)', border:'1px solid var(--color-border)', padding:'4px 10px', borderRadius:99 }}>
+                                                    <Calendar size={11}/> Due {fmtDate(due)}
+                                                </span>
+                                            </div>
+
                                             {desc && (
-                                                <p style={{ fontSize:11.5, color:'var(--color-text-secondary)', margin:0, lineHeight:1.5, whiteSpace:'pre-wrap' }}>
-                                                    {desc}
-                                                </p>
+                                                <div style={{ marginBottom: (docFile || t.teacher_feedback) ? 12 : 0 }}>
+                                                    <p style={{ fontSize:10, fontWeight:700, color:'var(--color-text-placeholder)', margin:'0 0 3px', textTransform:'uppercase', letterSpacing:'0.03em' }}>Description</p>
+                                                    <p style={{ fontSize:12, color:'var(--color-text-secondary)', margin:0, lineHeight:1.65, whiteSpace:'pre-wrap' }}>
+                                                        {desc}
+                                                    </p>
+                                                </div>
                                             )}
+
                                             {docFile && (
-                                                <div style={{ display:'flex', alignItems:'center', gap:14, marginTop: desc?10:0, flexWrap:'wrap' }}>
-                                                    <span style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:11.5, fontWeight:600, color:'var(--color-text-secondary)' }}>
-                                                        <FileText size={12}/> {docName}
+                                                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:10, padding:'7px 10px', background:'var(--color-surface)', border:'1px solid var(--color-border)', borderRadius:7, flexWrap:'wrap', marginBottom: t.teacher_feedback ? 12 : 0 }}>
+                                                    <span style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:11.5, fontWeight:600, color:'var(--color-text-secondary)', minWidth:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                                        <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:22, height:22, borderRadius:6, background:'#efe7fb', flexShrink:0 }}>
+                                                            <FileText size={12} style={{ color:'#6d4fc2' }}/>
+                                                        </span>
+                                                        {docName}
                                                     </span>
-                                                    <a href={docFile} target="_blank" rel="noreferrer"
-                                                        style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
-                                                        <FileText size={12}/> View
-                                                    </a>
+                                                    {/* Only a Download link — the earlier "View" (open-in-new-tab)
+                                                        link didn't reliably load the file, so it's been removed
+                                                        rather than shipped broken. */}
                                                     <a href={docFile} target="_blank" rel="noreferrer" download={docName}
-                                                        style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11.5, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
-                                                        <Paperclip size={12}/> Download
+                                                        style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11.5, fontWeight:700, color:'#fff', background:'var(--color-primary)', padding:'6px 12px', borderRadius:7, textDecoration:'none', flexShrink:0 }}>
+                                                        <Download size={12}/> Download
                                                     </a>
                                                 </div>
                                             )}
+
+                                            {/* Feedback comes last, after the attachment */}
+                                            {t.teacher_feedback && (() => {
+                                                const isRejectedFb = t.status === 'rejected'
+                                                const isApprovedFb = t.status === 'completed'
+                                                const FbIcon = isRejectedFb ? XCircle : isApprovedFb ? CheckCircle2 : MessageSquare
+                                                const fbTitle = isRejectedFb ? 'Rejected' : isApprovedFb ? 'Accepted' : 'Feedback'
+                                                return (
+                                                    <div style={{ padding:'8px 10px', background:sb.bg, borderLeft:`3px solid ${sb.color}`, borderRadius:6 }}>
+                                                        <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:3 }}>
+                                                            <FbIcon size={12} style={{ color:sb.color, flexShrink:0 }}/>
+                                                            <span style={{ fontSize:11, fontWeight:700, color:sb.color }}>{fbTitle}</span>
+                                                        </div>
+                                                        <p style={{ fontSize:11.5, color:'var(--color-text-secondary)', margin:0, lineHeight:1.45 }}>{t.teacher_feedback}</p>
+                                                    </div>
+                                                )
+                                            })()}
                                         </div>
                                     )}
                                 </div>
