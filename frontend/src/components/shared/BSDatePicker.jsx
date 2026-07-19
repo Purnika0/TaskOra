@@ -9,6 +9,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
 import { nepalNow, todayNepalISO } from '../../utils/helpers.js'
+import { useBSCalendar } from '../../hooks/useHolidays.js'
 
 const RED = '#DC2626'
 
@@ -42,7 +43,26 @@ export default function BSDatePicker({ value, onChange, placeholder = 'Select da
         return () => document.removeEventListener('mousedown', handleClick)
     }, [])
 
-    const days     = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
+    const rawDays  = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
+    const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
+    // Same merge as CalendarPage.jsx and the dashboard mini calendars —
+    // backend holiday data (DB-editable) overrides the hardcoded
+    // NEPAL_HOLIDAYS fallback when available, so the day-picker's red
+    // weekend/holiday coloring and hover title stay accurate.
+    const days = useMemo(() => {
+        if (!backendCal?.days?.length) return rawDays
+        const bkMap = {}
+        backendCal.days.forEach(d => { bkMap[d.day_bs] = d })
+        return rawDays.map(day => {
+            const bk = bkMap[day.bsDay]
+            if (!bk) return day
+            return {
+                ...day,
+                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+            }
+        })
+    }, [rawDays, backendCal])
     const firstDow = days.length ? days[0].dow : 0
     const monthName = BS_MONTH_NAMES[cur.m - 1]
     const today = todayISO()

@@ -339,11 +339,15 @@ Holidays = RED, Assignment due dates = BLUE, Today = primary blue.
     box-shadow: 0 2px 8px rgba(37,99,235,0.30);
 }
 
-/* Today + holiday */
+/* Today + holiday — today always renders fully in the primary color,
+   regardless of also being a holiday/weekend, so 'today' stays
+   unambiguous at a glance (previously this fell back to plain holiday-red,
+   making today indistinguishable from any other holiday cell). */
 .cal-day.today.holiday {
-    background: #DC2626;
-    border-color: #DC2626;
+    background: var(--color-primary);
+    border-color: var(--color-primary);
     color: #FFFFFF;
+    box-shadow: 0 2px 8px rgba(37,99,235,0.30);
 }
 
 /* Saturday — soft red tint */
@@ -357,7 +361,8 @@ Holidays = RED, Assignment due dates = BLUE, Today = primary blue.
     color: #E53E3E;
 }
 
-/* Assignment due date — blue dot indicator */
+/* Assignment due date — purple dot indicator (distinct from the primary
+   color used for 'today', so the two legend keys aren't the same color) */
 .cal-day.has-assignment::after {
     content: '';
     position: absolute;
@@ -367,7 +372,7 @@ Holidays = RED, Assignment due dates = BLUE, Today = primary blue.
     width: 4px;
     height: 4px;
     border-radius: 50%;
-    background: var(--color-primary);
+    background: #5452e4;
 }
 .cal-day.today.has-assignment::after {
     background: rgba(255,255,255,0.8);

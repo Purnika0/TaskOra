@@ -146,12 +146,21 @@ class MyCoursesView(generics.ListAPIView):
 
 
 class CourseStudentsView(generics.ListAPIView):
+    """Teacher (own course) or Admin — roster of a course's enrolled students."""
     serializer_class = EnrollmentSerializer
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         course_id = self.kwargs['pk']
         user = self.request.user
+        # Previously a student calling this endpoint just got an empty list
+        # (the `course__teacher=user` filter can never match a student), which
+        # returns 200 rather than a clear 403. Explicit role check instead, so
+        # the behavior matches the docstring rather than relying on the query
+        # happening to filter down to nothing.
+        if user.role not in ('admin', 'teacher'):
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("Only the course's teacher or an admin can view this roster.")
         if user.role == 'admin':
             return Enrollment.objects.filter(course_id=course_id)
         return Enrollment.objects.filter(course_id=course_id, course__teacher=user)

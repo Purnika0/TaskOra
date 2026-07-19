@@ -49,9 +49,13 @@ export function priorityColor(n) {
     const level = typeof n === 'number' ? priorityToLevel(n) : n
     return { high: '#e05252', medium: '#d4a93c', low: '#3cb87a' }[level] ?? '#b0a898'
 }
-export function priorityLabel(n) {
-    return priorityToLevel(typeof n === 'number' ? n : levelToPriority(n))
-}
+// NOTE: there used to be a priorityLabel(n) here that collapsed the 5-level
+// Assignment.priority field (1-5, "Medium-High" etc.) into just 3 buckets
+// ("low"/"medium"/"high"). It was used for a couple of badges while the rest
+// of the app correctly displayed the API's 5-level priority_label, so the
+// same assignment could show two different words for the same value on one
+// screen. Removed — use `assignment.priority_label` from the API, or
+// `priorityLabelFor()` from constants/assignmentChoices.js, everywhere.
 
 // ── Task title ──────────────────────────────────────────────────────────────
 // Personal tasks removed from backend — display_title or assignment.title
@@ -151,6 +155,25 @@ export function fmtDate(s) {
     }
 }
 
+// ── Due date — prefer the backend's BS conversion ───────────────────────────
+// AssignmentSerializer and TaskSerializer both already send due_date_bs
+// (computed server-side via holidays/bs_calendar.py, wrapping the real
+// nepali_datetime package). Previously every page recomputed this itself via
+// adToBS() instead of reading the value the backend already sent — this is
+// the one date the frontend can read straight from the API rather than
+// convert, so use it. Accepts a Task (checks task.due_date_bs, then
+// task.assignment.due_date_bs) or an Assignment (due_date_bs directly).
+// Falls back to fmtDate() for the rare object that doesn't carry due_date_bs,
+// so nothing breaks if this is ever called on something else.
+export function dueDateBS(entity) {
+    const bs = entity?.due_date_bs || entity?.assignment?.due_date_bs
+    if (bs && bs.year && bs.month && bs.day) {
+        const mn = BS_MONTH_NAMES[bs.month - 1]
+        return `${bs.day} ${mn?.en} ${bs.year}`
+    }
+    return fmtDate(getTaskDueDate(entity) || entity?.due_date)
+}
+
 // ── Format date + time — BS date, Nepal-local time ──────────────────────────
 // For timestamp fields (submitted_at, created_at, date_joined, etc.) where
 // the time of day also matters. Date portion is always BS.
@@ -182,4 +205,23 @@ export function apiError(err) {
     const messages = Object.entries(d)
         .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
     return messages.join(' | ')
+}
+
+// ── Student display name — shared by StudentList and ReviewPanel ──────────────
+// Usernames may be dotted with a numeric suffix (e.g. "john.doe.3"); falls back
+// to a title-cased version of the username when no display name is set.
+export function formatStudentDisplayName(sub) {
+    const rawUsername = sub.student_username || ""
+    const formattedName = rawUsername
+        ? rawUsername
+            .replace(/\.\d+$/, "")
+            .split(".")
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ")
+        : ""
+
+    return (sub.student_name && sub.student_name.trim() !== "") ? sub.student_name :
+        formattedName ? formattedName :
+        rawUsername ? rawUsername :
+        `Student #${sub.student || sub.id}`
 }

@@ -8,12 +8,12 @@ import {
 import { useAuth }                         from '../../hooks/useAuth.js'
 import { useTasks, isPending, isRejected, statusLabel, statusBg, statusColor } from '../../hooks/useTasks.js'
 import { useStudentSummary }               from '../../hooks/useAnalytics.js'
-import { useUpcomingHolidays, useToday }   from '../../hooks/useHolidays.js'
+import { useUpcomingHolidays, useToday, useBSCalendar }   from '../../hooks/useHolidays.js'
 import { DashboardFooter }                 from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock }        from '../../components/shared/Loader.jsx'
 import { useToast }                        from '../../context/ToastContext.jsx'
 import tasksService                        from '../../services/tasks.service.js'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, nepalNow, nepalHour, todayNepalISO } from '../../utils/helpers.js'
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, dueDateBS, nepalNow, nepalHour, todayNepalISO } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { TASK_TYPES } from '../../constants/assignmentChoices.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS }            from '../../utils/bsCalendar.js'
@@ -25,17 +25,10 @@ const DOW_LABELS = ['S','M','T','W','T','F','S']
 // Assignments page (/app/assignments), linked to below the table.
 const DASHBOARD_ROW_LIMIT = 5
 
-// ── Convert a plain AD 'YYYY-MM-DD' date string to a short BS date string
-// (e.g. "15 Shrawan 2083"), interpreted in Nepal local time (+05:45) —
-// same convention as BSCalWidget below — so every date shown on this
-// dashboard (calendar grid, holidays, upcoming assignments) reads in the
-// same Nepali/BS format instead of mixing BS and raw AD strings.
-function formatBSDate(iso) {
-    if (!iso) return 'No date'
-    const bs = adToBS(new Date(`${iso}T00:00:00+05:45`))
-    const monthName = BS_MONTH_NAMES[bs.month - 1]
-    return `${bs.day} ${monthName?.en || ''} ${bs.year}`
-}
+// (formatBSDate removed — this dashboard used to hand-roll its own AD→BS
+// conversion for due dates, duplicating both bsCalendar.js's adToBS() and
+// the backend's own conversion. Due dates now use dueDateBS() from
+// helpers.js, which reads the backend's due_date_bs field directly.)
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon, accent }) {
@@ -72,7 +65,24 @@ function BSCalWidget({ tasks }) {
 
     const prev = () => setCur(c => c.m === 1  ? { y:c.y-1, m:12 } : { y:c.y, m:c.m-1 })
     const next = () => setCur(c => c.m === 12 ? { y:c.y+1, m:1  } : { y:c.y, m:c.m+1 })
-    const days        = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
+    const rawDays     = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
+    const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
+    // Same merge as CalendarPage.jsx / TeacherDashboard.jsx: backend holiday
+    // data overrides the hardcoded NEPAL_HOLIDAYS fallback when available.
+    const days = useMemo(() => {
+        if (!backendCal?.days?.length) return rawDays
+        const bkMap = {}
+        backendCal.days.forEach(d => { bkMap[d.day_bs] = d })
+        return rawDays.map(day => {
+            const bk = bkMap[day.bsDay]
+            if (!bk) return day
+            return {
+                ...day,
+                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+            }
+        })
+    }, [rawDays, backendCal])
     const firstDow    = days.length ? days[0].dow : 0
     const bsMonthName = BS_MONTH_NAMES[cur.m - 1]
 
@@ -126,7 +136,7 @@ function BSCalWidget({ tasks }) {
             <div className="cal-legend" style={{ marginTop:'auto' }}>
                 <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:'#DC2626' }}/>Holiday/Weekend</div>
                 <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:'var(--color-primary)' }}/>Today</div>
-                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ width:6, height:6, background:'var(--color-primary)' }}/>Assignment due</div>
+                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ width:6, height:6, background:'#5452e4' }}/>Assignment due</div>
             </div>
         </div>
     )
@@ -204,7 +214,7 @@ function UpcomingWidget({ tasks }) {
                                     <p style={{ fontSize:12, fontWeight:600, color:'var(--color-text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                         {getTaskTitle(t)}
                                     </p>
-                                    <p style={{ fontSize:10, color:'var(--color-text-placeholder)', margin:'1px 0 0' }}>{formatBSDate(due)}</p>
+                                    <p style={{ fontSize:10, color:'var(--color-text-placeholder)', margin:'1px 0 0' }}>{dueDateBS(t)}</p>
                                 </div>
                                 <span style={{ fontSize:10, fontWeight:600, padding:'3px 8px', background:bg, color, borderRadius:99, whiteSpace:'nowrap' }}>
                                     {statusLabel(t)}
@@ -418,7 +428,10 @@ function AssignmentTable({ tasks, onSubmit }) {
         // work is done and shouldn't crowd out what still needs attention,
         // especially with the dashboard's 5-row cap. Array.sort is stable,
         // so the sortBy ordering chosen above is preserved within each group.
-        if (tab === 'all') {
+        // Skipped for Title (A-Z): grouping by completion status first would
+        // split one alphabetical list into two separately-alphabetized
+        // blocks, which looks like A-Z sorting isn't doing anything.
+        if (tab === 'all' && sortBy !== 'title') {
             base.sort((a, b) => (a.status === 'completed' ? 1 : 0) - (b.status === 'completed' ? 1 : 0))
         }
         return base
@@ -517,7 +530,11 @@ function AssignmentTable({ tasks, onSubmit }) {
                             const taskTypeLabel = TASK_TYPES.find(tt => tt.value === t.assignment?.task_type)?.label || 'Assignment'
                             const importanceVal = t.assignment?.priority
                             const iColor = priorityColor(importanceVal)
-                            const iLabel = priorityLabel(importanceVal)
+                            // Use the backend's 5-level priority_label (e.g. "Medium-High")
+                            // instead of re-deriving a coarser 3-bucket label here, which
+                            // used to show a different word than the same value's badge
+                            // elsewhere in the app.
+                            const iLabel = t.assignment?.priority_label || 'Medium'
                             const isDone = t.status === 'completed'
                             const StatusIcon = t.status === 'completed' ? CheckCircle2
                                 : t.status === 'rejected' ? XCircle
@@ -564,7 +581,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                                         </div>
 
                                         <span style={{ fontSize:11.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, whiteSpace:'nowrap' }}>
-                                            {formatBSDate(due)}
+                                            {dueDateBS(t)}
                                             {urgent && d !== null && d < 0 && <span style={{ display:'block', fontSize:10 }}>({Math.abs(d)}d late)</span>}
                                         </span>
 
@@ -609,7 +626,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                                                     <FileText size={11}/> {taskTypeLabel}
                                                 </span>
                                                 <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'#4a4238', background:'var(--color-surface-subtle)', border:'1px solid var(--color-cream-border)', padding:'4px 10px', borderRadius:99 }}>
-                                                    <Calendar size={11}/> Due {formatBSDate(due)}
+                                                    <Calendar size={11}/> Due {dueDateBS(t)}
                                                 </span>
                                             </div>
 

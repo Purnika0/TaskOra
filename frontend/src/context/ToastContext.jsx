@@ -7,6 +7,18 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { CheckCircle2, XCircle, AlertTriangle, X } from 'lucide-react'
 
+const ICON = {
+    success: <CheckCircle2 size={15} className="text-[#3cb87a] shrink-0" />,
+    error:   <XCircle      size={15} className="text-[#e05252] shrink-0" />,
+    warning: <AlertTriangle size={15} className="text-[#d4a93c] shrink-0" />,
+}
+
+const BORDER = {
+    success: 'border-l-[3px] border-[#3cb87a]',
+    error:   'border-l-[3px] border-[#e05252]',
+    warning: 'border-l-[3px] border-[#d4a93c]',
+}
+
 const ToastContext = createContext(null)
 
 export function ToastProvider({ children }) {
@@ -28,18 +40,6 @@ export function ToastProvider({ children }) {
         success: (msg, dur) => show(msg, 'success', dur),
         error:   (msg, dur) => show(msg, 'error',   dur || 5000),
         warning: (msg, dur) => show(msg, 'warning', dur),
-    }
-
-    const ICON = {
-        success: <CheckCircle2 size={15} className="text-[#3cb87a] shrink-0" />,
-        error:   <XCircle      size={15} className="text-[#e05252] shrink-0" />,
-        warning: <AlertTriangle size={15} className="text-[#d4a93c] shrink-0" />,
-    }
-
-    const BORDER = {
-        success: 'border-l-[3px] border-[#3cb87a]',
-        error:   'border-l-[3px] border-[#e05252]',
-        warning: 'border-l-[3px] border-[#d4a93c]',
     }
 
     return (

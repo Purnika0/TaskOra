@@ -4,9 +4,15 @@ Task = one student's personal instance of an Assignment (their submission,
 status, and score). This split lets one Assignment fan out into many Tasks
 (one per enrolled student) without duplicating the assignment's own data.
 """
+from django.core.validators import FileExtensionValidator
 from django.db import models
 from users.models import User
 from courses.models import Course
+from .validators import (
+    ASSIGNMENT_FILE_EXTENSIONS,
+    SUBMISSION_FILE_EXTENSIONS,
+    validate_upload_size,
+)
 
 
 class Assignment(models.Model):
@@ -45,7 +51,15 @@ class Assignment(models.Model):
 
     # Optional reference document the teacher attaches to the assignment
     # (instructions, handout, rubric, etc.) — visible/downloadable by students.
-    file = models.FileField(upload_to='assignments/', null=True, blank=True)
+    # Type + size enforced server-side (see tasks/validators.py) — the
+    # frontend's accept attribute alone is not a security boundary.
+    file = models.FileField(
+        upload_to='assignments/', null=True, blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=ASSIGNMENT_FILE_EXTENSIONS),
+            validate_upload_size,
+        ],
+    )
 
     def __str__(self):
         return f"{self.title} ({self.course.title})"
@@ -80,10 +94,16 @@ class Task(models.Model):
         db_index=True,
     )
 
-    # Student submission
+    # Student submission — type + size enforced server-side (see
+    # tasks/validators.py); the frontend's accept attribute alone is not a
+    # security boundary.
     submission_file = models.FileField(
         upload_to='submissions/',
-        null=True, blank=True
+        null=True, blank=True,
+        validators=[
+            FileExtensionValidator(allowed_extensions=SUBMISSION_FILE_EXTENSIONS),
+            validate_upload_size,
+        ],
     )
     submission_text = models.TextField(blank=True)
     submitted_at    = models.DateTimeField(null=True, blank=True)

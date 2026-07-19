@@ -7,7 +7,7 @@ import {
     AlertCircle,
     Send,
 } from "lucide-react"
-import { fmtDateTime } from "../../utils/helpers.js"
+import { fmtDateTime, formatStudentDisplayName } from "../../utils/helpers.js"
 
 export default function ReviewPanel({
     submission,
@@ -78,23 +78,8 @@ export default function ReviewPanel({
         }
     })()
 
-    // Usernames may be dotted with a numeric suffix (e.g. "john.doe.3");
-    // fall back to a title-cased version of the username when no display
-    // name is set.
-    const rawUsername = submission.student_username || "";
-    const formattedName = rawUsername
-        ? rawUsername
-            .replace(/\.\d+$/, "") 
-            .split(".")            
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1)) 
-            .join(" ")             
-        : "";
-
-    const studentDisplayName = 
-        (submission.student_name && submission.student_name.trim() !== "") ? submission.student_name :
-        formattedName ? formattedName :
-        rawUsername ? rawUsername :
-        `Student #${submission.student || submission.id}`;
+    // Student's display name, formatted from username as fallback
+    const studentDisplayName = formatStudentDisplayName(submission);
 
     const isPendingReview = submission.status === "submitted" && submission.submitted_at;
 

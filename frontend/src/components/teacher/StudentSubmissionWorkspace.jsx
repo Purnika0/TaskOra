@@ -16,10 +16,6 @@ export default function StudentSubmissionWorkspace({ assignment, onClose }) {
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    load();
-  }, [assignment.id]);
-
   async function load() {
     try {
       setLoading(true);
@@ -27,13 +23,16 @@ export default function StudentSubmissionWorkspace({ assignment, onClose }) {
       const list = Array.isArray(data) ? data : [];
       setSubmissions(list);
       if (list.length) {
-        setSelected(list[0]);
-        setFeedback(list[0].teacher_feedback || "");
+        setSelected(list[0]); // feedback is synced by the effect below
       }
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    load();
+  }, [assignment.id]);
 
   useEffect(() => {
     if (!selected) return;

@@ -24,15 +24,7 @@ export default function SubmissionViewer({ submission }) {
         )
     }
 
-    const API =
-    import.meta.env.VITE_API_URL ||
-    "http://127.0.0.1:8000"
-
-    const file = submission.submission_file
-    ? submission.submission_file.startsWith("http")
-        ? submission.submission_file
-        : API + submission.submission_file
-    : ""
+    const file = submission.submission_file || ""
 
     const ext = file
         ? file.split(".").pop().toLowerCase()

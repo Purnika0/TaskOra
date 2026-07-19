@@ -96,9 +96,8 @@
         const freshUser = await authService.login({ credential, password, portalRole })
         setUser(freshUser)                          // role is fully resolved + gated
         return freshUser
-        } catch (err) {
-        // Re-throw ALL errors (including ROLE_MISMATCH) so AuthPage can handle them.
-        throw err
+        // Errors (including ROLE_MISMATCH) propagate automatically to the caller
+        // so AuthPage can handle them — no catch needed here.
         } finally {
         setLoading(false)                           // always unblock, even on error
         }

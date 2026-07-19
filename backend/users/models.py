@@ -16,6 +16,11 @@ import random
 
 
 class User(AbstractUser):
+    # username uses Django's inherited default validator (UnicodeUsernameValidator:
+    # letters, digits, and @ . + - _). The frontend's signup regex is narrower
+    # (/^[a-zA-Z0-9_.]+$/ in AuthPage.jsx — no @, +, or -), so nothing invalid
+    # can reach here today, but the two rules are typed independently. If this
+    # validator ever changes, check AuthPage.jsx's regex too (and vice versa).
     class Role(models.TextChoices):
         STUDENT = 'student', 'Student'
         TEACHER = 'teacher', 'Teacher'

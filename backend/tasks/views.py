@@ -5,7 +5,9 @@ endpoints (student and teacher side). See tasks/urls.py for routes.
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import AllowAny
 from django.shortcuts import get_object_or_404
+from django.http import FileResponse, Http404
 from django.db import models
 from django.db.models import Count, Q, F
 
@@ -17,7 +19,9 @@ from .serializers import (
     TaskReviewSerializer,
 )
 from .priority import calculate_priority_score, HolidayCountCache
+from .file_access import read_download_token
 from courses.models import Enrollment
+from users.models import User
 from users.permissions import IsTeacher, IsStudent
 from notifications.services import (
     notify_new_assignment,
@@ -191,7 +195,7 @@ class StudentSubmitTaskView(APIView):
         if serializer.is_valid():
             serializer.save()
             notify_new_submission(task, is_resubmission=is_resubmission, is_edit=is_edit)
-            return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
+            return Response(TaskSerializer(task, context={'request': request}).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -299,7 +303,7 @@ class TeacherReviewTaskView(APIView):
         if serializer.is_valid():
             serializer.save()
             notify_submission_reviewed(task, approved=(task.status == Task.Status.COMPLETED))
-            return Response(TaskSerializer(task).data, status=status.HTTP_200_OK)
+            return Response(TaskSerializer(task, context={'request': request}).data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -317,4 +321,90 @@ class MarkOverdueTasksView(APIView):
         return Response(
             {"detail": f"{updated} task(s) marked as overdue."},
             status=status.HTTP_200_OK
+        )
+
+
+def _can_access_assignment_file(user, assignment):
+    if user.role == 'admin':
+        return True
+    if user.role == 'teacher':
+        return assignment.created_by_id == user.id
+    if user.role == 'student':
+        return Enrollment.objects.filter(student_id=user.id, course_id=assignment.course_id).exists()
+    return False
+
+
+def _can_access_submission_file(user, task):
+    if user.role == 'admin':
+        return True
+    if user.role == 'teacher':
+        return task.assignment.created_by_id == user.id
+    if user.role == 'student':
+        return task.student_id == user.id
+    return False
+
+
+class AssignmentFileDownloadView(APIView):
+    """
+    Serves Assignment.file to whoever a signed download token (see
+    tasks/file_access.py, issued by AssignmentSerializer.get_file) was
+    issued for — the assignment's teacher, an admin, or a student
+    currently enrolled in the course. Replaces direct /media/ access,
+    which had no access control at all.
+
+    permission_classes is AllowAny at the DRF level because auth here
+    comes from the signed token itself (which encodes who it was issued
+    for and expires after 10 minutes), not from the request's session —
+    the actual permission check happens below, re-verified against the
+    token's user on every request rather than trusted from issue time.
+
+    GET /api/tasks/assignments/<pk>/file/?token=...
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        payload = read_download_token(request.query_params.get('token'))
+        if not payload or payload.get('kind') != 'assignment' or payload.get('pk') != pk:
+            raise Http404
+        try:
+            user = User.objects.get(pk=payload['user_id'])
+        except User.DoesNotExist:
+            raise Http404
+
+        assignment = get_object_or_404(Assignment, pk=pk)
+        if not assignment.file or not _can_access_assignment_file(user, assignment):
+            raise Http404
+
+        return FileResponse(
+            assignment.file.open('rb'),
+            filename=assignment.file.name.rsplit('/', 1)[-1],
+        )
+
+
+class TaskSubmissionFileDownloadView(APIView):
+    """
+    Serves Task.submission_file — same signed-token pattern as
+    AssignmentFileDownloadView above, scoped to the task's own student,
+    the assignment's teacher, or an admin.
+
+    GET /api/tasks/<pk>/submission-file/?token=...
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, pk):
+        payload = read_download_token(request.query_params.get('token'))
+        if not payload or payload.get('kind') != 'submission' or payload.get('pk') != pk:
+            raise Http404
+        try:
+            user = User.objects.get(pk=payload['user_id'])
+        except User.DoesNotExist:
+            raise Http404
+
+        task = get_object_or_404(Task, pk=pk)
+        if not task.submission_file or not _can_access_submission_file(user, task):
+            raise Http404
+
+        return FileResponse(
+            task.submission_file.open('rb'),
+            filename=task.submission_file.name.rsplit('/', 1)[-1],
         )

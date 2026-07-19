@@ -81,7 +81,19 @@ function CurrentPasswordChangeForm() {
             toast.success('Password changed successfully')
             setCurrentPw(''); setNewPw(''); setConfirmPw('')
         } catch (err) {
-            setErrors({ form: apiError(err) })
+            const data = err.response?.data
+            // ChangePasswordSerializer returns errors keyed by field name
+            // (current_password / new_password) — including Django's
+            // AUTH_PASSWORD_VALIDATORS rejections on new_password, which the
+            // frontend's own length-only check can't predict. Route those
+            // under the matching field instead of the generic form banner.
+            if (data?.current_password) {
+                setErrors({ current: Array.isArray(data.current_password) ? data.current_password[0] : data.current_password })
+            } else if (data?.new_password) {
+                setErrors({ new: Array.isArray(data.new_password) ? data.new_password[0] : data.new_password })
+            } else {
+                setErrors({ form: apiError(err) })
+            }
         } finally { setSaving(false) }
     }
 

@@ -4,8 +4,9 @@
 // (0-1 float, recomputed live on every fetch).
 //
 // This is deliberately separate from assignment.priority (the teacher-set
-// *importance*, 1-5, static), which already has its own display helpers in
-// helpers.js: priorityToLevel / priorityColor / priorityLabel. Don't merge
+// *importance*, 1-5, static), which is displayed via the API's
+// priority_label (or priorityLabelFor() in constants/assignmentChoices.js),
+// with priorityColor() in helpers.js for its badge color. Don't merge
 // the two — they answer different questions:
 //   • Importance (helpers.js)   → "how much weight did the teacher give this"
 //   • Urgency    (this file)    → "how urgent is this right now"

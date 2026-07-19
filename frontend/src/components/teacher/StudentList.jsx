@@ -1,5 +1,5 @@
 import { User, CheckCircle2, Clock3, XCircle, AlertCircle } from "lucide-react"
-import { fmtDateTime } from "../../utils/helpers.js"
+import { fmtDateTime, formatStudentDisplayName } from "../../utils/helpers.js"
 
 export default function StudentList({
     loading,
@@ -129,24 +129,8 @@ export default function StudentList({
         const active = selected?.id === sub.id
         const badge = statusMeta(sub)
 
-        // 1. Get the username or raw string fallback
-        const rawUsername = sub.student_username || "";
-
-        // 2. Format the username to look like a clean name (e.g., "bishala.bajracharya.82" -> "Bishala Bajracharya")
-        const formattedName = rawUsername
-            ? rawUsername
-                .replace(/\.\d+$/, "") // Removes trailing numbers like .82
-                .split(".")            // Splits by dots
-                .map(word => word.charAt(0).toUpperCase() + word.slice(1)) // Capitalizes words
-                .join(" ")             // Joins with a space
-            : "";
-
-        // 3. Select the best available display name
-        const studentDisplayName = 
-            (sub.student_name && sub.student_name.trim() !== "") ? sub.student_name :
-            formattedName ? formattedName :
-            rawUsername ? rawUsername :
-            `Student #${sub.student || sub.id}`;
+        // Student's display name, formatted from username as fallback
+        const studentDisplayName = formatStudentDisplayName(sub);
         return (
             <div
                 key={sub.id}

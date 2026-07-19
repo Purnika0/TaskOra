@@ -15,4 +15,8 @@ urlpatterns = [
     path('assignment/<int:assignment_pk>/submissions/', views.TeacherAssignmentTaskListView.as_view(), name='assignment-submissions'),
     path('teacher/submissions/', views.TeacherSubmissionsInboxView.as_view(), name='teacher-submissions-inbox'),
     path('mark-overdue/', views.MarkOverdueTasksView.as_view(),          name='mark-overdue'),
+
+    # Signed, permission-checked file downloads — see tasks/file_access.py
+    path('assignments/<int:pk>/file/', views.AssignmentFileDownloadView.as_view(),      name='assignment-file-download'),
+    path('<int:pk>/submission-file/',  views.TaskSubmissionFileDownloadView.as_view(),  name='task-submission-file-download'),
 ]

@@ -91,6 +91,7 @@ export function SiteFooter() {
                         </>
                     ) : (
                         <>
+                            <FtLink to="/auth?view=login">Dashboard</FtLink>
                             <FtLink to="/auth?view=login">Assignments</FtLink>
                             <FtLink to="/auth?view=login">Calendar</FtLink>
                             <FtLink to="/auth?view=login">Analytics</FtLink>

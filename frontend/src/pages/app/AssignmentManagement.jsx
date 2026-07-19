@@ -13,7 +13,7 @@ import coursesService      from '../../services/courses.service.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker         from '../../components/shared/BSDatePicker.jsx'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, priorityLabel, fmtDate } from '../../utils/helpers.js'
+import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, dueDateBS } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { TASK_TYPES, PRIORITY_CHOICES } from '../../constants/assignmentChoices.js'
 
@@ -580,7 +580,12 @@ function StudentAssignments() {
                             const taskTypeLabel = TASK_TYPES.find(tt => tt.value === t.assignment?.task_type)?.label || 'Assignment'
                             const importanceVal = t.assignment?.priority
                             const iColor = priorityColor(importanceVal)
-                            const iLabel = priorityLabel(importanceVal)
+                            // Use the backend's 5-level priority_label (e.g. "Medium-High")
+                            // — same field already used for the assignment card badge
+                            // elsewhere on this page — instead of re-deriving a coarser
+                            // 3-bucket label here, which used to show a different word
+                            // for the same priority value.
+                            const iLabel = t.assignment?.priority_label || 'Medium'
                             const isDone = t.status === 'completed'
                             const StatusIcon = t.status === 'completed' ? CheckCircle2
                                 : t.status === 'rejected' ? XCircle
@@ -625,7 +630,7 @@ function StudentAssignments() {
                                         </div>
 
                                         <span style={{ fontSize:11.5, color: urgent?'var(--color-red)':'var(--color-text-secondary)', fontWeight: urgent?600:400, whiteSpace:'nowrap' }}>
-                                            {fmtDate(due)}
+                                            {dueDateBS(t)}
                                             {urgent && d !== null && d < 0 && <span style={{ display:'block', fontSize:10 }}>({Math.abs(d)}d late)</span>}
                                         </span>
 
@@ -670,7 +675,7 @@ function StudentAssignments() {
                                                     <FileText size={11}/> {taskTypeLabel}
                                                 </span>
                                                 <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', background:'var(--color-surface)', border:'1px solid var(--color-border)', padding:'4px 10px', borderRadius:99 }}>
-                                                    <Calendar size={11}/> Due {fmtDate(due)}
+                                                    <Calendar size={11}/> Due {dueDateBS(t)}
                                                 </span>
                                             </div>
 
@@ -931,7 +936,7 @@ function TeacherAssignments() {
                                     <div style={{ display:'flex', alignItems:'center', gap:5 }}>
                                         <Calendar size={11} style={{ color:'var(--color-text-placeholder)' }} aria-hidden="true"/>
                                         <span style={{ fontSize:11.5, color: urgent ? 'var(--color-red)' : 'var(--color-text-secondary)', fontWeight: urgent?600:400 }}>
-                                            Due {fmtDate(a.due_date)} {urgent && `(${Math.abs(d)}d late)`}
+                                            Due {dueDateBS(a)} {urgent && `(${Math.abs(d)}d late)`}
                                         </span>
                                     </div>
                                     {enrolledCount != null && (

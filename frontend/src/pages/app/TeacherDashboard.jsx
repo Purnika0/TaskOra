@@ -8,7 +8,7 @@ CheckCircle2, X, Calendar, Upload, BookOpen,
 ClipboardList,
 Paperclip, RefreshCw, XCircle, ArrowRight, Trash2
 } from 'lucide-react'
-import { useToday }       from '../../hooks/useHolidays.js'
+import { useToday, useBSCalendar } from '../../hooks/useHolidays.js'
 import { useStudentRanking, useStudentGroups, useOutliers } from '../../hooks/useAnalytics.js'
 import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
@@ -16,7 +16,7 @@ import { useToast }       from '../../context/ToastContext.jsx'
 import { useAuth }        from '../../hooks/useAuth.js'
 import tasksService       from '../../services/tasks.service.js'
 import coursesService     from '../../services/courses.service.js'
-import { apiError, priorityColor, fmtDate, nepalNow, nepalHour } from '../../utils/helpers.js'
+import { apiError, priorityColor, dueDateBS, nepalNow, nepalHour } from '../../utils/helpers.js'
 import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
 import StudentSubmissionWorkspace from "../../components/teacher/StudentSubmissionWorkspace"
@@ -56,7 +56,27 @@ function BSCalWidget({ assignments }) {
 
     const prev = () => setCur(c => c.m === 1  ? { y:c.y-1, m:12 } : { y:c.y, m:c.m-1 })
     const next = () => setCur(c => c.m === 12 ? { y:c.y+1, m:1  } : { y:c.y, m:c.m+1 })
-    const days        = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
+    const rawDays     = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
+    const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
+    // Backend holiday data (DB-editable via the admin) overrides the
+    // hardcoded NEPAL_HOLIDAYS fallback baked into buildMonthDays whenever
+    // it's available — same merge CalendarPage.jsx uses, so this mini
+    // calendar's holiday tooltip stays in sync with the admin-managed list
+    // instead of only ever showing the hand-typed 2081–2084 BS table.
+    const days = useMemo(() => {
+        if (!backendCal?.days?.length) return rawDays
+        const bkMap = {}
+        backendCal.days.forEach(d => { bkMap[d.day_bs] = d })
+        return rawDays.map(day => {
+            const bk = bkMap[day.bsDay]
+            if (!bk) return day
+            return {
+                ...day,
+                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+            }
+        })
+    }, [rawDays, backendCal])
     const firstDow    = days.length ? days[0].dow : 0
     const bsMonthName = BS_MONTH_NAMES[cur.m - 1]
 
@@ -116,7 +136,7 @@ function BSCalWidget({ assignments }) {
             <div className="cal-legend" style={{ marginTop:'auto', flexWrap:'wrap', gap:'5px 12px' }}>
                 <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:RED }}/>Holiday/Weekend</div>
                 <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:'var(--color-primary)' }}/>Today</div>
-                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ width:6, height:6, background:'var(--color-primary)' }}/>Assignment due</div>
+                <div className="cal-legend-item"><span className="cal-legend-dot" style={{ width:6, height:6, background:'#5452e4' }}/>Assignment due</div>
             </div>
         </div>
     )
@@ -550,7 +570,7 @@ return (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                                                 {due && (
                                                     <span style={{ fontSize: 10, color: isLate ? '#c0392b' : '#8a7e6e', display: 'flex', alignItems: 'center', gap: 3 }}>
-                                                        <Calendar size={9} /> {fmtDate(due)}{isLate && ' (past)'}
+                                                        <Calendar size={9} /> {dueDateBS(a)}{isLate && ' (past)'}
                                                     </span>
                                                 )}
                                                 {a.submission_time && (

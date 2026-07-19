@@ -8,6 +8,7 @@ from rest_framework import serializers
 from django.utils import timezone
 from .models import Assignment, Task
 from .priority import calculate_priority_score
+from .file_access import make_download_token
 from holidays.bs_calendar import ad_to_bs
 
 
@@ -21,6 +22,11 @@ class AssignmentSerializer(serializers.ModelSerializer):
     approved_count        = serializers.SerializerMethodField()
     rejected_count        = serializers.SerializerMethodField()
     file_name             = serializers.SerializerMethodField()
+    # Overrides the model's plain FileField representation (a bare
+    # /media/... URL with no access control) with a signed, short-lived
+    # download link — see tasks/file_access.py and
+    # AssignmentFileDownloadView in tasks/views.py.
+    file                   = serializers.SerializerMethodField()
 
     # Human-readable label for the teacher-set importance (1-5), e.g. "Medium-High".
     # This is the *importance* the teacher assigned — not to be confused with
@@ -52,6 +58,15 @@ class AssignmentSerializer(serializers.ModelSerializer):
         if obj.file:
             return obj.file.name.split('/')[-1]
         return None
+
+    def get_file(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        if not obj.file or not user or not user.is_authenticated:
+            return None
+        token = make_download_token('assignment', obj.pk, user.id)
+        path = f'/api/tasks/assignments/{obj.pk}/file/?token={token}'
+        return request.build_absolute_uri(path) if request else path
 
     def get_submission_count(self, obj):
         # Annotated by the view's queryset when listing; fall back otherwise.
@@ -85,6 +100,9 @@ class TaskSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField()
     student_username = serializers.CharField(source="student.username", read_only=True)
     file_name = serializers.SerializerMethodField()
+    # Same reasoning as AssignmentSerializer.file above — signed short-lived
+    # link instead of a bare, unauthenticated /media/... URL.
+    submission_file = serializers.SerializerMethodField()
 
     # Recomputed live on every read rather than trusting the value stored at
     # task-creation time, which goes stale as the due date approaches (the
@@ -123,6 +141,15 @@ class TaskSerializer(serializers.ModelSerializer):
         if obj.submission_file:
             return obj.submission_file.name.split('/')[-1]
         return None
+
+    def get_submission_file(self, obj):
+        request = self.context.get('request')
+        user = getattr(request, 'user', None) if request else None
+        if not obj.submission_file or not user or not user.is_authenticated:
+            return None
+        token = make_download_token('submission', obj.pk, user.id)
+        path = f'/api/tasks/{obj.pk}/submission-file/?token={token}'
+        return request.build_absolute_uri(path) if request else path
 
 
 class TaskSubmitSerializer(serializers.ModelSerializer):

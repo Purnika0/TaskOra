@@ -257,6 +257,10 @@ export default function AuthPage({ initialView }) {
         if (!regName.trim())                        e.name  = 'Please enter your full name.'
         if (!regUser.trim())                        e.user  = 'Please enter your username.'
         else if (regUser.length < 3)               e.user  ='Username must be at least 3 characters.'
+        // Narrower than Django's default UnicodeUsernameValidator (which also
+        // allows @, +, and -) — intentional, more conservative policy. If this
+        // regex ever changes, check backend/users/models.py's User class too
+        // (and vice versa), since the two are typed independently.
         else if (!/^[a-zA-Z0-9_.]+$/.test(regUser)) e.user  = 'Username can only contain letters, numbers,dot,and underscores.'
         if (!regEmail.trim())                       e.email = 'Please enter your email address.'
         else if (!isEmailRe(regEmail))              e.email = 'Please enter a valid email address'
@@ -284,8 +288,15 @@ export default function AuthPage({ initialView }) {
         } catch (err) {
             const data = err.response?.data
             const e = {}
+            // The frontend only checks length >= 8 before submitting; Django's
+            // AUTH_PASSWORD_VALIDATORS additionally rejects passwords too
+            // similar to the username/email, common/breached passwords, and
+            // all-numeric passwords. Surface that rejection under the actual
+            // password field (not a generic form banner) so it's clear which
+            // input it applies to.
             if (data?.username)      e.user  = 'Username already exists'
             else if (data?.email)    e.email = 'Email already registered'
+            else if (data?.password) e.pw    = Array.isArray(data.password) ? data.password[0] : data.password
             else                     e.form  = getApiError(err)
             setRegErrors(e)
         } finally { setSubmitting(false) }
@@ -394,9 +405,16 @@ export default function AuthPage({ initialView }) {
             await authService.resetPassword(forgotEmail.trim(), resetOtp.trim(), resetPw)
             setResetDone(true)
         } catch (err) {
-            setResetErrors({ form: err.response?.data?.code === 'otp_invalid'
-                ? 'This code is invalid or has expired. Please request a new one.'
-                : getApiError(err) })
+            const data = err.response?.data
+            if (data?.code === 'otp_invalid') {
+                setResetErrors({ form: 'This code is invalid or has expired. Please request a new one.' })
+            } else if (data?.new_password) {
+                // Same AUTH_PASSWORD_VALIDATORS rejection as signup — show it
+                // under the password field, not the generic form banner.
+                setResetErrors({ pw: Array.isArray(data.new_password) ? data.new_password[0] : data.new_password })
+            } else {
+                setResetErrors({ form: getApiError(err) })
+            }
         } finally { setSubmitting(false) }
     }
 

@@ -368,7 +368,7 @@ export default function LandingPage() {
                 <div className="lp-features">
                     <div className="lp-feature-lead">
                         <BookOpen size={26} style={{ marginBottom:14, opacity:0.85 }}/>
-                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:18, margin:'0 0 8px' }}>Manage Your Courses</h3>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:18, margin:'0 0 8px', color:'#fff' }}>Manage Your Courses</h3>
                         <p style={{ fontSize:13, color:'rgba(255,255,255,0.70)', margin:0, lineHeight:1.6 }}>
                             Keep all your courses organized in one place. View assignments, monitor deadlines, submit work, and receive feedback from teachers—all from an easy-to-use dashboard.
                         </p>

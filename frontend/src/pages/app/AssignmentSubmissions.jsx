@@ -75,7 +75,7 @@ export default function AssignmentSubmissions() {
                 <div>
                     <h2 className="page-title">{assignment ? assignment.title : 'Submissions'}</h2>
                     <p className="page-subtitle">
-                        {assignment ? `${assignment.course_name} · Due ${fmtDate(assignment.due_date)}` : ''}
+                        {assignment ? `${assignment.course_name} · Due ${dueDateBS(assignment)}` : ''}
                     </p>
                 </div>
             </div>

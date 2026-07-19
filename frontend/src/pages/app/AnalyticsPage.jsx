@@ -8,7 +8,7 @@ import {
 import { useAuth }            from '../../hooks/useAuth.js'
 import { DashboardFooter }    from '../../components/layout/Footer.jsx'
 import { LoadingBlock }       from '../../components/shared/Loader.jsx'
-import { fmtDate }            from '../../utils/helpers.js'
+import { dueDateBS }          from '../../utils/helpers.js'
 import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
 import StudentAnalyticsPage from './StudentAnalyticsPage.jsx'
 
@@ -494,7 +494,7 @@ function AssignmentCompletionSection() {
                     <div className="progress-bar-fill" style={{ width:`${p.completion_rate}%`, background:'#1a1f35' }}/>
                 </div>
                 <p style={{ fontSize:10, color:'#b0a898', margin:0 }}>
-                    Due: {fmtDate(p.due_date)} · {p.completed}/{p.total_students} students · {p.completion_rate}%
+                    Due: {dueDateBS(p)} · {p.completed}/{p.total_students} students · {p.completion_rate}%
                 </p>
                 </div>
             ))}

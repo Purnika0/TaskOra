@@ -36,9 +36,17 @@ urlpatterns = [
 ]
 
 
-# Serve uploaded media files (e.g. submitted assignment files) in development.
-# In production this should be handled by the web server / a storage service
-# instead, so it's gated behind DEBUG.
+# Serve uploaded media files directly in development (DEBUG only) — this is
+# now only a convenience for Django admin (which links to FileField values
+# via raw /media/ URLs in its own UI) and local file inspection. It carries
+# no access control of its own, but the app's actual API responses no
+# longer hand out raw /media/ URLs for Assignment.file or
+# Task.submission_file — see AssignmentSerializer.get_file /
+# TaskSerializer.get_submission_file and tasks/file_access.py, which issue
+# short-lived signed download links instead, checked against the
+# requesting user's real permissions on every download. In production this
+# route should still be handled by the web server / a storage service, not
+# Django's DEBUG static() helper.
 if settings.DEBUG:
     urlpatterns += static(
         settings.MEDIA_URL,
