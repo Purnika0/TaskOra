@@ -1,4 +1,3 @@
-// src/routes/AppRoutes.jsx
 // "/" always renders LandingPage first — this is the browser's initial route.
 // Logged-in users still land on "/" and see the marketing page with a
 // "Go to Dashboard" CTA instead of being auto-redirected into /app.
@@ -130,6 +129,9 @@ export default function AppRoutes() {
                     <ProtectedRoute allowedRoles={['student']}><RecommendationsPage/></ProtectedRoute>
                 }/>
 
+                {/* Two URL aliases for the same page. Every internal link uses
+                    "assignments" except RecommendationsPage.jsx, which still
+                    links to "tasks" — kept so that link doesn't 404. */}
                 <Route path="tasks" element={
                     <ProtectedRoute allowedRoles={['student','teacher']}><AssignmentManagement/></ProtectedRoute>
                 }/>
@@ -152,6 +154,9 @@ export default function AppRoutes() {
                     <ProtectedRoute allowedRoles={['teacher']}><EnrolledStudentsPage/></ProtectedRoute>
                 }/>
 
+                {/* No allowedRoles here (unlike every route above) — both pages
+                    are open to any authenticated role; the outer ProtectedRoute
+                    on /app already enforces that a user is logged in. */}
                 <Route path="settings" element={<SettingsPage/>}/>
                 <Route path="notifications" element={<NotificationsPage/>}/>
                 <Route path="*" element={<RoleRedirect/>}/>

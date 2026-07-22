@@ -1,6 +1,12 @@
+// Centralized auth API client: registration, login (with portal-role
+// enforcement), session/profile management, email verification, password
+// reset, and admin user-management endpoints.
+
 import api, { setTokens, clearTokens, TOKEN_KEYS } from './api.js'
 
 const authService = {
+    // Create a new account. Backend always assigns the 'student' role for
+    // self-registration; new accounts must verify their email before login.
     async register({ username, full_name, email, password, role }) {
         const { data } = await api.post('/api/users/register/', { username, full_name, email, password, role })
         return data
@@ -86,6 +92,7 @@ const authService = {
         return data
     },
 
+    // No backend call — this only clears local session state.
     logout() { clearTokens() },
 
     // ── Delete own account (self-service, Settings page) ───────────────────
@@ -138,7 +145,8 @@ const authService = {
         return data
     },
 
-    // Admin
+    // ── Admin — user management ─────────────────────────────────────────────
+    // List users, optionally filtered by role ('student' | 'teacher' | 'admin').
     async listUsers(role) {
         const params = role ? { role } : {}
         const { data } = await api.get('/api/users/', { params })
@@ -162,6 +170,8 @@ const authService = {
         return data
     },
 
+    // Admin-created teacher account — bypasses the public self-registration
+    // flow and its email-verification requirement.
     async createTeacher({ username, full_name, email, password }) {
         const { data } = await api.post('/api/users/create-teacher/', { username, full_name, email, password })
         return data

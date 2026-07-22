@@ -1,4 +1,3 @@
-// src/services/notifications.service.js
 // Thin wrapper around the notifications API. Mirrors the shape of the other
 // *.service.js files (tasks.service.js, courses.service.js) in this project.
 //

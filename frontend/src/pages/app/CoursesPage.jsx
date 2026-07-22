@@ -1,5 +1,3 @@
-// src/pages/app/CoursesPage.jsx — pure CSS, no Tailwind classes
-
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Plus, GraduationCap, Hash, User, Pencil, Trash2, ListChecks, LogOut, Users } from 'lucide-react'
@@ -51,372 +49,372 @@ export default function CoursesPage() {
     const [leavingId,      setLeavingId]      = useState(null)
     const [leaveTarget,    setLeaveTarget]    = useState(null)   // course pending leave confirmation
 
-async function load() {
+    async function load() {
         setLoading(true)
         try { setCourses(await (isTeacher ? coursesService.list() : coursesService.getMyCourses())) }
         catch { toast.error('Failed to load courses') }
         finally { setLoading(false) }
-}
-useEffect(() => { load() }, [])
+    }
+    useEffect(() => { load() }, [])
 
-async function handleJoin(e) {
+    async function handleJoin(e) {
         e.preventDefault()
         if (!joinCode.trim()) return
         setJoining(true)
         try {
-        await coursesService.join(joinCode.trim().toUpperCase())
-        toast.success('Joined course!')
-        setJoinCode(''); load()
+            await coursesService.join(joinCode.trim().toUpperCase())
+            toast.success('Joined course!')
+            setJoinCode(''); load()
         } catch (err) { toast.error(apiError(err)) }
         finally { setJoining(false) }
-}
+    }
 
-function resetForm() {
+    function resetForm() {
         setShowCreate(false)
         setEditingCourse(null)
         setNewCourse({ title:'', description:'' })
-}
+    }
 
-function handleToggleCreate() {
+    function handleToggleCreate() {
         if (showCreate) resetForm()
         else { setEditingCourse(null); setNewCourse({ title:'', description:'' }); setShowCreate(true) }
-}
+    }
 
-function handleEditClick(course) {
+    function handleEditClick(course) {
         setEditingCourse(course)
         setNewCourse({
-        title: course.title || '',
-        description: course.description || '',
+            title: course.title || '',
+            description: course.description || '',
         })
         setShowCreate(true)
-}
+    }
 
-async function handleSubmit(e) {
+    async function handleSubmit(e) {
         e.preventDefault()
         if (!newCourse.title.trim()) return
         setCreating(true)
         try {
-        if (editingCourse) {
+            if (editingCourse) {
                 await coursesService.update(editingCourse.id, newCourse)
                 toast.success('Course updated')
-        } else {
+            } else {
                 await coursesService.create(newCourse)
                 toast.success('Course created')
-        }
-        resetForm(); load()
+            }
+            resetForm(); load()
         } catch (err) { toast.error(apiError(err)) }
         finally { setCreating(false) }
-}
+    }
 
-function handleDeleteClick(course) {
+    function handleDeleteClick(course) {
         setDeleteTarget(course)
-}
+    }
 
-function cancelDelete() {
+    function cancelDelete() {
         if (deletingId) return // don't allow closing mid-request
         setDeleteTarget(null)
-}
+    }
 
-async function confirmDelete() {
+    async function confirmDelete() {
         if (!deleteTarget) return
         setDeletingId(deleteTarget.id)
         try {
-        await coursesService.remove(deleteTarget.id)
-        toast.success('Course deleted')
-        setDeleteTarget(null)
-        load()
+            await coursesService.remove(deleteTarget.id)
+            toast.success('Course deleted')
+            setDeleteTarget(null)
+            load()
         } catch (err) { toast.error(apiError(err)) }
         finally { setDeletingId(null) }
-}
+    }
 
-function handleViewAssignments(course) {
+    function handleViewAssignments(course) {
         navigate(`/app/assignments?course=${course.id}`)
-}
+    }
 
-function handleViewStudents(course) {
+    function handleViewStudents(course) {
         navigate(`/app/courses/${course.id}/students`)
-}
+    }
 
-function handleLeaveClick(course) {
+    function handleLeaveClick(course) {
         setLeaveTarget(course)
-}
+    }
 
-function cancelLeave() {
+    function cancelLeave() {
         if (leavingId) return // don't allow closing mid-request
         setLeaveTarget(null)
-}
+    }
 
-async function confirmLeave() {
+    async function confirmLeave() {
         if (!leaveTarget) return
         setLeavingId(leaveTarget.id)
         try {
-        await coursesService.leave(leaveTarget.id)
-        toast.success('You have left the course')
-        setLeaveTarget(null)
-        load()
+            await coursesService.leave(leaveTarget.id)
+            toast.success('You have left the course')
+            setLeaveTarget(null)
+            load()
         } catch (err) { toast.error(apiError(err)) }
         finally { setLeavingId(null) }
-}
+    }
 
-return (
-    <div style={{ display:'flex', flexDirection:'column', gap:20 }} className="anim-fade-in">
+    return (
+        <div style={{ display:'flex', flexDirection:'column', gap:20 }} className="anim-fade-in">
 
-        {/* Page header */}
-        <div className="page-header">
-            <div>
-            <h2 className="page-title">{isTeacher ? 'My Courses' : 'Enrolled Courses'}</h2>
-            <p className="page-subtitle">{courses.length} {isTeacher ? 'course' : 'enrollment'}{courses.length!==1?'s':''}</p>
-            </div>
-            {isTeacher && (
-            <button
-                onClick={handleToggleCreate}
-                className="btn-primary"
-            >
-                <Plus size={14} aria-hidden="true"/>
-                {showCreate ? 'Cancel' : 'Create Course'}
-            </button>
-            )}
-        </div>
-
-        {/* Teacher: create / edit form */}
-        {isTeacher && showCreate && (
-            <div className="white-card" style={{ padding:'20px 22px' }}>
-            <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:'0 0 16px' }}>
-                {editingCourse ? 'Edit Course' : 'New Course'}
-            </h3>
-            <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
-                <FormInput placeholder="Course title *" value={newCourse.title}
-                onChange={e => setNewCourse(p=>({...p,title:e.target.value}))} required/>
-                <FormInput placeholder="Description (optional)" rows={2} value={newCourse.description}
-                onChange={e => setNewCourse(p=>({...p,description:e.target.value}))}/>
-                <div style={{ display:'flex', gap:10 }}>
-                <button type="submit" disabled={creating} className="btn-primary" style={{ alignSelf:'flex-start' }}>
-                    {creating ? (editingCourse ? 'Saving…' : 'Creating…') : (editingCourse ? 'Save Changes' : 'Create Course')}
-                </button>
-                {editingCourse && (
-                    <button type="button" onClick={resetForm} className="btn-primary"
-                    style={{ alignSelf:'flex-start', background:'#f0ece5', color:'#7a7060' }}>
-                    Cancel
+            {/* Page header */}
+            <div className="page-header">
+                <div>
+                    <h2 className="page-title">{isTeacher ? 'My Courses' : 'Enrolled Courses'}</h2>
+                    <p className="page-subtitle">{courses.length} {isTeacher ? 'course' : 'enrollment'}{courses.length!==1?'s':''}</p>
+                </div>
+                {isTeacher && (
+                    <button
+                        onClick={handleToggleCreate}
+                        className="btn-primary"
+                    >
+                        <Plus size={14} aria-hidden="true"/>
+                        {showCreate ? 'Cancel' : 'Create Course'}
                     </button>
                 )}
-                </div>
-            </form>
             </div>
-)}
 
-        {/* Student: join form */}
-        {!isTeacher && (
-            <div className="white-card" style={{ padding:'18px 22px' }}>
-            <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:'0 0 12px' }}>
-                Join a Course
-            </h3>
-            <form onSubmit={handleJoin} style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-                <div style={{ position:'relative', flex:1, minWidth:180 }}>
-                <Hash size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#b0a898' }}/>
-                <input type="text" value={joinCode}
-                    onChange={e => setJoinCode(e.target.value)}
-                    placeholder="Enter 8-character join code"
-                    maxLength={8}
-                    style={{ ...inpStyle, paddingLeft:30, textTransform:'uppercase', letterSpacing:'0.1em' }}
-                />
-                </div>
-                <button type="submit" disabled={joining || !joinCode.trim()} className="btn-primary">
-                {joining ? 'Joining…' : 'Join'}
-                </button>
-            </form>
-            </div>
-        )}
-
-        {/* Course list */}
-        {loading ? (
-            <div className="white-card" style={{ padding:28 }}><LoadingBlock/></div>
-        ) : courses.length === 0 ? (
-            <div className="white-card" style={{ padding:'56px 24px', textAlign:'center' }}>
-            <div style={{ width:56, height:56, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
-                <GraduationCap size={24} style={{ color:'#b0a898' }}/>
-            </div>
-            <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:'0 0 6px' }}>
-                No courses yet
-            </p>
-            <p style={{ fontSize:13, color:'#b0a898' }}>
-                {isTeacher ? 'Create your first course above.' : 'Use a join code to enroll in a course.'}
-            </p>
-            </div>
-        ) : (
-            <div className="course-grid">
-            {courses.map(c => {
-                const course = c.course || c
-                return (
-                <div key={course.id} className="white-card" style={{ padding:'18px 20px', transition:'box-shadow 0.15s, transform 0.15s' }}
-                    onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 4px 18px rgba(26,31,53,0.10)'; e.currentTarget.style.transform='translateY(-1px)'}}
-                    onMouseLeave={e=>{e.currentTarget.style.boxShadow=''; e.currentTarget.style.transform=''}}>
-                    <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:12 }}>
-                    <div style={{ width:38, height:38, borderRadius:10, background:'#e8eeff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} aria-hidden="true">
-                        <GraduationCap size={17} style={{ color:'#3b6fd4' }}/>
-                    </div>
-                    {isTeacher && course.join_code && (
-                        <span style={{ fontSize:10, fontWeight:700, fontFamily:'var(--font-mono)', background:'#f5f0e8', color:'#7a6e5e', padding:'3px 8px', borderRadius:6, border:'1px solid #e8e3db', letterSpacing:'0.08em' }}>
-                        {course.join_code}
-                        </span>
-                    )}
-                    </div>
-                    <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:'0 0 6px', lineHeight:1.3 }}>
-                    {course.title}
-                    </h4>
-                    {course.description && (
-                    <p style={{ fontSize:12, color:'#7a7060', margin:'0 0 10px', lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
-                        {course.description}
-                    </p>
-                    )}
-                    <div style={{ display:'flex', flexDirection:'column', gap:4, marginTop:'auto' }}>
-                    {!isTeacher && course.teacher && (
-                        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
-                        <User size={10} style={{ color:'#b0a898' }} aria-hidden="true"/>
-                        <span style={{ fontSize:11, color:'#a09080' }}>{course.teacher.full_name||course.teacher.username}</span>
+            {/* Teacher: create / edit form */}
+            {isTeacher && showCreate && (
+                <div className="white-card" style={{ padding:'20px 22px' }}>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:'0 0 16px' }}>
+                        {editingCourse ? 'Edit Course' : 'New Course'}
+                    </h3>
+                    <form onSubmit={handleSubmit} style={{ display:'flex', flexDirection:'column', gap:12 }}>
+                        <FormInput placeholder="Course title *" value={newCourse.title}
+                            onChange={e => setNewCourse(p=>({...p,title:e.target.value}))} required/>
+                        <FormInput placeholder="Description (optional)" rows={2} value={newCourse.description}
+                            onChange={e => setNewCourse(p=>({...p,description:e.target.value}))}/>
+                        <div style={{ display:'flex', gap:10 }}>
+                            <button type="submit" disabled={creating} className="btn-primary" style={{ alignSelf:'flex-start' }}>
+                                {creating ? (editingCourse ? 'Saving…' : 'Creating…') : (editingCourse ? 'Save Changes' : 'Create Course')}
+                            </button>
+                            {editingCourse && (
+                                <button type="button" onClick={resetForm} className="btn-primary"
+                                    style={{ alignSelf:'flex-start', background:'#f0ece5', color:'#7a7060' }}>
+                                    Cancel
+                                </button>
+                            )}
                         </div>
-                    )}
-                    </div>
+                    </form>
+                </div>
+            )}
 
-                    <div style={{ display:'flex', gap:8, marginTop:14, paddingTop:12, borderTop:'1px solid #eee7db' }}>
-                    <button
-                        onClick={() => handleViewAssignments(course)}
-                        style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#3b6fd4', background:'#eef2fc', border:'none', borderRadius:7, padding:'7px 8px', cursor:'pointer' }}
+            {/* Student: join form */}
+            {!isTeacher && (
+                <div className="white-card" style={{ padding:'18px 22px' }}>
+                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:'0 0 12px' }}>
+                        Join a Course
+                    </h3>
+                    <form onSubmit={handleJoin} style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+                        <div style={{ position:'relative', flex:1, minWidth:180 }}>
+                            <Hash size={13} style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#b0a898' }}/>
+                            <input type="text" value={joinCode}
+                                onChange={e => setJoinCode(e.target.value)}
+                                placeholder="Enter 8-character join code"
+                                maxLength={8}
+                                style={{ ...inpStyle, paddingLeft:30, textTransform:'uppercase', letterSpacing:'0.1em' }}
+                            />
+                        </div>
+                        <button type="submit" disabled={joining || !joinCode.trim()} className="btn-primary">
+                            {joining ? 'Joining…' : 'Join'}
+                        </button>
+                    </form>
+                </div>
+            )}
+
+            {/* Course list */}
+            {loading ? (
+                <div className="white-card" style={{ padding:28 }}><LoadingBlock/></div>
+            ) : courses.length === 0 ? (
+                <div className="white-card" style={{ padding:'56px 24px', textAlign:'center' }}>
+                    <div style={{ width:56, height:56, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
+                        <GraduationCap size={24} style={{ color:'#b0a898' }}/>
+                    </div>
+                    <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:'0 0 6px' }}>
+                        No courses yet
+                    </p>
+                    <p style={{ fontSize:13, color:'#b0a898' }}>
+                        {isTeacher ? 'Create your first course above.' : 'Use a join code to enroll in a course.'}
+                    </p>
+                </div>
+            ) : (
+                <div className="course-grid">
+                    {courses.map(c => {
+                        const course = c.course || c
+                        return (
+                            <div key={course.id} className="white-card" style={{ padding:'18px 20px', transition:'box-shadow 0.15s, transform 0.15s' }}
+                                onMouseEnter={e=>{e.currentTarget.style.boxShadow='0 4px 18px rgba(26,31,53,0.10)'; e.currentTarget.style.transform='translateY(-1px)'}}
+                                onMouseLeave={e=>{e.currentTarget.style.boxShadow=''; e.currentTarget.style.transform=''}}>
+                                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:12 }}>
+                                    <div style={{ width:38, height:38, borderRadius:10, background:'#e8eeff', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }} aria-hidden="true">
+                                        <GraduationCap size={17} style={{ color:'#3b6fd4' }}/>
+                                    </div>
+                                    {isTeacher && course.join_code && (
+                                        <span style={{ fontSize:10, fontWeight:700, fontFamily:'var(--font-mono)', background:'#f5f0e8', color:'#7a6e5e', padding:'3px 8px', borderRadius:6, border:'1px solid #e8e3db', letterSpacing:'0.08em' }}>
+                                            {course.join_code}
+                                        </span>
+                                    )}
+                                </div>
+                                <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'#1a1f35', margin:'0 0 6px', lineHeight:1.3 }}>
+                                    {course.title}
+                                </h4>
+                                {course.description && (
+                                    <p style={{ fontSize:12, color:'#7a7060', margin:'0 0 10px', lineHeight:1.5, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical', overflow:'hidden' }}>
+                                        {course.description}
+                                    </p>
+                                )}
+                                <div style={{ display:'flex', flexDirection:'column', gap:4, marginTop:'auto' }}>
+                                    {!isTeacher && course.teacher && (
+                                        <div style={{ display:'flex', alignItems:'center', gap:5 }}>
+                                            <User size={10} style={{ color:'#b0a898' }} aria-hidden="true"/>
+                                            <span style={{ fontSize:11, color:'#a09080' }}>{course.teacher.full_name||course.teacher.username}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div style={{ display:'flex', gap:8, marginTop:14, paddingTop:12, borderTop:'1px solid #eee7db' }}>
+                                    <button
+                                        onClick={() => handleViewAssignments(course)}
+                                        style={{ flex:1, display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#3b6fd4', background:'#eef2fc', border:'none', borderRadius:7, padding:'7px 8px', cursor:'pointer' }}
+                                    >
+                                        <ListChecks size={12} aria-hidden="true"/>
+                                        Assignments
+                                    </button>
+                                    {!isTeacher && (
+                                        <button
+                                            onClick={() => handleLeaveClick(course)}
+                                            aria-label={`Leave ${course.title}`}
+                                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#c0392b', background:'#fbeceb', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                                        >
+                                            <LogOut size={12} aria-hidden="true"/>
+                                        </button>
+                                    )}
+                                    {isTeacher && (
+                                        <>
+                                            <button
+                                                onClick={() => handleViewStudents(course)}
+                                                aria-label={`View students enrolled in ${course.title}`}
+                                                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#3cb87a', background:'#eafaf1', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                                            >
+                                                <Users size={12} aria-hidden="true"/>
+                                            </button>
+                                            <button
+                                                onClick={() => handleEditClick(course)}
+                                                aria-label={`Edit ${course.title}`}
+                                                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#7a7060', background:'#f5f0e8', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                                            >
+                                                <Pencil size={12} aria-hidden="true"/>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteClick(course)}
+                                                aria-label={`Delete ${course.title}`}
+                                                style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#c0392b', background:'#fbeceb', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
+                                            >
+                                                <Trash2 size={12} aria-hidden="true"/>
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            </div>
+                        )
+                    })}
+                </div>
+            )}
+
+            {/* Delete confirmation modal */}
+            {deleteTarget && (
+                <div
+                    onClick={cancelDelete}
+                    style={{
+                        position:'fixed', inset:0, background:'rgba(26,31,53,0.45)', backdropFilter:'blur(2px)',
+                        display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:20,
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className="white-card anim-fade-in"
+                        style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)' }}
                     >
-                        <ListChecks size={12} aria-hidden="true"/>
-                        Assignments
-                    </button>
-                    {!isTeacher && (
-                        <button
-                            onClick={() => handleLeaveClick(course)}
-                            aria-label={`Leave ${course.title}`}
-                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#c0392b', background:'#fbeceb', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
-                        >
-                            <LogOut size={12} aria-hidden="true"/>
-                        </button>
-                    )}
-                    {isTeacher && (
-                        <>
-                        <button
-                            onClick={() => handleViewStudents(course)}
-                            aria-label={`View students enrolled in ${course.title}`}
-                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#3cb87a', background:'#eafaf1', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
-                        >
-                            <Users size={12} aria-hidden="true"/>
-                        </button>
-                        <button
-                            onClick={() => handleEditClick(course)}
-                            aria-label={`Edit ${course.title}`}
-                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#7a7060', background:'#f5f0e8', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
-                        >
-                            <Pencil size={12} aria-hidden="true"/>
-                        </button>
-                        <button
-                            onClick={() => handleDeleteClick(course)}
-                            aria-label={`Delete ${course.title}`}
-                            style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:5, fontSize:11.5, fontWeight:600, color:'#c0392b', background:'#fbeceb', border:'none', borderRadius:7, padding:'7px 10px', cursor:'pointer' }}
-                        >
-                            <Trash2 size={12} aria-hidden="true"/>
-                        </button>
-                        </>
-                    )}
+                        <div style={{ width:44, height:44, borderRadius:'50%', background:'#fbeceb', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
+                            <Trash2 size={19} style={{ color:'#c0392b' }}/>
+                        </div>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:'0 0 8px' }}>
+                            Delete Course
+                        </h3>
+                        <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
+                            Are you sure you want to delete this course? This action cannot be undone.
+                        </p>
+                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                            <button
+                                onClick={cancelDelete}
+                                disabled={!!deletingId}
+                                className="btn-primary"
+                                style={{ background:'#f0ece5', color:'#7a7060', cursor: deletingId ? 'default' : 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDelete}
+                                disabled={!!deletingId}
+                                className="btn-primary"
+                                style={{ background:'#c0392b', color:'#fff', cursor: deletingId ? 'default' : 'pointer', opacity: deletingId ? 0.75 : 1 }}
+                            >
+                                {deletingId ? 'Deleting…' : 'Delete Course'}
+                            </button>
+                        </div>
                     </div>
                 </div>
-                )
-            })}
-            </div>
-)}
+            )}
 
-        {/* Delete confirmation modal */}
-        {deleteTarget && (
-            <div
-                onClick={cancelDelete}
-                style={{
-                    position:'fixed', inset:0, background:'rgba(26,31,53,0.45)', backdropFilter:'blur(2px)',
-                    display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:20,
-                }}
-            >
+            {/* Leave confirmation modal */}
+            {leaveTarget && (
                 <div
-                    onClick={e => e.stopPropagation()}
-                    className="white-card anim-fade-in"
-                    style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)' }}
+                    onClick={cancelLeave}
+                    style={{
+                        position:'fixed', inset:0, background:'rgba(26,31,53,0.45)', backdropFilter:'blur(2px)',
+                        display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:20,
+                    }}
                 >
-                    <div style={{ width:44, height:44, borderRadius:'50%', background:'#fbeceb', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
-                        <Trash2 size={19} style={{ color:'#c0392b' }}/>
-                    </div>
-                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:'0 0 8px' }}>
-                        Delete Course
-                    </h3>
-                    <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
-                        Are you sure you want to delete this course? This action cannot be undone.
-                    </p>
-                    <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
-                        <button
-                            onClick={cancelDelete}
-                            disabled={!!deletingId}
-                            className="btn-primary"
-                            style={{ background:'#f0ece5', color:'#7a7060', cursor: deletingId ? 'default' : 'pointer' }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={confirmDelete}
-                            disabled={!!deletingId}
-                            className="btn-primary"
-                            style={{ background:'#c0392b', color:'#fff', cursor: deletingId ? 'default' : 'pointer', opacity: deletingId ? 0.75 : 1 }}
-                        >
-                            {deletingId ? 'Deleting…' : 'Delete Course'}
-                        </button>
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        className="white-card anim-fade-in"
+                        style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)' }}
+                    >
+                        <div style={{ width:44, height:44, borderRadius:'50%', background:'#fbeceb', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
+                            <LogOut size={19} style={{ color:'#c0392b' }}/>
+                        </div>
+                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:'0 0 8px' }}>
+                            Leave Course
+                        </h3>
+                        <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
+                            Are you sure you want to leave "{leaveTarget.title}"? Your assignments and progress will be restored if you re-enroll later.
+                        </p>
+                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                            <button
+                                onClick={cancelLeave}
+                                disabled={!!leavingId}
+                                className="btn-primary"
+                                style={{ background:'#f0ece5', color:'#7a7060', cursor: leavingId ? 'default' : 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmLeave}
+                                disabled={!!leavingId}
+                                className="btn-primary"
+                                style={{ background:'#c0392b', color:'#fff', cursor: leavingId ? 'default' : 'pointer', opacity: leavingId ? 0.75 : 1 }}
+                            >
+                                {leavingId ? 'Leaving…' : 'Leave Course'}
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        )}
+            )}
 
-        {/* Leave confirmation modal */}
-        {leaveTarget && (
-            <div
-                onClick={cancelLeave}
-                style={{
-                    position:'fixed', inset:0, background:'rgba(26,31,53,0.45)', backdropFilter:'blur(2px)',
-                    display:'flex', alignItems:'center', justifyContent:'center', zIndex:1000, padding:20,
-                }}
-            >
-                <div
-                    onClick={e => e.stopPropagation()}
-                    className="white-card anim-fade-in"
-                    style={{ width:'100%', maxWidth:400, padding:'26px 26px 22px', boxShadow:'0 12px 40px rgba(26,31,53,0.25)' }}
-                >
-                    <div style={{ width:44, height:44, borderRadius:'50%', background:'#fbeceb', display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }} aria-hidden="true">
-                        <LogOut size={19} style={{ color:'#c0392b' }}/>
-                    </div>
-                    <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#1a1f35', margin:'0 0 8px' }}>
-                        Leave Course
-                    </h3>
-                    <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
-                        Are you sure you want to leave "{leaveTarget.title}"? Your assignments and progress will be restored if you re-enroll later.
-                    </p>
-                    <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
-                        <button
-                            onClick={cancelLeave}
-                            disabled={!!leavingId}
-                            className="btn-primary"
-                            style={{ background:'#f0ece5', color:'#7a7060', cursor: leavingId ? 'default' : 'pointer' }}
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            onClick={confirmLeave}
-                            disabled={!!leavingId}
-                            className="btn-primary"
-                            style={{ background:'#c0392b', color:'#fff', cursor: leavingId ? 'default' : 'pointer', opacity: leavingId ? 0.75 : 1 }}
-                        >
-                            {leavingId ? 'Leaving…' : 'Leave Course'}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
-
-        <DashboardFooter/>
+            <DashboardFooter/>
         </div>
     )
 }

@@ -1,4 +1,3 @@
-// src/components/shared/ReviewSubmissionModal.jsx
 // Shared review/approve/reject modal for a single student submission.
 // Used by:
 //   • AssignmentSubmissions.jsx  (per-assignment submissions list)
@@ -14,6 +13,8 @@ import { useToast } from '../../context/ToastContext.jsx'
 import { apiError } from '../../utils/helpers.js'
 
 export default function ReviewSubmissionModal({ task, onClose, onReviewed }) {
+    // Already-reviewed submissions (approved/rejected) are shown read-only —
+    // only a fresh 'submitted' task can still be approved or rejected.
     const readOnly = task.status !== 'submitted'
     const [feedback, setFeedback] = useState(task.teacher_feedback || '')
     const [saving,   setSaving]   = useState(null) // 'approve' | 'reject' | null

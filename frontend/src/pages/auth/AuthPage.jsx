@@ -1,15 +1,9 @@
-// src/pages/auth/AuthPage.jsx
-// CHANGE: Teacher signup removed. Only Students can self-register.
-// Teacher login tab remains — teachers log in with admin-provided credentials.
-// The signup view now only shows the Student form (no role selector).
-// CHANGE: AuthPage now also honors a ?view=signup / ?view=login URL param,
-// so links from other pages (About, Landing, etc.) can open directly to
-// the right form instead of always landing on Login.
-// CHANGE: Password reset converted from token-link based to OTP-code based,
-// matching the backend's forgot-password / verify-otp / reset-password flow.
-// CHANGE: Added email verification flow — new signups must enter a 6-digit
-// OTP before they can log in. Login also redirects here if the backend
-// reports the account as unverified.
+// Auth page — login (student/teacher), student self-signup (teacher accounts
+// are admin-provisioned, not self-registered), OTP-based email verification,
+// and OTP-based password reset (matching the backend's forgot-password /
+// verify-otp / reset-password flow). Honors a ?view=signup or ?view=login
+// URL param so other pages (About, Landing, etc.) can deep-link straight to
+// a given form instead of always landing on Login.
 
 import { useState, useRef, useEffect } from 'react'
 import { useSearchParams, Link } from 'react-router-dom'
@@ -83,7 +77,7 @@ function LockBar({ timer }) {
 // Shared header used by every non-login auth view (forgot / verify-otp /
 // reset / verify-email / success screens): icon badge + heading + subtext.
 // Purely presentational — takes no state, so it's safe to hoist to module
-// scope (matches the audit's fix for Label/FieldError in TaskForm.jsx).
+// scope instead of redefining it inside every view branch below.
 function AuthStatusHeader({ icon, tone = 'primary', title, subtitle }) {
     return (
         <>

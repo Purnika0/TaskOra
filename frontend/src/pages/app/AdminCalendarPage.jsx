@@ -1,3 +1,7 @@
+// Admin-only holiday calendar: view the BS calendar and add/edit/delete
+// holidays directly. Unlike the shared CalendarPage.jsx, this page never
+// fetches tasks/assignments — holidays only.
+
 import { useState, useMemo, useEffect, useCallback } from 'react'
 import { ChevronLeft, ChevronRight, CalendarDays, Plus, Trash2, Pencil, Loader, X } from 'lucide-react'
 import { useToday } from '../../hooks/useHolidays.js'
@@ -213,7 +217,6 @@ function AdminSidePanel({ day, bsMonth, bsYear, onAdd, onEdit, onDelete }) {
                 <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:13, color:BLUE, margin:'0 0 5px' }}>
                     Select a date
                 </p>
-                
             </div>
         </div>
     )
@@ -274,7 +277,7 @@ function AdminSidePanel({ day, bsMonth, bsYear, onAdd, onEdit, onDelete }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN ADMIN CALENDAR PAGE — holidays only, no task/assignment fetching
+// MAIN ADMIN CALENDAR PAGE
 // ─────────────────────────────────────────────────────────────────────────────
 export default function AdminCalendarPage() {
     const { today: todayData } = useToday()
@@ -425,7 +428,7 @@ export default function AdminCalendarPage() {
                 <div>
                     <h2 className="page-title">Holiday Calendar</h2>
                     <p className="page-subtitle">
-                        Bikram Sambat · English {new Date().getFullYear()} 
+                        Bikram Sambat · English {new Date().getFullYear()}
                         {todayBS && (
                             <span style={{ marginLeft:8, fontWeight:600, color:BLUE }}>
                                 Today: {BS_MONTH_NAMES[todayBS.month-1]?.en} {todayBS.day}, {todayBS.year} BS

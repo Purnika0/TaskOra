@@ -3,6 +3,8 @@ import { Mail, LogIn } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth.js'
 import { currentBSYear } from '../../utils/helpers.js'
 
+// Renders as <a> (href) for external/mailto links or <Link> (to) for
+// internal routes, since react-router's <Link> can't handle mailto:/external URLs.
 function FtLink({ to, href, children }) {
     const style = {
         color: 'rgba(255,255,255,0.75)',
@@ -20,12 +22,13 @@ function FtLink({ to, href, children }) {
     return <Link to={to} style={style} onMouseEnter={on} onMouseLeave={off}>{children}</Link>
 }
 
+// Public/marketing pages use this; app dashboard pages use DashboardFooter instead.
 export function SiteFooter() {
     const { user } = useAuth()
 
     return (
         <footer style={{
-            background: 'var(--color-navy)',   /* same token as .sidebar */
+            background: 'var(--color-navy)', // same token as .sidebar, for a consistent dark UI chrome
             borderTop: '1px solid rgba(255,255,255,0.08)',
         }}>
             <style>{`
@@ -80,6 +83,8 @@ export function SiteFooter() {
                     <FtLink to="/legal">Privacy & Terms</FtLink>
                 </div>
 
+                {/* Portal links — point straight into the app for signed-in users,
+                    or to login (plus a Sign In button) for everyone else. */}
                 <div>
                     <p className="ft-col-title">Portal</p>
                     {user ? (
@@ -115,6 +120,9 @@ export function SiteFooter() {
     )
 }
 
+// No-op placeholder used by dashboard/app layouts, which don't show a footer.
+// Keeping it as a component (instead of removing it from callers) lets those
+// layouts stay structurally identical to the public pages that do use SiteFooter.
 export function DashboardFooter() { return null }
 
 export default SiteFooter

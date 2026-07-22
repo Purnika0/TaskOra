@@ -1,4 +1,3 @@
-// src/pages/app/SubmissionsInboxPage.jsx
 // Teacher-only: a single cross-course "To Review" inbox — every submission
 // from every assignment, in one place, instead of opening each assignment
 // individually. Reached from the sidebar's "Submissions" link → /app/submissions
@@ -67,6 +66,7 @@ export default function SubmissionsInboxPage() {
         if (courseFilter !== 'all') list = list.filter(t => String(t.assignment?.course) === String(courseFilter))
         if (search.trim()) {
             const q = search.toLowerCase()
+            // student_username is the fallback when a student hasn't set a display name.
             list = list.filter(t =>
                 (t.student_name || t.student_username || '').toLowerCase().includes(q) ||
                 (t.assignment?.title || '').toLowerCase().includes(q)

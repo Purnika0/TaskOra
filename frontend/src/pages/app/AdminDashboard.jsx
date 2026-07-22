@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
     Users, RefreshCw, ShieldCheck, Trash2, Search,
@@ -9,7 +9,7 @@ import {
     Eye, EyeOff,
 } from 'lucide-react'
 import {
-    PieChart, Pie, Cell, BarChart, Bar, LineChart, Line,
+    PieChart, Pie, Cell, LineChart, Line,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from 'recharts'
 import authService    from '../../services/auth.service.js'
@@ -409,6 +409,58 @@ function OverviewTab({ users, courses, loading, coursesLoading, adminName }) {
 }
 
 // ── Teachers tab ─────────────────────────────────────────────────────────────
+// Click-to-open popover listing a teacher's course titles.
+function TeacherCoursesCell({ list }) {
+    const [open, setOpen] = useState(false)
+    const wrapRef = useRef(null)
+
+    // Close popover on outside click.
+    useEffect(() => {
+        function onClick(e) {
+            if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+        }
+        if (open) document.addEventListener('mousedown', onClick)
+        return () => document.removeEventListener('mousedown', onClick)
+    }, [open])
+
+    if (list.length === 0) {
+        return <span style={{ fontSize:11.5, color:'var(--color-text-placeholder)', fontStyle:'italic' }}>None</span>
+    }
+
+    return (
+        <div ref={wrapRef} style={{ position:'relative', display:'inline-block' }}>
+            <button
+                onClick={() => setOpen(o => !o)}
+                style={{
+                    display:'inline-flex', alignItems:'center', gap:4, fontSize:11.5,
+                    color:A.blue, fontWeight:600, background:'none', border:'none',
+                    cursor:'pointer', padding:0,
+                }}
+            >
+                <BookOpen size={11}/> {list.length} course{list.length !== 1 ? 's' : ''}
+            </button>
+            {open && (
+                <div style={{
+                    position:'absolute', top:'calc(100% + 6px)', left:0, zIndex:20,
+                    minWidth:220, maxWidth:320, background:'#fff',
+                    border:'1px solid var(--color-border)', borderRadius:10,
+                    boxShadow:'0 8px 24px rgba(0,0,0,0.12)', padding:8,
+                }}>
+                    {list.map(c => (
+                        <div key={c.id} style={{
+                            display:'flex', alignItems:'flex-start', gap:6, padding:'6px 8px',
+                            fontSize:12, color:'var(--color-text)', borderRadius:6,
+                        }}>
+                            <BookOpen size={11} style={{ color:A.blue, flexShrink:0, marginTop:2 }}/>
+                            <span style={{ wordBreak:'break-word' }}>{c.title}</span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
 function TeachersTab({ teachers, courses, loading, currentUser, onDelete, onSuspend, onAddTeacher }) {
     // Real data only — computed from courses already loaded, no fabrication.
     const courseCountFor = teacherId => courses.filter(c => c.teacher?.id === teacherId)
@@ -429,16 +481,7 @@ function TeachersTab({ teachers, courses, loading, currentUser, onDelete, onSusp
                 emptyTitle="No teacher accounts yet" emptyMsg={'Click "Add Teacher" to create one.'}
                 extraColumn={{
                     header: 'Courses',
-                    render: u => {
-                        const list = courseCountFor(u.id)
-                        if (list.length === 0) return <span style={{ fontSize:11.5, color:'var(--color-text-placeholder)', fontStyle:'italic' }}>None</span>
-                        return (
-                            <span title={list.map(c => c.title).join(', ')}
-                                style={{ display:'inline-flex', alignItems:'center', gap:4, fontSize:11.5, color:A.blue, fontWeight:600 }}>
-                                <BookOpen size={11}/> {list.length} course{list.length !== 1 ? 's' : ''}
-                            </span>
-                        )
-                    },
+                    render: u => <TeacherCoursesCell list={courseCountFor(u.id)}/>,
                 }}
             />
         </div>
@@ -847,27 +890,11 @@ function renderDonutLabel({ cx, cy, midAngle, outerRadius, name, value }) {
     )
 }
 
-// Custom Y-axis tick for the horizontal "Courses per Teacher" bar chart —
-// keeps every teacher's name on a single, cleanly right-aligned line instead
-// of Recharts' default awkward two-line word-wrap for longer names.
-function TeacherNameTick({ x, y, payload }) {
-    const name = payload.value
-    const short = name.length > 16 ? `${name.slice(0, 15)}…` : name
-    return (
-        <text x={x} y={y} dy={4} textAnchor="end" fontSize={11.5} fontWeight={600} fontFamily="var(--font-body)" fill="var(--color-text-secondary)">
-            <title>{name}</title>
-            {short}
-        </text>
-    )
-}
-
 function AnalyticsTab({ users, courses, loading }) {
     const teachers  = users.filter(u => u.role === 'teacher')
     const students  = users.filter(u => u.role === 'student')
     const active    = users.filter(u => u.is_active !== false).length
     const suspended = users.filter(u => u.is_active === false).length
-    const assigned   = courses.filter(c => c.teacher).length
-    const unassigned = courses.length - assigned
 
     const roleData = useMemo(() => ([
         { name:'Teachers', value:teachers.length, color:A.purple },
@@ -878,24 +905,6 @@ function AnalyticsTab({ users, courses, loading }) {
         { name:'Active',    value:active,    color:A.green },
         { name:'Suspended', value:suspended, color:A.amber },
     ]), [active, suspended])
-
-    // Courses per teacher — real counts from already-loaded course data,
-    // sorted descending so the busiest teachers lead the chart.
-    const teacherCourseData = useMemo(() => {
-        const byTeacher = {}
-        courses.forEach(c => {
-            if (!c.teacher) return
-            const key = c.teacher.full_name || c.teacher.username
-            byTeacher[key] = (byTeacher[key] || 0) + 1
-        })
-        return Object.entries(byTeacher)
-            .map(([name, count]) => ({ name, count }))
-            .sort((a, b) => b.count - a.count)
-    }, [courses])
-
-    // Cap what we chart to the top 10 — beyond that a bar chart just becomes
-    // noise, and the "Courses by Teacher" list below already covers everyone.
-    const topTeacherCourseData = teacherCourseData.slice(0, 10)
 
     // Teacher → course titles, for the table view (answers "who teaches what").
     const teacherCourseMap = useMemo(() => {
@@ -958,35 +967,6 @@ function AnalyticsTab({ users, courses, loading }) {
                     </ResponsiveContainer>
                 </ChartCard>
             </div>
-
-            {/* Horizontal layout: teacher names stay readable no matter how many
-                there are, and we only chart the top 10 so it never gets cramped. */}
-            <ChartCard
-                title="Courses per Teacher"
-                empty={teacherCourseData.length === 0}
-                emptyMsg="No courses assigned to a teacher yet."
-                height={Math.max(160, topTeacherCourseData.length * 30)}
-            >
-                <ResponsiveContainer>
-                    <BarChart data={topTeacherCourseData} layout="vertical" margin={{ left:10, right:24, top:4, bottom:4 }} barCategoryGap="28%">
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" horizontal={false}/>
-                        <XAxis type="number" allowDecimals={false} tick={{ fontSize:11 }}/>
-                        <YAxis type="category" dataKey="name" width={130} tick={<TeacherNameTick/>} interval={0}/>
-                        <Tooltip contentStyle={CHART_TOOLTIP_STYLE}/>
-                        <Bar dataKey="count" name="Courses" fill={A.blue} radius={[0, 6, 6, 0]} barSize={16}/>
-                    </BarChart>
-                </ResponsiveContainer>
-            </ChartCard>
-            {teacherCourseData.length > 10 && (
-                <p style={{ fontSize:11.5, color:'var(--color-text-muted)', margin:'-8px 0 0' }}>
-                    Showing top 10 of {teacherCourseData.length} teachers with assigned courses — see the full breakdown below.
-                </p>
-            )}
-            {unassigned > 0 && (
-                <p style={{ fontSize:11.5, color:'var(--color-text-muted)', margin:'-8px 0 0' }}>
-                    {unassigned} course{unassigned !== 1 ? 's' : ''} currently unassigned — not shown above.
-                </p>
-            )}
 
             <ChartCard title="Registrations Over Time" empty={growthData.length < 2} emptyMsg="Not enough registration history yet to plot a trend.">
                 <ResponsiveContainer>
@@ -1089,8 +1069,8 @@ function ActivityTab({ users, loading }) {
 const TABS = [
     { key:'overview',  label:'Overview',  icon:LayoutDashboard },
     { key:'teachers',  label:'Teachers',  icon:GraduationCap   },
-    { key:'students',  label:'Students',  icon:BookOpen        },
-    { key:'courses',   label:'Courses',   icon:ClipboardList   },
+    { key:'students',  label:'Students',  icon:Users            },
+    { key:'courses',   label:'Courses',   icon:BookOpen         },
     { key:'messages',  label:'Messages',  icon:Mail            },
     { key:'analytics', label:'Analytics', icon:BarChart2       },
     { key:'activity',  label:'Activity',  icon:History         },

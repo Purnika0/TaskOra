@@ -1,20 +1,14 @@
-// src/services/tasks.service.js
-// UPDATED per backend integration guide:
-//   • Personal tasks REMOVED (404 on old endpoints)
-//   • Subtasks REMOVED (model deleted from backend)
-//   • Task status is now a 4-state string: pending|submitted|completed|overdue
-//   • toggleComplete removed → replaced by submitAssignment (student) + reviewSubmission (teacher)
-//   • createAssignment now accepts FormData for file uploads (multipart/form-data)
-//   • getSubmissions endpoint updated to /api/tasks/assignment/<id>/submissions/
-//   • reviewSubmission now calls PATCH /api/tasks/<id>/review/
-//   • Admin: markOverdue + createTeacher added
+// Assignment/task lifecycle for students, teachers, and admins.
+// Tasks have no separate "personal task" or subtask concept — every task is
+// tied to a teacher-created assignment. Status is one of:
+//   'pending' | 'submitted' | 'completed' | 'overdue'
 
 import api from './api.js'
 
 const tasksService = {
 
-    // ── Student: fetch all assigned tasks ───────────────────────────────────
-    // Response now includes status: 'pending' | 'submitted' | 'completed' | 'overdue'
+    // Student: fetch all assigned tasks.
+    // status is one of: 'pending' | 'submitted' | 'completed' | 'overdue'
     async getMyTasks() {
         const { data } = await api.get('/api/tasks/my/')
         return data
@@ -42,26 +36,24 @@ const tasksService = {
         return data
     },
 
-    // ── Teacher: mark a submitted task as completed ─────────────────────────
-    // PATCH /api/tasks/<task_id>/review/
-    // Body: { teacher_feedback?: string }
+    // Teacher: mark a submitted task as completed.
+    // PATCH /api/tasks/<task_id>/review/  — body: { teacher_feedback?: string }
+    // action: 'approve' | 'reject'
     async reviewSubmission(taskId, action, feedback = '') {
-        // action: 'approve' maps to completed; backend uses teacher_feedback
         const { data } = await api.patch(`/api/tasks/${taskId}/review/`, {
             teacher_feedback: feedback,
-            action,                    // some backends accept 'approve'|'reject'
+            action,
         })
         return data
     },
 
     // ── Teacher: assignments CRUD ────────────────────────────────────────────
-    // createAssignment accepts FormData (for file upload) or plain object
     async getAssignments() {
         const { data } = await api.get('/api/tasks/assignments/')
         return data
     },
 
-    // GET single assignment (used by the submissions review page header)
+    // Used by the submissions review page header.
     async getAssignment(id) {
         const { data } = await api.get(`/api/tasks/assignments/${id}/`)
         return data

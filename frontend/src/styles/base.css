@@ -1,6 +1,5 @@
 /*
- * base.css — TaskOra Base Styles v5 (Light Theme)
- * Body now uses --color-bg (#F8FAFC) — soft blue-grey, fully light.
+ * base.css — TaskOra base styles (light theme).
  */
 
 *, *::before, *::after {
@@ -62,7 +61,7 @@ input[type="password"]::-webkit-credentials-auto-fill-button {
 }
 input[type="password"]::-webkit-caps-lock-indicator { display: none !important; }
 
-/* ── Custom scrollbar — light ── */
+/* ── Custom scrollbar ── */
 ::-webkit-scrollbar         { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track   { background: var(--color-bg); }
 ::-webkit-scrollbar-thumb   { background: var(--color-border); border-radius: 99px; }

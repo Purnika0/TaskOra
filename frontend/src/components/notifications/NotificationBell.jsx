@@ -1,7 +1,6 @@
-// src/components/notifications/NotificationBell.jsx
 // Bell icon + unread badge for the topbar, with a dropdown panel showing the
 // most recent notifications. Clicking a notification marks it read and
-// navigates to the relevant page (assignments / submissions).
+// navigates to the relevant page.
 
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -16,7 +15,6 @@ export default function NotificationBell() {
     const wrapRef = useRef(null)
     const navigate = useNavigate()
 
-    // Close on outside click
     useEffect(() => {
         function onClick(e) {
             if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
@@ -28,7 +26,9 @@ export default function NotificationBell() {
     function toggle() {
         setOpen(o => {
             const next = !o
-            if (next) refresh() // pull the freshest list the moment it's opened
+            // Refresh on open rather than polling continuously, so the list
+            // is current whenever the user actually looks at it.
+            if (next) refresh()
             return next
         })
     }
@@ -39,6 +39,7 @@ export default function NotificationBell() {
         navigate(n.link || '/app/assignments')
     }
 
+    // Panel only shows a preview; the full list lives at /app/notifications.
     const recent = notifications.slice(0, 8)
 
     return (

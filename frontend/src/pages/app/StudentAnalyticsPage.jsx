@@ -162,7 +162,8 @@ function nepaliWeekdayLabel(dateStr) {
     return new Intl.DateTimeFormat('en-US', { timeZone: 'Asia/Kathmandu', weekday: 'short' }).format(d)
 }
 
-// Builds an SVG path for a bar with rounded top corners only.
+// Builds an SVG path for a rectangular bar with only its top two corners
+// rounded (a plain "L"-cornered rect isn't available as an SVG primitive).
 function topRoundedBarPath(x, y, w, h, r) {
     const radius = Math.min(r, w / 2, h)
     if (h <= 0) return ''
@@ -207,7 +208,6 @@ function WeeklyBarChart({ data }) {
                 aria-label="Tasks completed per day, last 7 days"
                 onMouseLeave={() => setHovered(null)}
             >
-                {/* y-axis title */}
                 <text
                     x={14} y={padTop + chartH / 2}
                     className="sap-weekly-axis-title"
@@ -217,7 +217,6 @@ function WeeklyBarChart({ data }) {
                     Tasks completed in a week
                 </text>
 
-                {/* gridlines + axis labels */}
                 {gridValues.map((gv, i) => {
                     const y = padTop + chartH - (gv / niceMax) * chartH
                     const isBaseline = gv === 0
@@ -234,7 +233,6 @@ function WeeklyBarChart({ data }) {
                     )
                 })}
 
-                {/* bars */}
                 {data.map((d, i) => {
                     const cx = padLeft + slot * i + slot / 2
                     const barH = d.value > 0 ? Math.max((d.value / niceMax) * chartH, 4) : 0
@@ -262,7 +260,6 @@ function WeeklyBarChart({ data }) {
                     )
                 })}
 
-                {/* baseline */}
                 <line x1={padLeft} y1={padTop + chartH} x2={W - padRight} y2={padTop + chartH} className="sap-weekly-baseline" />
             </svg>
         </div>

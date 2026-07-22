@@ -1,15 +1,7 @@
 /*
- * dashboard.css — TaskOra App Shell v5 (Light Professional Theme)
- *
- * KEY CHANGES from v4:
- *  - Sidebar: deep navy-blue (#0055FF) — professional, readable
- *  - Page background: #F8FAFC soft blue-grey — FULLY LIGHT
- *  - Topbar: white with subtle border
- *  - Cards: pure white with light blue-grey borders
- *  - Calendar: LIGHT THEME — white background, blue primary, red holidays
- *  - Stat boxes: white with coloured accent top border
- *  - Tab bar: light grey background — NOT dark
- *  - All text: dark for maximum readability
+ * dashboard.css — TaskOra app shell theme (light, professional).
+ * Sidebar and accents use the brand blue (#0055FF); everything else is
+ * light (white cards, #F8FAFC page background, dark text) for readability.
  */
 
 /* ═══════════════════════════════════════════════════════════
@@ -210,9 +202,8 @@ GRIDS
 @media(max-width:580px) { .course-grid { grid-template-columns:1fr; } }
 
 /* ═══════════════════════════════════════════════════════════
-BS CALENDAR — LIGHT THEME
-Changed from dark navy to clean white with blue accents.
-Holidays = RED, Assignment due dates = BLUE, Today = primary blue.
+BS CALENDAR
+Holidays = red. Today and assignment due dates share the primary accent color.
 ═══════════════════════════════════════════════════════════ */
 .cal-card {
     background: #FFFFFF;
@@ -361,8 +352,7 @@ Holidays = RED, Assignment due dates = BLUE, Today = primary blue.
     color: #E53E3E;
 }
 
-/* Assignment due date — purple dot indicator (distinct from the primary
-   color used for 'today', so the two legend keys aren't the same color) */
+/* Assignment due date — dot indicator, same color as 'today' by design */
 .cal-day.has-assignment::after {
     content: '';
     position: absolute;
@@ -378,7 +368,7 @@ Holidays = RED, Assignment due dates = BLUE, Today = primary blue.
     background: rgba(255,255,255,0.8);
 }
 
-/* Legend — light version */
+/* Legend */
 .cal-legend {
     display: flex;
     gap: 14px;
@@ -438,7 +428,7 @@ TASK / ASSIGNMENT TABLE
     transition: background 0.12s;
 }
 
-/* ── Tab bar — LIGHT (no more dark navy tab bar) ── */
+/* ── Tab bar ── */
 .tab-bar {
     display: flex;
     background: #FFFFFF;
@@ -587,7 +577,7 @@ ADMIN DASHBOARD
 
 /* ═══════════════════════════════════════════════════════════
 DASHBOARD BANNER (teacher/student hero cards)
-Now uses a lighter blue gradient instead of pitch-black navy.
+Blue gradient hero background.
 ═══════════════════════════════════════════════════════════ */
 .dashboard-banner {
     background: linear-gradient(135deg, #0044CC 0%, #0055FF 100%);

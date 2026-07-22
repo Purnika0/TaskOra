@@ -1,4 +1,3 @@
-// src/hooks/useTasks.js
 // Fetches and manages the current student's assigned tasks. Task status is
 // a 5-state string: pending | submitted | completed | rejected | overdue.
 
@@ -64,14 +63,14 @@ export function useTasks() {
 
     useEffect(() => { fetchTasks() }, [fetchTasks])
 
-    // Student submits an assignment
     const submitAssignment = useCallback(async (taskId, formData) => {
         const updated = await tasksService.submitAssignment(taskId, formData)
+        // Merge rather than replace: the response may only contain the fields
+        // this endpoint changed, so a full replace could drop other task data.
         setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updated } : t))
         return updated
     }, [])
 
-    // Compute 5-state stats
     const stats = {
         total:     tasks.length,
         completed: tasks.filter(isCompleted).length,

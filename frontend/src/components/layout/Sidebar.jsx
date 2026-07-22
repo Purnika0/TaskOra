@@ -5,6 +5,7 @@ import {
     ClipboardList, Upload, Sparkles,
 } from 'lucide-react'
 
+// Each role has a different dashboard entry route, so nav items aren't shared across roles.
 const NAV = {
     admin: [
         { to: '/app/admin',          icon: <LayoutDashboard size={15}/>, label: 'Dashboard'    },
@@ -37,6 +38,8 @@ const ROLE_BADGE = {
     student: { bg: 'rgba(255,255,255,0.14)', color: '#fff', label: 'Student'       },
 }
 
+// `collapsed` and `mobileOpen` are pure CSS-class toggles (icon-only width vs.
+// full width, and slide-in on small screens) — no separate layout logic here.
 export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
     const links = NAV[user?.role] || NAV.student
     const badge = ROLE_BADGE[user?.role] || ROLE_BADGE.student
@@ -77,6 +80,8 @@ export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
                     <NavLink
                         key={n.to + idx}
                         to={n.to}
+                        // Exact match only for each role's dashboard route — otherwise NavLink's
+                        // default prefix matching would keep it "active" on every nested page too.
                         end={n.to === '/app/admin' || n.to === '/app/teacher' || n.to === '/app/dashboard'}
                         title={collapsed ? n.label : undefined}
                         className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
@@ -91,7 +96,7 @@ export default function Sidebar({ user, onLogout, collapsed, mobileOpen }) {
                 ))}
             </nav>
 
-            {/* User footer */}
+            {/* User info + logout */}
             <div style={{ borderTop:'1px solid rgba(255,255,255,0.10)', padding:'8px', flexShrink:0 }}>
                 {!collapsed && (
                     <div style={{ display:'flex', alignItems:'center', gap:8, padding:'8px', marginBottom:4, borderRadius:8, background:'rgba(255,255,255,0.06)' }}>

@@ -1,6 +1,10 @@
 import React from 'react'
 import { AlertTriangle, RefreshCw } from 'lucide-react'
 
+// Wraps the app to catch render-time errors in any child component and show
+// a fallback screen instead of an unstyled crash/blank page. Does not catch
+// errors from event handlers, async code, or effects — only React itself
+// calls getDerivedStateFromError/componentDidCatch, and only for render errors.
 export default class ErrorBoundary extends React.Component {
     constructor(props) { super(props); this.state = { hasError: false } }
     static getDerivedStateFromError() { return { hasError: true } }

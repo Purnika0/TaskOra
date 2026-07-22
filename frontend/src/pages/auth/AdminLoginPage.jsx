@@ -1,7 +1,3 @@
-// src/pages/auth/AdminLoginPage.jsx
-//
-// Dedicated Admin Portal login screen.
-//
 // This is intentionally NOT linked from the Navbar, Sidebar, Footer, the
 // public AuthPage's role tabs, or anywhere else in the UI. It is only
 // reachable by knowing the route (see routes/AppRoutes.jsx: "/portal-admin").
@@ -100,16 +96,6 @@ export default function AdminLoginPage() {
             t -= 1; setTimer(t)
             if (t <= 0) { clearInterval(lockRef.current); setLocked(false); setAttempts(0); setTimer(0) }
         }, 1000)
-    }
-
-    function getApiError(err) {
-        if (!err) return 'Something went wrong'
-        const d = err.response?.data
-        if (!d) return err.message || 'Cannot reach server'
-        if (typeof d === 'string') return d
-        if (d.detail) return Array.isArray(d.detail) ? d.detail[0] : d.detail
-        const vals = Object.values(d).flat()
-        return vals.length ? String(vals[0]) : 'Something went wrong'
     }
 
     function validate() {

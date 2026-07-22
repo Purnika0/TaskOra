@@ -1,4 +1,3 @@
-// src/pages/app/TeacherDashboard.jsx
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -47,6 +46,9 @@ function BSCalWidget({ assignments }) {
     }, [todayData])
     const [cur, setCur] = useState(() => { const t = adToBS(nepalNow()); return { y:t.year, m:t.month } })
 
+    // todayBS resolves asynchronously; once it changes, jump the visible month to
+    // match it. Syncing during render (rather than useEffect) avoids a render of
+    // the wrong month before a follow-up re-render.
     const todayKey = todayBS?.year && todayBS?.month ? `${todayBS.year}-${todayBS.month}` : null
     const [syncedKey, setSyncedKey] = useState(todayKey)
     if (todayKey && todayKey !== syncedKey) {
@@ -58,11 +60,10 @@ function BSCalWidget({ assignments }) {
     const next = () => setCur(c => c.m === 12 ? { y:c.y+1, m:1  } : { y:c.y, m:c.m+1 })
     const rawDays     = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
     const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
-    // Backend holiday data (DB-editable via the admin) overrides the
-    // hardcoded NEPAL_HOLIDAYS fallback baked into buildMonthDays whenever
-    // it's available — same merge CalendarPage.jsx uses, so this mini
-    // calendar's holiday tooltip stays in sync with the admin-managed list
-    // instead of only ever showing the hand-typed 2081–2084 BS table.
+    // Backend holiday data (DB-editable via the admin) overrides the hardcoded
+    // NEPAL_HOLIDAYS fallback baked into buildMonthDays whenever it's available —
+    // same merge CalendarPage.jsx uses, so this mini calendar's holiday tooltip
+    // stays in sync with the admin-managed list.
     const days = useMemo(() => {
         if (!backendCal?.days?.length) return rawDays
         const bkMap = {}
@@ -115,11 +116,11 @@ function BSCalWidget({ assignments }) {
                     if (day.isSat && !day.isHoliday) cls += ' saturday'
                     if (hasAssignment)               cls += ' has-assignment'
                     
-                    // Unified tooltip matching 'Weekend' terminology
                     const hTitle   = day.holidayTitle || (day.isSat || day.isSun ? 'Weekend' : null)
                     const label    = `${day.bsDay}${hTitle ? ' — ' + hTitle : ''}${hasAssignment ? ' — assignment due' : ''}`
                     
-                    // Color overrides: Sunday now groups with holidays/Saturdays
+                    // Sunday is styled as a holiday color, same as Saturday and named
+                    // holidays, since Sunday is also a non-working day in Nepal.
                     const numColor = (day.isHoliday || day.isSun) ? RED_DIM : undefined
                     
                     return (
@@ -132,7 +133,6 @@ function BSCalWidget({ assignments }) {
                     )
                 })}
             </div>
-            {/* Updated Legend with fixed 'Today' blue dot & terminology */}
             <div className="cal-legend" style={{ marginTop:'auto', flexWrap:'wrap', gap:'5px 12px' }}>
                 <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:RED }}/>Holiday/Weekend</div>
                 <div className="cal-legend-item"><span className="cal-legend-dot" style={{ background:'var(--color-primary)' }}/>Today</div>
@@ -329,9 +329,9 @@ return (
 )
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MAIN
-// ─────────────────────────────────────────────────────────────────────────────
+// ── Main teacher dashboard: assignment board, mini calendar, and the three
+// analytics sections (ranking, groups, outliers) that summarize class-wide
+// student performance data computed by the ML layer on the backend.
 export default function TeacherDashboard() {
 const { user }  = useAuth()
 const toast     = useToast()
@@ -350,7 +350,9 @@ const { data:groups,  loading:grL, error:grErr } = useStudentGroups()
 const { data:outliers,loading:olL, error:olErr  } = useOutliers()
 
 const [deleteTarget, setDeleteTarget] = useState(null);
-const [deletingId, setDeletingId] = useState(null); // tracking loading indicators
+// Separate from deleteTarget so only the button for the assignment actually
+// being deleted shows a loading state, rather than disabling every row.
+const [deletingId, setDeletingId] = useState(null);
 
 const cancelDelete = () => setDeleteTarget(null);
 const confirmDelete = async () => {
@@ -388,7 +390,9 @@ async function handleDeleteAssignment(id) {
     } catch(err) { toast.error(apiError(err)) }
 }
 
-// Group assignments by course
+// Group assignments by course; assignments with no matching course (e.g. the
+// course was deleted) fall into an "uncategorized" bucket using whatever
+// course_name was cached on the assignment itself.
 const grouped = useMemo(() => {
     const map = {}
     assignments.forEach(a => {
@@ -400,7 +404,8 @@ const grouped = useMemo(() => {
     return Object.values(map)
 }, [assignments, courses])
 
-// Analytics
+// Totals for the stat cards, computed client-side from the already-loaded
+// assignment list rather than a separate aggregate endpoint.
 const totalSubmitted   = assignments.reduce((s,a) => s + (a.submission_count || 0), 0)
 const totalPendingRev  = assignments.reduce((s,a) => s + (a.pending_review_count || 0), 0)
 const totalApproved    = assignments.reduce((s,a) => s + (a.approved_count || 0), 0)
@@ -408,6 +413,8 @@ const totalRejected    = assignments.reduce((s,a) => s + (a.rejected_count || 0)
 
 const hour         = nepalHour()
 const timeGreeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
+// "At-Risk" is the backend's internal group name; it's relabeled to the
+// gentler "Needs Support" wherever it's shown to a teacher.
 const GRP = {
     'High Performer': { bg:'#e0f7ee', text:'#166534', label:'High Performer', pluralLabel:'High Performers' },
     'Average':        { bg:'#eff3fd', text:'#1e40af', label:'Average',        pluralLabel:'Average'         },
@@ -417,7 +424,6 @@ const GRP = {
 return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }} className="anim-fade-in">
 
-    {/* Banner */}
     <div style={{ background:'var(--color-navy)', borderRadius:14, padding:'24px 28px', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', top:-30, right:-30, width:150, height:150, background:'rgba(255,255,255,0.05)', borderRadius:'50%' }}/>
         <div style={{ position:'relative', display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:14 }}>
@@ -437,7 +443,6 @@ return (
         </div>
     </div>
 
-    {/* Analytics cards */}
     <div className="stat-grid">
         <ACard label="Total Assignments" value={assignments.length}  icon={ClipboardList} color="#1a1f35"/>
         <ACard label="Total Courses"     value={courses.length}      icon={BookOpen}      color="#3b6fd4"/>
@@ -501,7 +506,6 @@ return (
 
         {/* Courses Main Board Card (Spans across all remaining whitespace) */}
         <div className="white-card overflow-hidden courses-board-wrapper" style={{ flex: '1 1 auto', minWidth: 0, width: '100%' }}>
-            {/* Card Header */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', borderBottom: '1px solid #f0ece4', gap: 10, flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <BookOpen size={14} style={{ color: '#3b6fd4' }} />
@@ -517,7 +521,6 @@ return (
                 </div>
             </div>
 
-            {/* Dynamic Content Body */}
             {loadingAssign ? (
                 <div style={{ padding: '14px 18px' }}><LoadingBlock /></div>
             ) : assignments.length === 0 ? (
@@ -531,7 +534,6 @@ return (
                     {grouped.map(({ course, items }) => (
                         <div key={course.id} style={{ background: '#faf8f5', border: '1px solid #ece7df', borderRadius: 12, overflow: 'hidden', display: 'flex', flexDirection: 'column', width: '100%', minWidth: 0 }}>
                             
-                            {/* Course Column Header */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: 7, padding: '10px 12px', borderBottom: '2px solid #f0ece4', background: '#fff' }}>
                                 <BookOpen size={13} style={{ color: '#3b6fd4', flexShrink: 0 }} />
                                 <h4 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 12.5, color: '#1a1f35', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -542,31 +544,29 @@ return (
                                 </span>
                             </div>
 
-                            {/* Assignments List Container */}
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, padding: 10, maxHeight: 440, overflowY: 'auto' }}>
                                 {items.map(a => {
                                     const due = a.due_date;
+                                    // Whole calendar days between now and the due date; ms-per-day
+                                    // divisor (24 * 60 * 60 * 1000) is the standard conversion.
                                     const dDays = due ? Math.ceil((new Date(due) - new Date()) / 86400000) : null;
                                     const isLate = dDays !== null && dDays < 0;
                                     const subCount = a.submission_count || 0;
 
                                     return (
                                         <div key={a.id} style={{ padding: '11px 12px', background: '#fff', borderRadius: 10, border: '1px solid #ece7df' }}>
-                                            {/* Title */}
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
                                                 <p style={{ fontSize: 12.5, fontWeight: 600, color: '#1a1f35', margin: 0, display:'-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',wordBreak: 'break-word', maxWidth: '100%' }}>
                                                     {a.title}
                                                 </p>
                                             </div>
 
-                                            {/* File Badge */}
                                             {a.file && (
                                                 <span style={{ fontSize: 10, color: '#6d4fc2', background: '#f0e8ff', padding: '1px 6px', borderRadius: 99, display: 'inline-flex', alignItems: 'center', gap: 3, marginBottom: 6 }}>
                                                     <Paperclip size={9} /> File attached
                                                 </span>
                                             )}
 
-                                            {/* Combined Metadata */}
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 8 }}>
                                                 {due && (
                                                     <span style={{ fontSize: 10, color: isLate ? '#c0392b' : '#8a7e6e', display: 'flex', alignItems: 'center', gap: 3 }}>
@@ -583,7 +583,6 @@ return (
                                                 </span>
                                             </div>
 
-                                            {/* Review Status Pills */}
                                             <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 10 }}>
                                                 <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: '#f5f2ed', color: priorityColor(a.priority) }}>
                                                     {a.priority_label || '—'}
@@ -601,11 +600,12 @@ return (
                                                 )}
                                             </div>
 
-                                            {/* Card Action Buttons */}
                                             <div style={{ display: 'flex', gap: 6 }}>
                                                 <button
                                                     onClick={() => {
-                                                        // Direct Router Navigation instead of setting a modal state pop-up
+                                                        // Navigates directly to the assignment's submissions page
+                                                        // rather than opening a modal, so the URL is shareable
+                                                        // and the browser back button works as expected.
                                                         navigate(`/app/assignments/${a.id}/submissions`);
                                                     }}
                                                     style={{
@@ -626,7 +626,6 @@ return (
                                                 >
                                                     <ClipboardList size={11} /> Submissions
                                                 </button>
-                                                {/* Delete Icon Trigger */}
                                                 <button onClick={() => setDeleteTarget(a)}
                                                     style={{ padding: '5px 8px', background: '#fde8e8', color: '#c0392b', border: 'none', borderRadius: 7, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
                                                     <Trash2 size={11} />
@@ -642,12 +641,10 @@ return (
             )}
         </div>
 
-        {/* Calendar Column Card */}
         <div className="calendar-wrapper">
             <BSCalWidget assignments={assignments}/>
         </div>
     </div>
-    {/* Custom Delete Confirmation Modal Overlay */}
     {deleteTarget && (
         <div
             onClick={cancelDelete}
@@ -692,10 +689,8 @@ return (
         </div>
     )}
 
-    {/* Analytics row */}
     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }} className="grid-2">
 
-    {/* Student Ranking */}
     <Section
         title="Student Ranking"
         tag="Top 5"
@@ -801,7 +796,6 @@ return (
         </div>
     </Section>
 
-    {/* Student Groups */}
     <Section
         title="Student Performance Groups"
         icon={<Users/>}
@@ -955,7 +949,6 @@ return (
     </Section>
     </div>
 
-    {/* Outliers */}
     <Section
     title="Student Outliers"
     icon={<AlertTriangle/>}

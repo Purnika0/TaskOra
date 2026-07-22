@@ -82,6 +82,9 @@ export function NotificationProvider({ children }) {
             document.removeEventListener('visibilitychange', handleVisibility)
             window.removeEventListener('focus', fetchUnreadCount)
         }
+        // Deliberately keyed on user?.id only — fetchUnreadCount/fetchList get
+        // new identities on every render, and re-running this on those would
+        // restart the poll loop constantly instead of once per login/logout.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user?.id])
 

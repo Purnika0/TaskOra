@@ -1,5 +1,5 @@
-   /*
-   * tokens.css — TaskOra Design Tokens v8 (Updated Color Palette)
+/*
+   * tokens.css — TaskOra Design Tokens
    *
    * Brand Theme (strict two-color identity):
    * Primary    : #5452e4
@@ -25,7 +25,13 @@
       --color-primary-hover:  #3E3CBD;
       --color-primary-light:  #EEEDFD; /* Tinted overlay background */
 
-      /* Legacy aliases */
+      /* Legacy aliases — kept for backward compatibility with older class
+         names. Still referenced: --color-sidebar(-hover/-text/-text-active).
+         Not referenced anywhere else in the codebase as of this writing:
+         --color-sidebar-active, --color-secondary(-light), --color-blue(-light),
+         --color-purple(-light), --color-navy-mid. Safe to remove on a cleanup
+         pass, but left in place here since deleting variables is out of scope
+         for a comment-only pass. */
       --color-sidebar:        var(--color-primary);
       --color-sidebar-hover:  rgba(255,255,255,0.10);
       --color-sidebar-active: rgba(255,255,255,0.16);

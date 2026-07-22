@@ -1,5 +1,3 @@
-// src/utils/outlierSeverity.js
-//
 // Single source of truth for how an Isolation Forest / Z-Score outlier
 // (from ml/clustering.py -> detect_outliers()) is labeled and colored.
 // Used identically by AnalyticsPage.jsx and TeacherDashboard.jsx so the
@@ -13,6 +11,7 @@
 // so they shouldn't share a label or a reader will assume they mean the
 // same thing.
 
+// rate: student's completion_rate as a 0-100 percentage.
 export function getOutlierSeverity(rate) {
     const isCritical = rate < 30
 

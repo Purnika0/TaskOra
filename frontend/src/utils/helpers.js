@@ -1,9 +1,6 @@
-// src/utils/helpers.js
-// UPDATED per backend integration guide:
-//   • isOverdue() now checks status === 'overdue' (backend sends this)
-//   • statusBadge() updated for 4-state system: pending|submitted|completed|overdue
-//   • getTaskTitle() updated — personal tasks removed, assignment nested object is primary
-//   • deadlinePill() updated to use status field
+// Shared date/timezone, priority, task-status, and formatting helpers used
+// across the app. Task status is a 5-state string:
+//   'pending' | 'submitted' | 'completed' | 'rejected' | 'overdue'
 
 import { adToBS, BS_MONTH_NAMES } from './bsCalendar.js'
 
@@ -49,16 +46,14 @@ export function priorityColor(n) {
     const level = typeof n === 'number' ? priorityToLevel(n) : n
     return { high: '#e05252', medium: '#d4a93c', low: '#3cb87a' }[level] ?? '#b0a898'
 }
-// NOTE: there used to be a priorityLabel(n) here that collapsed the 5-level
-// Assignment.priority field (1-5, "Medium-High" etc.) into just 3 buckets
-// ("low"/"medium"/"high"). It was used for a couple of badges while the rest
-// of the app correctly displayed the API's 5-level priority_label, so the
-// same assignment could show two different words for the same value on one
-// screen. Removed — use `assignment.priority_label` from the API, or
-// `priorityLabelFor()` from constants/assignmentChoices.js, everywhere.
+// Do not add a 3-level priorityLabel(n) here. The API's `priority_label`
+// field (or `priorityLabelFor()` in constants/assignmentChoices.js) is the
+// 5-level source of truth — a separate 3-bucket helper causes the same
+// assignment to show two different priority words on one screen.
 
 // ── Task title ──────────────────────────────────────────────────────────────
-// Personal tasks removed from backend — display_title or assignment.title
+// No standalone personal-task title exists — falls back through display_title,
+// then the parent assignment's title.
 export function getTaskTitle(task) {
     return task.display_title || task.assignment?.title || task.title || 'Untitled'
 }
@@ -86,7 +81,6 @@ export function isPending(task) {
 }
 
 // ── 5-state status badge ────────────────────────────────────────────────────
-// Replaces old boolean statusBadge(isCompleted)
 export function statusBadge(task) {
     switch (task.status) {
         case 'completed':
@@ -156,15 +150,12 @@ export function fmtDate(s) {
 }
 
 // ── Due date — prefer the backend's BS conversion ───────────────────────────
-// AssignmentSerializer and TaskSerializer both already send due_date_bs
-// (computed server-side via holidays/bs_calendar.py, wrapping the real
-// nepali_datetime package). Previously every page recomputed this itself via
-// adToBS() instead of reading the value the backend already sent — this is
-// the one date the frontend can read straight from the API rather than
-// convert, so use it. Accepts a Task (checks task.due_date_bs, then
-// task.assignment.due_date_bs) or an Assignment (due_date_bs directly).
-// Falls back to fmtDate() for the rare object that doesn't carry due_date_bs,
-// so nothing breaks if this is ever called on something else.
+// AssignmentSerializer and TaskSerializer both send due_date_bs, precomputed
+// server-side (holidays/bs_calendar.py, wrapping the nepali_datetime package).
+// Prefer this over recomputing the BS date from due_date via adToBS().
+// Accepts a Task (checks task.due_date_bs, then task.assignment.due_date_bs)
+// or an Assignment (due_date_bs directly). Falls back to fmtDate() if
+// due_date_bs isn't present, so nothing breaks if called on something else.
 export function dueDateBS(entity) {
     const bs = entity?.due_date_bs || entity?.assignment?.due_date_bs
     if (bs && bs.year && bs.month && bs.day) {

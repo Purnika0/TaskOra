@@ -1,3 +1,7 @@
+// Teacher-facing detail panel for the selected submission: student info,
+// status, submission timestamp, a feedback textarea, and approve/reject
+// actions. Renders a placeholder until a submission is selected.
+
 import {
     User,
     Calendar,
@@ -41,6 +45,9 @@ export default function ReviewPanel({
     }
 
     const statusInfo = (() => {
+        // Treat as "not submitted" whenever there's no submission timestamp,
+        // regardless of status — a task can be marked pending/assigned before
+        // the student has actually turned anything in.
         if (!submission.submitted_at || submission.status === "pending" || submission.status === "assigned") {
             return {
                 label: "Not Submitted",
@@ -78,9 +85,10 @@ export default function ReviewPanel({
         }
     })()
 
-    // Student's display name, formatted from username as fallback
     const studentDisplayName = formatStudentDisplayName(submission);
 
+    // Only a submitted-but-unreviewed task can still be approved/rejected;
+    // gates the feedback textarea and action buttons below.
     const isPendingReview = submission.status === "submitted" && submission.submitted_at;
 
     return (

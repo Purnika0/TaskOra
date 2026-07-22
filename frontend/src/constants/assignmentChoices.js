@@ -29,6 +29,8 @@ export const PRIORITY_CHOICES = [
     { value: 5, label: 'High'        },
 ]
 
+// Falls back to 'Medium' for any value outside 1–5, so a bad/missing
+// priority never renders as a blank label in the UI.
 export function priorityLabelFor(value) {
     const match = PRIORITY_CHOICES.find(p => p.value === Number(value))
     return match ? match.label : 'Medium'

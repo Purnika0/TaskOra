@@ -1,4 +1,3 @@
-// src/pages/app/NotificationsPage.jsx
 // Full notification history — reachable from the bell dropdown's "View all"
 // link, and directly via /app/notifications. Available to every role.
 
@@ -31,12 +30,13 @@ export default function NotificationsPage() {
 
     async function handleClick(n) {
         if (!n.is_read) await markAsRead(n.id)
+        // Assignments is the sensible default landing page when a notification
+        // has no explicit link to follow.
         navigate(n.link || '/app/assignments')
     }
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }} className="anim-fade-in">
-            {/* Header */}
             <div className="page-header">
                 <div>
                     <h2 className="page-title">Notifications</h2>
@@ -60,7 +60,6 @@ export default function NotificationsPage() {
                 )}
             </div>
 
-            {/* Tabs */}
             <div className="am-tabs" style={{ display: 'flex', gap: 4 }}>
                 {TABS.map(t => (
                     <button
@@ -79,7 +78,6 @@ export default function NotificationsPage() {
                 ))}
             </div>
 
-            {/* List */}
             <div style={{ background: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: 14, overflow: 'hidden' }}>
                 {loading && notifications.length === 0 && (
                     <div style={{ padding: 20 }}><LoadingBlock rows={4} /></div>
@@ -101,6 +99,9 @@ export default function NotificationsPage() {
                         onMouseLeave={() => setHoveredId(null)}
                         style={{
                             display: 'flex', gap: 12, padding: '14px 16px', borderBottom: '1px solid var(--color-border)',
+                            // Unread rows stay highlighted regardless of hover, so they're
+                            // easy to spot at a glance; read rows only highlight on hover,
+                            // like a normal list item.
                             background: n.is_read
                                 ? (hoveredId === n.id ? 'var(--color-surface-subtle)' : 'var(--color-surface)')
                                 : 'var(--color-primary-light)',

@@ -1,4 +1,3 @@
-// src/components/shared/BSDatePicker.jsx
 // A compact BS (Bikram Sambat) calendar date picker dropdown.
 // Value in / value out is always an AD ISO date string ('YYYY-MM-DD'),
 // so it's a drop-in replacement for <input type="date"> — the picker
@@ -45,10 +44,10 @@ export default function BSDatePicker({ value, onChange, placeholder = 'Select da
 
     const rawDays  = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
     const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
-    // Same merge as CalendarPage.jsx and the dashboard mini calendars —
-    // backend holiday data (DB-editable) overrides the hardcoded
-    // NEPAL_HOLIDAYS fallback when available, so the day-picker's red
-    // weekend/holiday coloring and hover title stay accurate.
+    // Backend holiday data (DB-editable) overrides the hardcoded fallback list
+    // when available, so the red weekend/holiday coloring and hover title
+    // stay accurate. Same merge logic as CalendarPage.jsx and the dashboard
+    // mini calendars — keep them in sync if this changes.
     const days = useMemo(() => {
         if (!backendCal?.days?.length) return rawDays
         const bkMap = {}

@@ -3,6 +3,9 @@ import {
     UserPlus, GraduationCap, BookOpen, Mail, RefreshCw,
 } from 'lucide-react'
 
+// Maps each backend notif_type to an icon + color. Unrecognized types
+// (e.g. a new type added server-side but not yet here) fall back to a
+// neutral file icon instead of breaking the notification list.
 const CONFIG = {
     new_assignment:       { icon: FileText,     color: '#3b6fd4', bg: '#EFF3FD' },
     assignment_updated:   { icon: RefreshCw,    color: '#3b6fd4', bg: '#EFF3FD' },

@@ -1,10 +1,9 @@
-// src/services/api.js
 // Central Axios instance for all backend requests.
-//
+
 // Token strategy:
 //   access  → sessionStorage (60-min lifetime, cleared on tab close)
 //   refresh → localStorage   (1-day lifetime, persists across tabs)
-//
+
 // The request interceptor attaches the access token to every call.
 // The response interceptor catches 401s, silently refreshes the
 // access token using the refresh endpoint, and retries the original
@@ -52,6 +51,8 @@ api.interceptors.request.use(config => {
 let isRefreshing = false
 let waitQueue = [] // requests waiting while refresh is in progress
 
+// Resolves or rejects every request that queued up while a refresh was
+// already in flight, so they don't all trigger their own refresh calls.
 function processQueue(error, token = null) {
     waitQueue.forEach(({ resolve, reject }) =>
     error ? reject(error) : resolve(token)
@@ -69,6 +70,7 @@ api.interceptors.response.use(
         return Promise.reject(err)
     }
 
+    // No refresh token available — session can't be restored, log out.
     const refresh = getRefreshToken()
     if (!refresh) {
         clearTokens()
@@ -86,6 +88,8 @@ api.interceptors.response.use(
         })
     }
 
+    // First request to hit the 401 — perform the actual refresh call,
+    // update the stored access token, then replay the original request.
     original._retry = true
     isRefreshing = true
 

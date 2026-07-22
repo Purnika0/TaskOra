@@ -85,15 +85,15 @@ function DayCell({ day, isToday, isSelected, taskCount, onClick }) {
                 }}
                 aria-label={`${day.bsDay}${hTitle ? ' — ' + hTitle : ''}`}
             >
-                {/* BS date */}
+                {/* BS date (main) */}
                 <span style={{ lineHeight:1 }}>{day.bsDay}</span>
-                {/* AD date — tiny below */}
+                {/* AD date (small, secondary) */}
                 <span style={{ fontSize:8, lineHeight:1, marginTop:1, opacity: isToday ? 0.75 : 0.45 }}>
                     {day.adDate.getDate()}
                 </span>
             </div>
 
-            {/* Assignment dot — blue */}
+            {/* Assignment dot — has at least one assignment due this day */}
             {taskCount > 0 && (
                 <span style={{
                     position:'absolute', bottom:1, left:'50%',
@@ -235,7 +235,9 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onDeleteTask, is
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MAIN CALENDAR PAGE
+// MAIN CALENDAR PAGE — BS month view shared by students and teachers, with a
+// side panel of that day's assignments. Teachers can delete an assignment
+// directly from the side panel.
 // ─────────────────────────────────────────────────────────────────────────────
 export default function CalendarPage() {
     const { today: todayData }  = useToday()
@@ -263,7 +265,7 @@ export default function CalendarPage() {
         setCur({ y:todayBS.year, m:todayBS.month })
     }
 
-    const { calendar: backendCal, loading: calLoading } = useBSCalendar(cur.y, cur.m) 
+    const { calendar: backendCal, loading: calLoading } = useBSCalendar(cur.y, cur.m)
 
     const [selected, setSelected] = useState(null)
     const [allTasks, setAllTasks] = useState([])
@@ -271,10 +273,9 @@ export default function CalendarPage() {
 
     useEffect(() => {
         setLoadingT(true)
-        
-        // Use getAssignments() for teachers, and getMyTasks() for students
-        const fetchTasks = isTeacher 
-            ? tasksService.getAssignments() 
+
+        const fetchTasks = isTeacher
+            ? tasksService.getAssignments()
             : tasksService.getMyTasks()
 
         fetchTasks
@@ -349,7 +350,7 @@ export default function CalendarPage() {
     // Triggered when a teacher clicks the side panel trash icon
     const handleDeleteTask = useCallback((taskOrId) => {
         if (!isTeacher) return
-        
+
         // If it's just an ID (like 206), find the full object from allTasks so we have the title
         if (typeof taskOrId === 'number' || typeof taskOrId === 'string') {
             const fullTask = allTasks.find(t => t.id === taskOrId || t.assignment?.id === taskOrId)
@@ -359,13 +360,11 @@ export default function CalendarPage() {
         }
     }, [isTeacher, allTasks])
 
-    // Closes the modal safely
     const cancelDelete = useCallback(() => {
         if (deletingId) return // Prevent closing while a delete request is in flight
         setDeleteTarget(null)
     }, [deletingId])
 
-    // Executes the backend API request
     const confirmDelete = useCallback(async () => {
         // Fallback to the target itself if it's a primitive ID number
         const actualId = deleteTarget?.id || deleteTarget?.assignment?.id || (typeof deleteTarget !== 'object' ? deleteTarget : null);
@@ -380,146 +379,146 @@ export default function CalendarPage() {
         setDeletingId(actualId);
         try {
             await tasksService.deleteAssignment(actualId);
-            
+
             // Filter out the task by matching against both target layouts
             setAllTasks(prev => prev.filter(t => t.id !== actualId && t.assignment?.id !== actualId));
             toast.success('Assignment removed');
             setDeleteTarget(null); // Close the modal
-        } catch (err) { 
+        } catch (err) {
             console.error("Delete API failed:", err);
-            toast.error(err?.response?.data?.message || 'Failed to remove assignment'); 
+            toast.error(err?.response?.data?.message || 'Failed to remove assignment');
         } finally {
             setDeletingId(null);
         }
     }, [deleteTarget, deletingId, toast]);
 
     const holidayCount = useMemo(
-        () => days.filter(d => d?.isHoliday || d?.isSat || d?.isSun).length, 
+        () => days.filter(d => d?.isHoliday || d?.isSat || d?.isSun).length,
         [days]
     )
 
     return (
-        <div className="anim-fade-in"> 
-            <div className="page-header"> 
+        <div className="anim-fade-in">
+            <div className="page-header">
                 <div>
-                    <h2 className="page-title">Calendar</h2> 
-                    <p className="page-subtitle"> 
-                        Bikram Sambat · English {new Date().getFullYear()} · Nepal Public Holidays 
-                        {todayBS && ( 
-                            <span style={{ marginLeft:8, fontWeight:600, color:BLUE }}> 
-                                Today: {BS_MONTH_NAMES[todayBS.month-1]?.en} {todayBS.day}, {todayBS.year} BS 
+                    <h2 className="page-title">Calendar</h2>
+                    <p className="page-subtitle">
+                        Bikram Sambat · English {new Date().getFullYear()} · Nepal Public Holidays
+                        {todayBS && (
+                            <span style={{ marginLeft:8, fontWeight:600, color:BLUE }}>
+                                Today: {BS_MONTH_NAMES[todayBS.month-1]?.en} {todayBS.day}, {todayBS.year} BS
                             </span>
                         )}
                     </p>
                 </div>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}> 
-                    <button onClick={goToday} 
-                        style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', fontSize:12, fontWeight:600, background:BLUE, color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontFamily:'var(--font-display)' }}> 
-                        <CalendarDays size={13}/> Today 
+                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <button onClick={goToday}
+                        style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 14px', fontSize:12, fontWeight:600, background:BLUE, color:'#fff', border:'none', borderRadius:8, cursor:'pointer', fontFamily:'var(--font-display)' }}>
+                        <CalendarDays size={13}/> Today
                     </button>
-                    {isTeacher && ( 
-                        <span style={{ fontSize:10, fontWeight:600, padding:'4px 10px', borderRadius:99, 
-                            background: BLUE_BG, color: BLUE, 
-                            border: `1px solid rgba(84,82,228,0.18)`, 
-                            fontFamily:'var(--font-display)' }}> 
-                            Teacher 
+                    {isTeacher && (
+                        <span style={{ fontSize:10, fontWeight:600, padding:'4px 10px', borderRadius:99,
+                            background: BLUE_BG, color: BLUE,
+                            border: `1px solid rgba(84,82,228,0.18)`,
+                            fontFamily:'var(--font-display)' }}>
+                            Teacher
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className="cal-pg-grid" style={{ marginBottom:24 }}> 
-                <div className="white-card" style={{ padding:20 }}> 
-                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}> 
-                        <button className="cal-nav" onClick={prev} aria-label="Previous month"> 
-                            <ChevronLeft size={14}/> 
+            <div className="cal-pg-grid" style={{ marginBottom:24 }}>
+                <div className="white-card" style={{ padding:20 }}>
+                    <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+                        <button className="cal-nav" onClick={prev} aria-label="Previous month">
+                            <ChevronLeft size={14}/>
                         </button>
-                        <div style={{ textAlign:'center' }}> 
-                            <div style={{ display:'flex', alignItems:'baseline', gap:6, justifyContent:'center' }}> 
-                                <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#0F172A' }}> 
-                                    {bsMonth?.en} 
+                        <div style={{ textAlign:'center' }}>
+                            <div style={{ display:'flex', alignItems:'baseline', gap:6, justifyContent:'center' }}>
+                                <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'#0F172A' }}>
+                                    {bsMonth?.en}
                                 </span>
-                                <span style={{ fontSize:10, color:'#94A3B8' }}>{bsMonth?.ne}</span> 
-                                <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#0F172A' }}> 
-                                    {cur.y} BS 
+                                <span style={{ fontSize:10, color:'#94A3B8' }}>{bsMonth?.ne}</span>
+                                <span style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#0F172A' }}>
+                                    {cur.y} BS
                                 </span>
                             </div>
-                            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}> 
-                                <p style={{ fontSize:11, color:'#94A3B8', margin:'2px 0 0' }}>{adRangeStr}</p> 
-                                {calLoading && ( 
-                                    <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:9, color:'#94A3B8', margin:'2px 0 0' }}> 
-                                        <Loader size={9} style={{ animation:'to-spin 1s linear infinite' }}/> 
-                                        Syncing… 
+                            <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:6 }}>
+                                <p style={{ fontSize:11, color:'#94A3B8', margin:'2px 0 0' }}>{adRangeStr}</p>
+                                {calLoading && (
+                                    <span style={{ display:'inline-flex', alignItems:'center', gap:3, fontSize:9, color:'#94A3B8', margin:'2px 0 0' }}>
+                                        <Loader size={9} style={{ animation:'to-spin 1s linear infinite' }}/>
+                                        Syncing…
                                     </span>
                                 )}
                             </div>
                         </div>
-                        <button className="cal-nav" onClick={next} aria-label="Next month"> 
-                            <ChevronRight size={14}/> 
+                        <button className="cal-nav" onClick={next} aria-label="Next month">
+                            <ChevronRight size={14}/>
                         </button>
                     </div>
 
-                    <div className="cal-grid" style={{ marginBottom:4 }}> 
-                        {DOW_SHORT.map((d, i) => ( 
-                            <div key={d} style={{ 
-                                textAlign:'center', fontSize:11, fontWeight:600, 
-                                padding:'5px 0 8px', letterSpacing:'0.03em', 
-                                color: (i === 0 || i === 6) ? RED : '#94A3B8', 
+                    <div className="cal-grid" style={{ marginBottom:4 }}>
+                        {DOW_SHORT.map((d, i) => (
+                            <div key={d} style={{
+                                textAlign:'center', fontSize:11, fontWeight:600,
+                                padding:'5px 0 8px', letterSpacing:'0.03em',
+                                color: (i === 0 || i === 6) ? RED : '#94A3B8',
                             }}>
-                                {d} 
+                                {d}
                             </div>
                         ))}
-                        {Array(firstDow).fill(null).map((_, i) => <div key={`b${i}`}/>)} 
-                        {days.map(day => { 
-                            const isToday = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year 
-                            const isSelected = day.bsKey === selected 
+                        {Array(firstDow).fill(null).map((_, i) => <div key={`b${i}`}/>)}
+                        {days.map(day => {
+                            const isToday = todayBS && day.bsDay===todayBS.day && cur.m===todayBS.month && cur.y===todayBS.year
+                            const isSelected = day.bsKey === selected
                             return (
-                                <DayCell 
-                                    key={day.bsKey} 
-                                    day={day} 
-                                    isToday={isToday} 
-                                    isSelected={isSelected} 
-                                    taskCount={taskCountMap[day.adISO] || 0} 
-                                    onClick={() => setSelected(isSelected ? null : day.bsKey)} 
+                                <DayCell
+                                    key={day.bsKey}
+                                    day={day}
+                                    isToday={isToday}
+                                    isSelected={isSelected}
+                                    taskCount={taskCountMap[day.adISO] || 0}
+                                    onClick={() => setSelected(isSelected ? null : day.bsKey)}
                                 />
                             )
                         })}
-                        {Array(trailBlanks).fill(null).map((_, i) => <div key={`e${i}`}/>)} 
+                        {Array(trailBlanks).fill(null).map((_, i) => <div key={`e${i}`}/>)}
                     </div>
 
                     {/* Legend */}
-                    <div style={{ display:'flex', gap:14, paddingTop:10, borderTop:'1px solid #E2E8F0', justifyContent:'center', flexWrap:'wrap', marginTop:8 }}> 
+                    <div style={{ display:'flex', gap:14, paddingTop:10, borderTop:'1px solid #E2E8F0', justifyContent:'center', flexWrap:'wrap', marginTop:8 }}>
                         {[
-                            { label:'Today', swatch: <span style={{ width:12, height:12, borderRadius:3, background:BLUE, border:`2px solid ${BLUE}`, flexShrink:0, display:'inline-block' }}/> }, 
-                            { label:'Holiday / Weekend', swatch: <span style={{ width:12, height:12, borderRadius:3, background:RED, border:`1px solid ${RED}`, flexShrink:0, display:'inline-block' }}/> }, 
-                            { label:'Has Assignment', swatch: <span style={{ width:8, height:8, borderRadius:'50%', background:BLUE, flexShrink:0, display:'inline-block' }}/> }, 
-                        ].map(l => ( 
-                            <div key={l.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:'#64748B' }}> 
-                                {l.swatch} 
-                                {l.label} 
+                            { label:'Today', swatch: <span style={{ width:12, height:12, borderRadius:3, background:BLUE, border:`2px solid ${BLUE}`, flexShrink:0, display:'inline-block' }}/> },
+                            { label:'Holiday / Weekend', swatch: <span style={{ width:12, height:12, borderRadius:3, background:RED, border:`1px solid ${RED}`, flexShrink:0, display:'inline-block' }}/> },
+                            { label:'Has Assignment', swatch: <span style={{ width:8, height:8, borderRadius:'50%', background:BLUE, flexShrink:0, display:'inline-block' }}/> },
+                        ].map(l => (
+                            <div key={l.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:'#64748B' }}>
+                                {l.swatch}
+                                {l.label}
                             </div>
                         ))}
                     </div>
 
                     {/* Month summary */}
-                    <div style={{ display:'flex', gap:16, justifyContent:'center', marginTop:8 }}> 
-                        <span style={{ fontSize:10, color:'#94A3B8' }}> 
-                            <span style={{ fontWeight:700, color:'#475569', fontSize:12 }}>{daysInBSMonth(cur.y, cur.m)}</span> days 
+                    <div style={{ display:'flex', gap:16, justifyContent:'center', marginTop:8 }}>
+                        <span style={{ fontSize:10, color:'#94A3B8' }}>
+                            <span style={{ fontWeight:700, color:'#475569', fontSize:12 }}>{daysInBSMonth(cur.y, cur.m)}</span> days
                         </span>
-                        <span style={{ fontSize:10, color:'#94A3B8' }}> 
-                            <span style={{ fontWeight:700, color:RED, fontSize:12 }}>{holidayCount}</span> holidays 
+                        <span style={{ fontSize:10, color:'#94A3B8' }}>
+                            <span style={{ fontWeight:700, color:RED, fontSize:12 }}>{holidayCount}</span> holidays
                         </span>
                     </div>
                 </div>
 
-                <div className="white-card" style={{ padding:16, display:'flex', flexDirection:'column', minHeight:300 }}> 
-                    <SidePanel 
-                        day={selectedDay} 
-                        bsMonth={bsMonth} 
-                        bsYear={cur.y} 
+                <div className="white-card" style={{ padding:16, display:'flex', flexDirection:'column', minHeight:300 }}>
+                    <SidePanel
+                        day={selectedDay}
+                        bsMonth={bsMonth}
+                        bsYear={cur.y}
                         tasks={dayTasks}
-                        loadingTasks={loadingT && dayTasks.length === 0} 
-                        onDeleteTask={handleDeleteTask} // onAddTask prop removed 
+                        loadingTasks={loadingT && dayTasks.length === 0}
+                        onDeleteTask={handleDeleteTask}
                         isTeacher={isTeacher}
                     />
                 </div>

@@ -1,3 +1,6 @@
+// Teacher-facing list of a course's submissions, with a status badge per
+// student. Selecting a row drives what ReviewPanel shows.
+
 import { User, CheckCircle2, Clock3, XCircle, AlertCircle } from "lucide-react"
 import { fmtDateTime, formatStudentDisplayName } from "../../utils/helpers.js"
 
@@ -41,7 +44,9 @@ export default function StudentList({
     }
 
     function statusMeta(sub) {
-        // If there's no submission timestamp or status matches unsubmitted flags
+        // Treat as "not submitted" whenever there's no submission timestamp,
+        // regardless of status — a task can be marked pending/assigned before
+        // the student has actually turned anything in.
         if (!sub.submitted_at || sub.status === "pending" || sub.status === "assigned") {
             return {
                 label: "Not Submitted",
@@ -118,31 +123,30 @@ export default function StudentList({
                 </p>
             </div>
 
-            {/* Student List */}
-<div
-    style={{
-        flex: 1,
-        overflowY: "auto",
-    }}
->
-    {submissions.map(sub => {
-        const active = selected?.id === sub.id
-        const badge = statusMeta(sub)
-
-        // Student's display name, formatted from username as fallback
-        const studentDisplayName = formatStudentDisplayName(sub);
-        return (
+            {/* Student list */}
             <div
-                key={sub.id}
-                onClick={() => onSelect(sub)}
                 style={{
-                    padding: 16,
-                    cursor: "pointer",
-                    background: active ? "#eef4ff" : "#fff",
-                    borderBottom: "1px solid #f1ece7",
-                    transition: ".15s",
+                    flex: 1,
+                    overflowY: "auto",
                 }}
             >
+                {submissions.map(sub => {
+                    const active = selected?.id === sub.id
+                    const badge = statusMeta(sub)
+                    const studentDisplayName = formatStudentDisplayName(sub);
+
+                    return (
+                        <div
+                            key={sub.id}
+                            onClick={() => onSelect(sub)}
+                            style={{
+                                padding: 16,
+                                cursor: "pointer",
+                                background: active ? "#eef4ff" : "#fff",
+                                borderBottom: "1px solid #f1ece7",
+                                transition: ".15s",
+                            }}
+                        >
                             <div
                                 style={{
                                     display: "flex",
@@ -150,7 +154,6 @@ export default function StudentList({
                                     gap: 10,
                                 }}
                             >
-                                {/* Avatar */}
                                 <div
                                     style={{
                                         width: 42,
@@ -169,7 +172,6 @@ export default function StudentList({
                                     />
                                 </div>
 
-                                {/* Info */}
                                 <div
                                     style={{
                                         flex: 1,
@@ -202,7 +204,7 @@ export default function StudentList({
                                 </div>
                             </div>
 
-                            {/* Status Badge */}
+                            {/* Status badge */}
                             <div
                                 style={{
                                     marginTop: 10,

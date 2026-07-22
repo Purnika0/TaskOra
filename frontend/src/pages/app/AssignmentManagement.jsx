@@ -1,3 +1,6 @@
+// Assignments page — renders the student or teacher view depending on role.
+// Students submit/edit work here; teachers create, edit, and delete assignments.
+
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {

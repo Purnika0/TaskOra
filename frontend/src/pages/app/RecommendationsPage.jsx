@@ -1,19 +1,12 @@
-// src/pages/app/RecommendationsPage.jsx
-//
 // ML Integration: Collaborative Filtering (Cosine Similarity)
 //   GET /api/ml/recommendations/
 //   Response: { student, recommendations: [{ task_type, reason, similarity_score }], total }
-//
 // Backend type → Human label mapping (NO raw ML values exposed):
 //   similar_users → "Trending"        (Collaborative Filtering)
 //   cluster       → "Focus"           (K-Means)
 //   outlier       → "Attention Needed" (Isolation Forest)
-//
 // Smart priority: rec with priority ≥ High AND due_date ≤ 48h
 //   → moved to top + "Suggested" badge
-//
-// Deduplication: by task_type + type composite key
-// Stable React keys: composite key, not array index
 
 import { useMemo, useState, useEffect } from 'react'
 import { Link }                              from 'react-router-dom'
@@ -29,36 +22,34 @@ import coursesService                        from '../../services/courses.servic
 function normaliseCourseTitle(title) {
     return (title || '').split('(')[0].trim()
 }
-// ── ML type → UI mapping ──────────────────────────────────────
-// Cosine similarity output    → Trending
-// K-Means cluster output      → Focus
-// Isolation Forest output     → Attention Needed
 const CATS = {
     similar_users: { label:'Trending',          icon:TrendingUp,  color:'#3b6fd4', bg:'#eff3fd' },
     cluster:       { label:'Focus',             icon:Layers,       color:'#d4a93c', bg:'#fdf5e6' },
     outlier:       { label:'Attention Needed',  icon:AlertCircle,  color:'#e05252', bg:'#fdf0f0' },
 }
+// Falls back to "Trending" for any type the backend might add later that
+// the frontend doesn't recognize yet, rather than rendering nothing.
 function getCat(type) { return CATS[type] || CATS.similar_users }
 
-// ── Smart priority: high + due within 48 h ───────────────────
 function isSuggested(rec) {
-  // priority may be numeric (4-5) or string ("High") from backend
+    // priority may be numeric (4-5) or string ("High") from backend
     const p = rec.priority
     const hi = p === 'High' || p === 'Critical' || Number(p) >= 4
     if (!hi || !rec.due_date) return false
+    // +05:45 is Nepal Standard Time — due dates are compared against
+    // end-of-day in the student's local time, consistent with due-date
+    // handling elsewhere in the app.
     const msLeft = new Date(rec.due_date + 'T23:59:59+05:45') - Date.now()
-    return msLeft >= 0 && msLeft / 3_600_000 <= 48
+    return msLeft >= 0 && msLeft / 3_600_000 <= 48 // 3_600_000 ms = 1 hour
 }
 
-// ── Stable composite key — prevents duplicate rendering ──────
-// function recKey(rec) {
-//     return `${rec.task_type || 'unknown'}_${rec.type || 'similar_users'}`
-// }
+// Composite key instead of array index, so a recommendation keeps its
+// identity (and React doesn't remount it) if the list is reordered or
+// re-filtered — falls back to task_type when no id is present.
 function recKey(rec) {
     return `${rec.task_id || rec.assignment_id || rec.task_type}_${rec.type || 'similar_users'}`
 }
 
-// ── Loading skeleton ─────────────────────────────────────────
 function RecSkeleton() {
     return (
         <div style={{ background:'#fff', border:'1px solid #e8e3db', borderRadius:12, padding:'16px 18px', display:'flex', flexDirection:'column', gap:10 }}>
@@ -70,7 +61,6 @@ function RecSkeleton() {
     )
 }
 
-    // ── Single recommendation card ───────────────────────────────
 function RecCard({ rec }) {
     const cat       = getCat(rec.type)
     const Icon      = cat.icon
@@ -95,7 +85,6 @@ function RecCard({ rec }) {
         onMouseEnter={e => (e.currentTarget.style.boxShadow = '0 4px 18px rgba(26,31,53,0.09)')}
         onMouseLeave={e => (e.currentTarget.style.boxShadow = 'none')}
         >
-        {/* Category + Suggested badges */}
         <div style={{ display:'flex', alignItems:'center', gap:7, flexWrap:'wrap' }}>
             <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:10, fontWeight:700, padding:'3px 9px', background:cat.bg, color:cat.color, borderRadius:99, textTransform:'uppercase', letterSpacing:'0.04em' }}>
             <Icon size={10} aria-hidden="true"/> {cat.label}
@@ -107,12 +96,12 @@ function RecCard({ rec }) {
             )}
         </div>
 
-        {/* Title */}
         <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:0, lineHeight:1.35, letterSpacing:'-0.01em' }}>
             {title}
         </p>
 
-        {/* Reason — human-readable only, no ML internals */}
+        {/* Reason text is always the backend's plain-language explanation —
+            never the raw similarity score or ML model internals. */}
         <p style={{ fontSize:12, color:'#6a5e4e', margin:0, lineHeight:1.65 }}>
             {rec.reason || 'Recommended based on your academic activity and study patterns.'}
         </p>
@@ -120,7 +109,6 @@ function RecCard({ rec }) {
     )
 }
 
-// ── Category section ─────────────────────────────────────────
 function CatSection({ catKey, items }) {
     if (!items.length) return null
     const cat  = CATS[catKey]
@@ -143,11 +131,10 @@ function CatSection({ catKey, items }) {
     )
 }
 
-// ── Course filter (select box, fetched from backend) ─────────
-// A student can be enrolled in many courses, so a dropdown scales
-// better than a row of pills. Options come from the student's actual
-// enrolled courses (GET /api/courses/my/), not just whichever ones
-// happen to have a recommendation right now.
+// A student can be enrolled in many courses, so a dropdown scales better
+// than a row of pills. Options come from the student's actual enrolled
+// courses (GET /api/courses/my/), not just whichever ones happen to have
+// a recommendation right now.
 function CourseFilter({ courses, selected, onSelect }) {
     if (courses.length < 2) return null
     return (
@@ -174,13 +161,11 @@ function CourseFilter({ courses, selected, onSelect }) {
     )
 }
 
-// ── Main page ─────────────────────────────────────────────────
 export default function RecommendationsPage() {
     const { data, loading, error, refetch } = useRecommendations()
     const [selectedCourse, setSelectedCourse] = useState('all')
     const [enrolledCourses, setEnrolledCourses] = useState([])
 
-  // Fetch the student's actual enrolled courses for the filter dropdown
     useEffect(() => {
         let cancelled = false
         coursesService.getMyCourses()
@@ -195,11 +180,9 @@ export default function RecommendationsPage() {
         return () => { cancelled = true }
     }, [])
 
-  // Normalise + deduplicate + apply smart priority
     const recs = useMemo(() => {
     const raw = Array.isArray(data) ? data : (data?.recommendations || [])
 
-    // Deduplicate by composite key (task_type + type)
     const seen = new Set()
     const unique = raw.filter(r => {
         const k = recKey(r)
@@ -208,25 +191,23 @@ export default function RecommendationsPage() {
         return true
     })
 
-    // Flag suggested items
     const flagged = unique.map(r => ({ ...r, _suggested: isSuggested(r) }))
 
-    // Suggested items first, then the rest
+    // Suggested (high-priority, due within 48h) items surface first.
     return [
         ...flagged.filter(r =>  r._suggested),
         ...flagged.filter(r => !r._suggested),
     ]
 }, [data])
 
-  // Course options for the dropdown: primarily the student's actual
-  // enrolled courses (from the backend), with any course names found
-  // in the recommendations themselves folded in as a safety net.
+    // Course options for the dropdown: primarily the student's actual
+    // enrolled courses (from the backend), with any course names found
+    // in the recommendations themselves folded in as a safety net.
     const courses = useMemo(() => {
         const fromRecs = recs.map(r => r.course).filter(Boolean)
         return [...new Set([...enrolledCourses, ...fromRecs])].sort()
     }, [enrolledCourses, recs])
 
-  // Apply the course filter (if one is selected and still valid)
     const visibleRecs = useMemo(() => {
         if (selectedCourse === 'all' || !courses.includes(selectedCourse)) return recs
         return recs.filter(r => r.course === selectedCourse)
@@ -235,12 +216,13 @@ export default function RecommendationsPage() {
 const trending = visibleRecs.filter(r => !r.type || r.type === 'similar_users')
 const focus    = visibleRecs.filter(r => r.type === 'cluster')
 const attn     = visibleRecs.filter(r => r.type === 'outlier')
+// Only split into labeled sections when more than one category is present —
+// a single category with its own header would just add noise.
 const isCategorised = focus.length > 0 || attn.length > 0
 
 return (
     <div style={{ display:'flex', flexDirection:'column', gap:20 }} className="anim-fade-in">
 
-      {/* Header */}
     <div className="page-header">
         <div>
         <h2 className="page-title">Recommendations</h2>
@@ -258,22 +240,19 @@ return (
             </button>
         </div>
 
-        {/* Course filter */}
         {!loading && !error && recs.length > 0 && (
             <CourseFilter courses={courses} selected={selectedCourse} onSelect={setSelectedCourse}/>
         )}
 
-        {/* Loading skeletons */}
         {loading && (
             <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12 }}>
             {[0,1,2].map(i => <RecSkeleton key={i}/>)}
             </div>
         )}
 
-        {/* Error */}
         {!loading && error && <ErrorBlock message={error} onRetry={refetch}/>}
 
-        {/* Empty state — no recommendations at all */}
+        {/* No recommendations exist yet for this student at all */}
         {!loading && !error && recs.length === 0 && (
             <div className="white-card" style={{ padding:'52px 24px', textAlign:'center' }}>
             <div style={{ width:52, height:52, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
@@ -292,7 +271,7 @@ return (
             </div>
         )}
 
-        {/* Empty state — recommendations exist, but none for the selected course */}
+        {/* Recommendations exist, but none match the selected course filter */}
         {!loading && !error && recs.length > 0 && visibleRecs.length === 0 && (
             <div className="white-card" style={{ padding:'52px 24px', textAlign:'center' }}>
             <div style={{ width:52, height:52, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
@@ -311,7 +290,6 @@ return (
             </div>
         )}
 
-        {/* Recommendation cards */}
         {!loading && !error && visibleRecs.length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:24 }}>
             {isCategorised ? (

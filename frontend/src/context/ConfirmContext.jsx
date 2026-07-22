@@ -1,4 +1,3 @@
-// src/context/ConfirmContext.jsx
 // Async confirm dialog — replaces window.confirm() everywhere.
 // Usage:
 //   const confirm = useConfirm()
@@ -26,7 +25,7 @@ export function ConfirmProvider({ children }) {
         resolveRef.current?.(result)
     }
 
-    // Lock body scroll while dialog is open
+    // Prevent background scroll while the dialog is open (standard modal behavior).
     useEffect(() => {
         if (!dialog) return
         const prev = document.body.style.overflow
@@ -34,7 +33,7 @@ export function ConfirmProvider({ children }) {
         return () => { document.body.style.overflow = prev }
     }, [dialog])
 
-    // Close on Escape key
+    // Escape key dismisses like Cancel.
     useEffect(() => {
         if (!dialog) return
         const handler = e => { if (e.key === 'Escape') answer(false) }

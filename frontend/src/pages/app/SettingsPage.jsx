@@ -1,4 +1,3 @@
-// src/pages/app/SettingsPage.jsx
 import { useState, useRef, useEffect } from 'react'
 import { LogOut, User, Trash2, Settings, Lock, KeyRound, Mail, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { useAuth }     from '../../hooks/useAuth.js'
@@ -139,6 +138,8 @@ function OtpPasswordChangeForm({ email }) {
     const [confirmPw,   setConfirmPw]   = useState('')
     const [errors,      setErrors]      = useState({})
     const cooldownRef = useRef(null)
+    // Stop the countdown if the user navigates away mid-cooldown, so it
+    // doesn't keep ticking (and calling setState) on an unmounted component.
     useEffect(() => () => clearInterval(cooldownRef.current), [])
 
     function startCooldown() {
@@ -219,7 +220,8 @@ function OtpPasswordChangeForm({ email }) {
         )
     }
 
-    // step === 'sent'
+    // step === 'sent': the only remaining case after the 'idle' and 'done'
+    // returns above, so no explicit condition is needed here.
     return (
         <form onSubmit={handleConfirm} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <p style={{ fontSize: 13, color: '#64748b', margin: 0, fontFamily: 'var(--font-body)', lineHeight: 1.6 }}>
@@ -227,6 +229,7 @@ function OtpPasswordChangeForm({ email }) {
             </p>
             <div>
                 <FieldLabel>Verification Code</FieldLabel>
+                {/* Strip non-digits as the user types, since the code is always 6 digits. */}
                 <SInput value={otpCode} onChange={e => setOtpCode(e.target.value.replace(/\D/g, ''))} placeholder="6-digit code"/>
                 {errors.code && <p style={{ fontSize: 12, color: '#dc2626', margin: '6px 0 0' }}>{errors.code}</p>}
             </div>
@@ -302,7 +305,7 @@ export default function SettingsPage() {
             confirmLabel: 'Delete',
             isDanger: true 
         })
-        
+
         if (ok) {
             try {
                 await authService.deleteAccount()
@@ -323,7 +326,6 @@ export default function SettingsPage() {
     return (
         <div style={{ maxWidth: 540, display: 'flex', flexDirection: 'column', gap: 20 }} className="anim-fade-in">
 
-            {/* Profile Information */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px', borderBottom: '1px solid #f1f5f9', background: '#fafafa' }}>
                     <User size={15} style={{ color: '#4f46e5' }} aria-hidden="true"/>
@@ -331,7 +333,7 @@ export default function SettingsPage() {
                         Personal Information
                     </h3>
                 </div>
-                
+
                 <div style={{ padding: '24px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
                         <div style={{ width: 56, height: 56, borderRadius: '12px', background: 'linear-gradient(135deg, #4f46e5, #312e81)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', fontWeight: 700, fontFamily: 'var(--font-display)', flexShrink: 0 }}>
@@ -362,10 +364,9 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* Password & Security — role-branched */}
+            {/* Password & Security — role-branched: OTP flow for students, current-password flow for teachers/admins */}
             <SecurityCard user={user}/>
 
-            {/* Account Management & Actions */}
             <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '16px 20px', borderBottom: '1px solid #f1f5f9', background: '#fafafa' }}>
                     <Settings size={15} style={{ color: '#475569' }} aria-hidden="true"/>
@@ -373,9 +374,8 @@ export default function SettingsPage() {
                         Account Actions
                     </h3>
                 </div>
-                
+
                 <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {/* Sign Out Row */}
                     <div style={{ padding: '20px', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                         <div>
                             <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Sign Out</p>
@@ -389,7 +389,6 @@ export default function SettingsPage() {
                         </button>
                     </div>
 
-                    {/* Delete Account Row */}
                     <div style={{ padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
                         <div>
                             <p style={{ fontSize: '13px', fontWeight: 600, color: '#0f172a', margin: 0 }}>Delete Account</p>

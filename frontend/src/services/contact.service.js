@@ -1,6 +1,10 @@
+// Public contact-form submission, plus admin endpoints for managing
+// the resulting messages.
+
 import api from './api.js'
 
 const contactService = {
+    // Public — submit the contact form (no auth required).
     async submit({ name, email, subject, message }) {
         const { data } = await api.post('/api/contact/', {
             full_name: name,

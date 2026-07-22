@@ -1,5 +1,9 @@
+// Full-screen modal that lets a teacher review every submission for one
+// assignment: a student list, the submission preview, and a feedback/
+// approve-reject panel, side by side.
+
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom"; // 1. Import createPortal
+import { createPortal } from "react-dom";
 import tasksService from "../../services/tasks.service";
 import StudentList from "./StudentList";
 import SubmissionViewer from "./SubmissionViewer";
@@ -71,7 +75,8 @@ export default function StudentSubmissionWorkspace({ assignment, onClose }) {
     };
   }, [submissions]);
 
-  // 2. Wrap the layout in createPortal to append it straight to document.body
+  // Portal straight to document.body so this modal sits above everything
+  // regardless of the opening page's own stacking context or overflow rules.
   return createPortal(
     <div
       style={{
@@ -82,7 +87,7 @@ export default function StudentSubmissionWorkspace({ assignment, onClose }) {
         bottom: 0,
         width: "100vw",
         height: "100vh",
-        zIndex: 2147483647, // Absolute maximum allowed 32-bit integer z-index value
+        zIndex: 2147483647, // max 32-bit z-index — guarantees this sits above any other UI
         background: "rgba(0,0,0,.6)",
         display: "flex",
         justifyContent: "center",
@@ -170,7 +175,7 @@ export default function StudentSubmissionWorkspace({ assignment, onClose }) {
           </button>
         </div>
 
-        {/* Workspace Grid */}
+        {/* Workspace grid: student list / submission preview / review panel */}
         <div
           className="workspace-grid"
           style={{
@@ -198,6 +203,6 @@ export default function StudentSubmissionWorkspace({ assignment, onClose }) {
         </div>
       </div>
     </div>,
-    document.body // 3. Target root body
+    document.body
   );
 }

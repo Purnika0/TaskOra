@@ -173,7 +173,7 @@ export function buildMonthDays(bsYear, bsMonth) {
         return {
             bsDay, adDate, adDay: adDate.getDate(), dow,
             isSat, isSun,
-            // both Saturday and Sunday now count as weekend holidays
+            // Saturday and Sunday both count as weekend holidays
             isHoliday: !!hTitle || isSat || isSun,
             holidayTitle: hTitle,
             bsKey,

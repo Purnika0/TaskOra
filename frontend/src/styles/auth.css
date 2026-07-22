@@ -177,7 +177,7 @@
 .auth-btn-blue:hover { background: var(--color-primary-hover); box-shadow: 0 4px 12px rgba(77, 127, 232, 0.25); }
 
 /* ── Status icon badges (Forgot / Verify-OTP / Reset / Verify-Email views) ──
-   Replaces the previous rgba(255,255,255,0.15)+white-icon combo, which was
+Replaces the previous rgba(255,255,255,0.15)+white-icon combo, which was
    effectively invisible on the white .login-card background. */
 .auth-icon-badge {
     width: 46px; height: 46px; border-radius: var(--radius-md);
@@ -191,7 +191,7 @@
 .auth-icon-badge-sm { width: 38px; height: 38px; margin: 0; flex-shrink: 0; }
 
 /* ── Forgot Password: inline left-aligned header (replaces the centered
-   floating-icon pattern shared by every other status screen, so this
+floating-icon pattern shared by every other status screen, so this
    view reads less like a generic template) ── */
 .auth-header-inline {
     display: flex; align-items: center; gap: 10px; margin-bottom: 8px;

@@ -1,4 +1,6 @@
-// src/services/analytics.service.js
+// Read-only analytics endpoints consumed by the Student and Teacher
+// dashboards. All responses are pre-aggregated by the backend.
+
 import api from './api.js'
 
 const analyticsService = {
@@ -37,4 +39,3 @@ const analyticsService = {
 }
 
 export default analyticsService
-

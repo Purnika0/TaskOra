@@ -1,8 +1,6 @@
-// src/pages/app/EnrolledStudentsPage.jsx
 // Teacher-only: view students enrolled in one of their courses, and
 // un-enroll a student from here. Reached from CoursesPage.jsx's
 // "Enrolled Students" button → /app/courses/:id/students
-//
 // Note: once a student is un-enrolled, the teacher can no longer see any
 // of that student's tasks/submissions for this course (enforced on the
 // backend) — this page only ever lists currently-enrolled students.
@@ -144,7 +142,6 @@ export default function EnrolledStudentsPage() {
 
             <DashboardFooter/>
 
-            {/* Un-enroll confirmation modal */}
             {removeTarget && (
                 <div
                     onClick={cancelUnenroll}

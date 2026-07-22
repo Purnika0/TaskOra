@@ -1,7 +1,5 @@
-// src/hooks/useAnalytics.js
-// All analytics + ML data hooks.
-// useApiData now exposes a `refetch` callback so pages can
-// re-request data after user actions (e.g. completing tasks).
+// All analytics + ML data hooks. useApiData exposes a `refetch` callback
+// so pages can re-request data after user actions (e.g. completing tasks).
 
 import { useState, useEffect, useCallback } from 'react'
 import analyticsService from '../services/analytics.service.js'
@@ -16,20 +14,23 @@ function useApiData(fetcher, deps = []) {
     const [error,   setError]   = useState(null)
     const [tick,    setTick]    = useState(0)  // increment to force re-fetch
 
-  // Stable fetch function
     const run = useCallback(() => {
-    setLoading(true)
-    fetcher()
-        .then(d  => { setData(d);  setError(null) })
-        .catch(e => {
-        const msg = e?.response?.data?.detail
-            || e?.response?.data?.error
-            || e?.message
-            || 'Failed to load data'
-        setError(msg)
-        })
-        .finally(() => setLoading(false))
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+        setLoading(true)
+        fetcher()
+            .then(d  => { setData(d);  setError(null) })
+            .catch(e => {
+                const msg = e?.response?.data?.detail
+                    || e?.response?.data?.error
+                    || e?.message
+                    || 'Failed to load data'
+                setError(msg)
+            })
+            .finally(() => setLoading(false))
+        // fetcher is intentionally left out of deps: callers like
+        // useStudentRanking() pass a fresh closure every render, so
+        // including it here would refetch on every render instead of
+        // only when the caller-declared `deps` actually change.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, deps)
 
     useEffect(() => { run() }, [run, tick])

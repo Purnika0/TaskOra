@@ -1,5 +1,3 @@
-// src/routes/DashboardShell.jsx
-//
 // App shell: Sidebar + Topbar + scrollable <Outlet> + SiteFooter (Student/Teacher only).
 // DashboardShell has one small piece of role-based rendering — whether
 // SiteFooter shows (hidden for Admin) — everything else is layout-only.
@@ -108,7 +106,7 @@ export default function DashboardShell() {
                     SiteFooter is intentionally omitted for Admin — the admin dashboard is
                     an internal tool, not a page visitors browse, so the marketing-style
                     footer (About/Contact/Legal links) doesn't belong there. Student and
-                    Teacher dashboards keep it as before. */}
+                    Teacher dashboards keep it. */}
                 <main className="content">
                     <div className="content-inner">
                         <Outlet/>

@@ -1,5 +1,3 @@
-// src/utils/urgencyLabel.js
-//
 // Display helpers for Task.priority_score — the system-computed *urgency*
 // (0-1 float, recomputed live on every fetch).
 //

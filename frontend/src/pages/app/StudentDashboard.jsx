@@ -205,7 +205,6 @@ function UpcomingWidget({ tasks }) {
                 ? <p style={{ fontSize:12, color:'var(--color-text-placeholder)' }}>No pending assignments.</p>
                 : <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                     {upcoming.map(t => {
-                        const due = getTaskDueDate(t)
                         const color = statusColor(t)
                         const bg    = statusBg(t)
                         return (

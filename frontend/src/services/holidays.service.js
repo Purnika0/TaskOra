@@ -1,3 +1,6 @@
+// Public holiday-calendar lookups (AD/BS), plus admin CRUD for managing
+// holiday entries.
+
 import api from './api.js'
 
 const holidaysService = {

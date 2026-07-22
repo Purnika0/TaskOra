@@ -1,4 +1,3 @@
-// src/context/ToastContext.jsx
 // Lightweight toast notifications. No external library needed.
 // Usage: const toast = useToast()
 //        toast.success('Task added')
