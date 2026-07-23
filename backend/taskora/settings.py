@@ -12,29 +12,53 @@ import os
 import socket
 from datetime import timedelta
 from pathlib import Path
+from dotenv import load_dotenv
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Loads variables from a local .env file (BASE_DIR/.env) into os.environ, if
+# one exists. In real deployments there usually is no .env file — the host
+# platform (Docker, systemd, Render/Railway/etc.) injects real environment
+# variables directly — so this is purely a local-dev convenience and is a
+# no-op if the file is missing. See .env.example for the variables this
+# project expects.
+load_dotenv(BASE_DIR / '.env')
+
+
+def env(key, default=None, required=False):
+    """
+    Small helper around os.environ.get with a clear failure message.
+    required=True means "there is no safe default — fail loudly at startup
+    rather than silently running with an empty/placeholder secret."
+    """
+    value = os.environ.get(key, default)
+    if required and not value:
+        raise ImproperlyConfigured(
+            f"Environment variable {key} is required but not set. "
+            f"Copy .env.example to .env and fill it in (see backend/README "
+            f"or .env.example for details)."
+        )
+    return value
 
 
 # ── Core / security ──────────────────────────────────────────────────────
 # Quick-start development settings - unsuitable for production as-is.
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 #
-# NOTE (known issue, tracked for future cleanup): SECRET_KEY, the database
-# password below, and the email credentials further down are all hardcoded
-# in this file rather than read from environment variables. That's fine for
-# local development/demo purposes but would need to move to env vars (e.g.
-# via python-decouple or django-environ) before any real deployment, since
-# this file is committed to version control.
+# SECRET_KEY, the database password, and the email credentials are all read
+# from environment variables (via a local .env file in development — see
+# .env.example) rather than hardcoded here, since this settings.py file is
+# committed to version control.
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0_a3ny-w&ro7434pfr52e&4=2zknlkmpd_a^s=@nw%#skj5tgk'
+SECRET_KEY = env('DJANGO_SECRET_KEY', required=True)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DJANGO_DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [h.strip() for h in env('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
 
 
 # ── Application definition ───────────────────────────────────────────────
@@ -121,7 +145,7 @@ WSGI_APPLICATION = 'taskora.wsgi.application'
 # This only affects your local machine — do not commit this change
 # or set it permanently, so the rest of the team keeps using PostgreSQL.
 
-if os.environ.get('USE_SQLITE', '').lower() == 'true':
+if env('USE_SQLITE', '').lower() == 'true':
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
@@ -132,11 +156,11 @@ else:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': 'taskora_db',
-            'USER': 'taskora_user',
-            'PASSWORD': 'admin123',
-            'HOST': 'localhost',
-            'PORT': '5432',
+            'NAME': env('DB_NAME', 'taskora_db'),
+            'USER': env('DB_USER', 'taskora_user'),
+            'PASSWORD': env('DB_PASSWORD', required=True),
+            'HOST': env('DB_HOST', 'localhost'),
+            'PORT': env('DB_PORT', '5432'),
         }
     }
 
@@ -231,13 +255,27 @@ SPECTACULAR_SETTINGS = {
 # ── Email — Gmail SMTP ───────────────────────────────────────────────────
 # Custom backend (users/backends.py) forces IPv4-only SMTP connections,
 # since some networks silently fail to reach Gmail over IPv6.
-EMAIL_BACKEND = 'users.backends.IPv4EmailBackend'
+EMAIL_HOST_USER     = env('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', '')
+
+if DEBUG and not (EMAIL_HOST_USER and EMAIL_HOST_PASSWORD):
+    # Local dev without Gmail creds configured yet: print emails (OTP codes,
+    # admin notifications, etc.) to the console instead of sending them, so
+    # `manage.py runserver` still works. Never falls back like this outside
+    # DEBUG — real deployments must set both env vars.
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_HOST_USER = EMAIL_HOST_USER or 'taskora-dev@example.com'
+else:
+    EMAIL_BACKEND = 'users.backends.IPv4EmailBackend'
+    if not (EMAIL_HOST_USER and EMAIL_HOST_PASSWORD):
+        raise ImproperlyConfigured(
+            "EMAIL_HOST_USER and EMAIL_HOST_PASSWORD are required when DEBUG=False."
+        )
+
 EMAIL_HOST          = 'smtp.gmail.com'
 EMAIL_PORT          = 587
 EMAIL_USE_TLS       = True
-EMAIL_HOST_USER     = 'taskora2083@gmail.com'
-EMAIL_HOST_PASSWORD = 'dnex lnin hypa fdwr'
-DEFAULT_FROM_EMAIL  = 'TaskOra <taskora2083@gmail.com>'
+DEFAULT_FROM_EMAIL  = f'TaskOra <{EMAIL_HOST_USER}>'
 
 # Contact form submissions are emailed to this address (the admin's Gmail).
 ADMIN_NOTIFICATION_EMAIL = EMAIL_HOST_USER
