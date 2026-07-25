@@ -74,7 +74,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'drf_spectacular',
-    'drf_spectacular_sidecar',  # served locally instead of Swagger UI's CDN
 
     # TaskOra apps
     'users',
@@ -210,4 +209,78 @@ USE_TZ = True
 
 
 # ── Static & media files ─────────────────────────────────────────────────
-# https://docs.djangopro
+# https://docs.djangoproject.com/en/6.0/howto/static-files/
+
+STATIC_URL = 'static/'
+
+# User-uploaded files: assignment reference documents and student
+# submissions (see tasks/models.py). Served via taskora/urls.py's
+# static() helper in development only (DEBUG=True).
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+
+# ── Django REST Framework / JWT / API schema ─────────────────────────────
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        # JWT first for the SPA frontend; session auth kept second so the
+        # browsable API / Django admin session still works when browsing
+        # the API directly (e.g. via Swagger UI).
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_RATES': {
+        'otp_request': '5/hour',   # max 5 OTP sends/resends per email per hour
+        'otp_verify':  '10/hour',  # max 10 verify attempts per email per hour
+    },
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'TaskOra API',
+    'DESCRIPTION': 'API for the TaskOra student task management platform',
+    'VERSION': '1.0.0',
+}
+
+
+# ── Email — Gmail SMTP ───────────────────────────────────────────────────
+# Custom backend (users/backends.py) forces IPv4-only SMTP connections,
+# since some networks silently fail to reach Gmail over IPv6.
+EMAIL_HOST_USER     = env('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', '')
+
+if DEBUG and not (EMAIL_HOST_USER and EMAIL_HOST_PASSWORD):
+    # Local dev without Gmail creds configured yet: print emails (OTP codes,
+    # admin notifications, etc.) to the console instead of sending them, so
+    # `manage.py runserver` still works. Never falls back like this outside
+    # DEBUG — real deployments must set both env vars.
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+    EMAIL_HOST_USER = EMAIL_HOST_USER or 'taskora-dev@example.com'
+else:
+    EMAIL_BACKEND = 'users.backends.IPv4EmailBackend'
+    if not (EMAIL_HOST_USER and EMAIL_HOST_PASSWORD):
+        raise ImproperlyConfigured(
+            "EMAIL_HOST_USER and EMAIL_HOST_PASSWORD are required when DEBUG=False."
+        )
+
+EMAIL_HOST          = 'smtp.gmail.com'
+EMAIL_PORT          = 587
+EMAIL_USE_TLS       = True
+DEFAULT_FROM_EMAIL  = f'TaskOra <{EMAIL_HOST_USER}>'
+
+# Contact form submissions are emailed to this address (the admin's Gmail).
+ADMIN_NOTIFICATION_EMAIL = EMAIL_HOST_USER
+
+# Prevents the whole request from hanging indefinitely if the SMTP server
+# is unreachable (e.g. a firewall silently drops the connection rather than
+# refusing it) — caps any socket operation at 10 seconds.
+socket.setdefaulttimeout(10)
