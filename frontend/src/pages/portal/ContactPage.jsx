@@ -1,14 +1,12 @@
-import { SiteFooter } from '../../components/layout/Footer.jsx'
-    // src/pages/portal/ContactPage.jsx
-    // Auth-aware navbar: shows Sign In OR logged-in user dropdown.
-    // Fully responsive with proper mobile layout.
+// src/pages/portal/ContactPage.jsx
 
-    import { useState, useRef, useEffect } from 'react'
-    import { Link }  from 'react-router-dom'
-    import { useAuth }             from '../../hooks/useAuth.js'
-    import { useToast }            from '../../context/ToastContext.jsx'
-    import contactService          from '../../services/contact.service.js'
-    import { Mail, Phone, MapPin, CheckCircle2, ChevronDown, LayoutDashboard, LogOut, ArrowRight, Menu, X } from 'lucide-react'
+import { useState } from 'react'
+import { useAuth }             from '../../hooks/useAuth.js'
+import { useToast }            from '../../context/ToastContext.jsx'
+import contactService          from '../../services/contact.service.js'
+import { Mail, Phone, MapPin, CheckCircle2, ArrowRight } from 'lucide-react'
+import { SiteFooter } from '../../components/layout/Footer.jsx'
+import PublicNavbar from '../../components/layout/PublicNavbar.jsx'
 
     const inp = {
     width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'10px 12px',
@@ -36,80 +34,13 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
     )
     }
 
-    // Auth-aware user menu
-    function UserMenu({ user, logout }) {
-    const [open, setOpen] = useState(false)
-    const ref = useRef(null)
-    const init = (user.full_name || user.username || '?').charAt(0).toUpperCase()
-    const name = user.full_name || user.username || 'User'
-
-    useEffect(() => {
-        function handle(e) { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
-        if (open) document.addEventListener('mousedown', handle)
-        return () => document.removeEventListener('mousedown', handle)
-    }, [open])
-
-    return (
-        <div ref={ref} style={{ position:'relative' }}>
-        <button
-            onClick={() => setOpen(v => !v)}
-            aria-expanded={open}
-            aria-label="User menu"
-            style={{
-            display:'flex', alignItems:'center', gap:8, padding:'6px 10px',
-            border:'1.5px solid var(--color-border)', borderRadius:9, cursor:'pointer',
-            background:'#fff', transition:'border-color 0.15s', fontFamily:'var(--font-body)',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.borderColor = 'var(--color-text-placeholder)')}
-            onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-border)')}
-        >
-            <div style={{ width:26, height:26, borderRadius:'50%', background:'var(--color-navy)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, color:'#fff', fontFamily:'var(--font-display)', flexShrink:0 }}>
-            {init}
-            </div>
-            <span style={{ fontSize:13, fontWeight:600, color:'var(--color-text)', maxWidth:120, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
-            {name}
-            </span>
-            <ChevronDown size={12} style={{ color:'var(--color-text-placeholder)', transition:'transform 0.15s', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }} />
-        </button>
-
-        {open && (
-            <div style={{
-            position:'absolute', right:0, top:'calc(100% + 6px)', zIndex:50,
-            background:'#fff', border:'1px solid var(--color-border)', borderRadius:10,
-            boxShadow:'0 4px 20px rgba(26,31,53,0.12)', minWidth:168, padding:5,
-            animation:'to-slideUp 0.15s ease both',
-            }}>
-            <Link to="/app/dashboard" onClick={() => setOpen(false)}
-                style={{ display:'flex', alignItems:'center', gap:8, padding:'8px 10px', fontSize:13, color:'var(--color-text)', borderRadius:6, textDecoration:'none', fontFamily:'var(--font-body)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-bg)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-                <LayoutDashboard size={13} style={{ color:'var(--color-text-muted)' }} />
-                Dashboard
-            </Link>
-            <div style={{ height:1, background:'var(--color-bg)', margin:'3px 4px' }} />
-            <button onClick={() => { logout(); setOpen(false) }}
-                style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'8px 10px', fontSize:13, color:'var(--color-red)', background:'none', border:'none', cursor:'pointer', borderRadius:6, fontFamily:'var(--font-body)', textAlign:'left' }}
-                onMouseEnter={e => (e.currentTarget.style.background = '#fef2f2')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-            >
-                <LogOut size={13} />
-                Sign Out
-            </button>
-            </div>
-        )}
-        </div>
-    )
-    }
-
     export default function ContactPage() {
-    const { user, logout } = useAuth()
+    const { user } = useAuth()
     const toast = useToast()
     const [form, setForm] = useState({ name:'', email:'', subject:'', message:'' })
     const [errs, setErrs] = useState({})
     const [busy, setBusy] = useState(false)
     const [sent, setSent] = useState(false)
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
     const f = (k, v) => setForm(p => ({ ...p, [k]: v }))
 
@@ -156,87 +87,9 @@ import { SiteFooter } from '../../components/layout/Footer.jsx'
             .ct-grid { grid-template-columns: 1fr !important; }
             .ct-left  { display: none !important; }
             }
-            .ct-nav-right {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            }
-            @media (max-width: 400px) {
-            .ct-nav-right .ct-register { display: none !important; }
-            }
-            .pub-nav-link {
-            font-size:13px; color:var(--color-text-secondary); text-decoration:none;
-            padding:6px 12px; border-radius:8px;
-            transition:background 0.13s, color 0.13s;
-            font-family:var(--font-body); font-weight:500;
-            }
-            a.pub-nav-link:visited { color:var(--color-text-secondary); }
-            .pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
-            a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
-            @media (max-width:640px) { .pub-nav-links { display:none; } }
-            .pub-nav-toggle { display:none; background:none; border:none; cursor:pointer; padding:6px; color:var(--color-text); align-items:center; justify-content:center; }
-            @media (max-width:640px) { .pub-nav-toggle { display:flex; } }
-            .pub-nav-mobile-menu {
-            position:absolute; top:100%; left:0; right:0;
-            background:#fff; border-bottom:1px solid var(--color-border);
-            box-shadow:0 8px 24px rgba(15,23,42,0.10);
-            display:flex; flex-direction:column; padding:8px; gap:2px; z-index:49;
-            }
-            .pub-nav-mobile-menu .pub-nav-link { padding:10px 14px; }
         `}</style>
 
-        {/* Navbar */}
-        <header style={{ padding:'12px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, borderBottom:'1px solid rgba(26,31,53,0.06)' }}>
-            <Link to="/" style={{ display:'flex', alignItems:'center', gap:9, textDecoration:'none', flexShrink:0 }}>
-            <div style={{ width:32, height:32, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                <img src="/logo.png" alt="TaskOra logo" width={32} height={32} style={{ width:'100%', height:'100%', objectFit:'cover' }} />
-            </div>
-            <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:15, color:'var(--color-text)', letterSpacing:'-0.01em' }}>
-                TaskOra
-            </span>
-            </Link>
-
-            <div className="pub-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Link to="/" className="pub-nav-link">Home</Link>
-                <Link to="/#features" className="pub-nav-link">Features</Link>
-                <Link to="/about" className="pub-nav-link" onClick={e => e.currentTarget.blur()}>About Us</Link>
-                <Link to="/contact" className="pub-nav-link active" onClick={e => e.currentTarget.blur()}>Contact Us</Link>
-            </div>
-
-            <div className="ct-nav-right">
-            {user ? (
-                <UserMenu user={user} logout={logout} />
-            ) : (
-                <>
-                <Link to="/auth?view=signup" className="ct-register"
-                    style={{ fontSize:13, fontWeight:500, color:'var(--color-text-muted)', textDecoration:'none', padding:'6px 12px', borderRadius:8, fontFamily:'var(--font-body)', transition:'color 0.15s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--color-text)')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--color-text-muted)')}
-                >
-                    Register
-                </Link>
-                <Link to="/auth?view=login"
-                    style={{ fontSize:13, fontWeight:600, color:'#fff', textDecoration:'none', padding:'7px 14px', borderRadius:8, background:'var(--color-primary)', fontFamily:'var(--font-display)', transition:'background 0.15s', letterSpacing:'-0.01em' }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-primary-hover)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'var(--color-primary)')}
-                >
-                    Sign In
-                </Link>
-                </>
-            )}
-            </div>
-            <button className="pub-nav-toggle" onClick={() => setMobileMenuOpen(o => !o)} aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'} aria-expanded={mobileMenuOpen}>
-                {mobileMenuOpen ? <X size={20}/> : <Menu size={20}/>}
-            </button>
-            {mobileMenuOpen && (
-                <div className="pub-nav-mobile-menu">
-                    <Link to="/" className="pub-nav-link" onClick={() => setMobileMenuOpen(false)}>Home</Link>
-                    <Link to="/#features" className="pub-nav-link" onClick={() => setMobileMenuOpen(false)}>Features</Link>
-                    <Link to="/about" className="pub-nav-link" onClick={() => setMobileMenuOpen(false)}>About Us</Link>
-                    <Link to="/contact" className="pub-nav-link active" onClick={() => setMobileMenuOpen(false)}>Contact Us</Link>
-                </div>
-            )}
-        </header>
+        <PublicNavbar/>
 
         {/* Page heading */}
         <div style={{ textAlign:'center', padding:'28px 24px 16px' }}>

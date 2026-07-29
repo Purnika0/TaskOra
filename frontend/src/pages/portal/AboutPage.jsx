@@ -1,90 +1,20 @@
 // Public page — no login required.
 
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-    ArrowRight, Menu, X, Command, MessageCircle, RotateCw, CalendarDays,
+    ArrowRight, Command, MessageCircle, RotateCw, CalendarDays,
     FileText, MessageSquare, Hourglass, TrendingUp, CheckCircle2,
 } from 'lucide-react'
 import { SiteFooter } from '../../components/layout/Footer.jsx'
+import PublicNavbar from '../../components/layout/PublicNavbar.jsx'
 import { useAuth } from '../../hooks/useAuth.js'
-
-const PUB_NAV_CSS = `
-.pub-nav-link {
-    font-size:13px; color:var(--color-text-secondary); text-decoration:none;
-    padding:6px 12px; border-radius:8px;
-    transition:background 0.13s, color 0.13s;
-    font-family:var(--font-body); font-weight:500;
-}
-a.pub-nav-link:visited { color:var(--color-text-secondary); }
-.pub-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
-a.pub-nav-link.active:visited { color:var(--color-text-secondary); }
-@media (max-width:640px) { .pub-nav-links { display:none; } }
-.pub-nav-toggle { display:none; background:none; border:none; cursor:pointer; padding:6px; color:var(--color-text); align-items:center; justify-content:center; }
-@media (max-width:640px) { .pub-nav-toggle { display:flex; } }
-.pub-nav-mobile-menu {
-    position:absolute; top:100%; left:0; right:0;
-    background:#fff; border-bottom:1px solid var(--color-border);
-    box-shadow:0 8px 24px rgba(15,23,42,0.10);
-    display:flex; flex-direction:column; padding:8px; gap:2px; z-index:49;
-}
-.pub-nav-mobile-menu .pub-nav-link { padding:10px 14px; }
-`
-
-function PubNav({ user }) {
-    const [open, setOpen] = useState(false)
-    return (
-        <nav style={{ background: '#fff', borderBottom: '1px solid var(--color-border)', padding: '0 24px', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 50 }}>
-            <style>{PUB_NAV_CSS}</style>
-            <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-                <div style={{ width: 30, height: 30, borderRadius: 8, overflow:'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src="/logo.png" alt="TaskOra logo" width={30} height={30} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                </div>
-                <span style={{ fontFamily: 'var(--font-display)', fontWeight: 800, fontSize: 16, color: 'var(--color-text)', letterSpacing: '-0.02em' }}>TaskOra</span>
-            </Link>
-            <div className="pub-nav-links" style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Link to="/" className="pub-nav-link">Home</Link>
-                <Link to="/#features" className="pub-nav-link">Features</Link>
-                <Link to="/about" className="pub-nav-link active" onClick={e => e.currentTarget.blur()}>About Us</Link>
-                <Link to="/contact" className="pub-nav-link" onClick={e => e.currentTarget.blur()}>Contact Us</Link>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                {user ? (
-                    <Link to="/app" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff', textDecoration: 'none', borderRadius: 8, background: 'var(--color-primary)' }}>
-                        Dashboard <ArrowRight size={14} />
-                    </Link>
-                ) : (
-                    <>
-                        <Link to="/auth?view=login" style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, color: 'var(--color-text-secondary)', textDecoration: 'none', borderRadius: 8 }}>
-                            Sign In
-                        </Link>
-                        <Link to="/auth?view=signup" style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600, color: '#fff', textDecoration: 'none', borderRadius: 8, background: 'var(--color-primary)' }}>
-                            Sign Up
-                        </Link>
-                    </>
-                )}
-                <button className="pub-nav-toggle" onClick={() => setOpen(o => !o)} aria-label={open ? 'Close menu' : 'Open menu'} aria-expanded={open}>
-                    {open ? <X size={20}/> : <Menu size={20}/>}
-                </button>
-            </div>
-            {open && (
-                <div className="pub-nav-mobile-menu">
-                    <Link to="/" className="pub-nav-link" onClick={() => setOpen(false)}>Home</Link>
-                    <Link to="/#features" className="pub-nav-link" onClick={() => setOpen(false)}>Features</Link>
-                    <Link to="/about" className="pub-nav-link active" onClick={() => setOpen(false)}>About Us</Link>
-                    <Link to="/contact" className="pub-nav-link" onClick={() => setOpen(false)}>Contact Us</Link>
-                </div>
-            )}
-        </nav>
-    )
-}
 
 export default function AboutPage() {
     const { user } = useAuth()
 
     return (
         <div style={{ minHeight: '100vh', background: 'var(--color-bg)', fontFamily: 'var(--font-body)', color: 'var(--color-text-secondary)' }}>
-            <PubNav user={user}/>
+            <PublicNavbar/>
 
             {/* 1. Hero Section */}
             <section style={{ background: 'linear-gradient(135deg, #EEEDFD 0%, #E6E5FB 100%)', padding: '64px 24px' }}>

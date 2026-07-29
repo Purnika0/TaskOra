@@ -13,7 +13,6 @@ import { useAuth }         from '../../hooks/useAuth.js'
 import { useToast }        from '../../context/ToastContext.jsx'
 import tasksService        from '../../services/tasks.service.js'
 import coursesService      from '../../services/courses.service.js'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker         from '../../components/shared/BSDatePicker.jsx'
 import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, dueDateBS } from '../../utils/helpers.js'
@@ -734,8 +733,6 @@ function StudentAssignments() {
                 </div>
             )}
 
-            <DashboardFooter/>
-
             {/* Submit modal (student-only) */}
             {submitTask && (
                 <SubmitModal
@@ -988,8 +985,6 @@ function TeacherAssignments() {
                     })}
                 </div>
             )}
-
-            <DashboardFooter/>
 
             {showForm && (
                 <AssignmentFormModal

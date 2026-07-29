@@ -10,7 +10,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Users, UserMinus, Calendar } from 'lucide-react'
 import coursesService from '../../services/courses.service.js'
 import { useToast } from '../../context/ToastContext.jsx'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import { apiError, fmtDate } from '../../utils/helpers.js'
 
@@ -139,8 +138,6 @@ export default function EnrolledStudentsPage() {
                     </div>
                 )
             )}
-
-            <DashboardFooter/>
 
             {removeTarget && (
                 <div

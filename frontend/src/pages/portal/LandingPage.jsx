@@ -1,459 +1,236 @@
-import { useState, useRef, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth.js'
+import PublicNavbar from '../../components/layout/PublicNavbar.jsx'
 import { SiteFooter } from '../../components/layout/Footer.jsx'
 import {
-    BarChart3, ArrowRight, Menu, X,
-    Users, BookOpen, Upload, ClipboardList, ThumbsUp
+    ArrowRight, ClipboardList, UploadCloud, LineChart, Mail,
 } from 'lucide-react'
 
-// STYLES
 const LP_CSS = `
-.lp-nav {
-    position:sticky; top:0; z-index:100;
-    background:#FFFFFF;
-    border-bottom:1px solid var(--color-border);
-    padding:0 24px; height:60px;
-    display:flex; align-items:center; justify-content:space-between;
-}
-.lp-nav-link {
-    font-size:13px; color:var(--color-text-secondary); text-decoration:none;
-    padding:6px 12px; border-radius:8px;
-    transition:background 0.13s, color 0.13s;
-    font-family:var(--font-body); font-weight:500;
-}
-a.lp-nav-link:visited { color:var(--color-text-secondary); }
-.lp-nav-link:hover { background:var(--color-surface-subtle); color:var(--color-text); }
-
-/* Hero section */
 .lp-hero {
-    background:var(--color-surface-subtle);
-    border-bottom:1px solid var(--color-border);
-    padding:64px 24px 56px;
+    background: linear-gradient(135deg, #EEEDFD 0%, #E6E5FB 100%);
+    padding: 72px 24px 64px;
+    text-align: center;
 }
 .lp-hero-inner {
-    max-width:1040px; margin:0 auto;
-    display:grid; grid-template-columns:1.1fr 0.9fr; gap:48px; align-items:center;
-}
-.lp-eyebrow {
-    display:inline-flex; align-items:center; gap:7px;
-    color:var(--color-primary); background:var(--color-primary-light);
-    font-size:12.5px; font-weight:700; padding:6px 14px;
-    border-radius:99px; margin-bottom:18px;
-    font-family:var(--font-display); letter-spacing:0.04em;
-    text-transform:uppercase;
+    max-width: 720px; margin: 0 auto 48px;
 }
 .lp-h1 {
-    font-family:var(--font-display); font-weight:800;
-    font-size:clamp(28px,4.2vw,44px); color:var(--color-text);
-    letter-spacing:-0.03em; line-height:1.12;
-    margin:0 0 16px;
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(28px, 4.4vw, 44px); color: var(--color-text);
+    letter-spacing: -0.03em; line-height: 1.15;
+    margin: 0 0 18px;
 }
-.lp-h1 em { font-style:normal; color:var(--color-primary); }
 .lp-sub {
-    font-size:15px; color:var(--color-text-secondary);
-    max-width:480px; margin:0 0 28px; line-height:1.7;
+    font-size: 15.5px; color: var(--color-text-secondary);
+    max-width: 560px; margin: 0 auto 30px; line-height: 1.7;
 }
-.lp-cta-row { display:flex; gap:10px; flex-wrap:wrap; }
+.lp-cta-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
 
 .lp-btn-primary {
-    display:inline-flex; align-items:center; gap:8px;
-    background:var(--color-primary); color:#fff;
-    font-family:var(--font-display); font-weight:700; font-size:14px;
-    padding:12px 22px; border-radius:10px; border:none; cursor:pointer;
-    text-decoration:none; transition:background 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--color-primary); color: #fff;
+    font-family: var(--font-display); font-weight: 700; font-size: 14px;
+    padding: 13px 24px; border-radius: 10px; border: none; cursor: pointer;
+    text-decoration: none; transition: background 0.15s ease;
 }
-.lp-btn-primary:hover { background:var(--color-primary-hover); }
+.lp-btn-primary:hover { background: var(--color-primary-hover); }
 .lp-btn-secondary {
-    display:inline-flex; align-items:center; gap:8px;
-    background:#fff; color:var(--color-text);
-    font-family:var(--font-display); font-weight:600; font-size:14px;
-    padding:12px 22px; border-radius:10px;
-    border:1.5px solid var(--color-border); cursor:pointer;
-    text-decoration:none; transition:border-color 0.15s, background 0.15s;
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #fff; color: var(--color-text);
+    font-family: var(--font-display); font-weight: 600; font-size: 14px;
+    padding: 13px 24px; border-radius: 10px;
+    border: 1.5px solid var(--color-border); cursor: pointer;
+    text-decoration: none; transition: border-color 0.15s ease, background 0.15s ease;
 }
-.lp-btn-secondary:hover { border-color:var(--color-text-placeholder); background:var(--color-surface-subtle); }
+.lp-btn-secondary:hover { border-color: var(--color-text-placeholder); background: var(--color-surface-subtle); }
 
-/* Mockup rendering */
-.lp-mockup {
-    background:#fff; border:1px solid var(--color-border);
-    border-radius:14px; padding:18px;
-    box-shadow:var(--shadow-md);
+/* Hero screenshot — sits inside the gradient hero, framed in white so it lifts off the color */
+.lp-shot-wrap {
+    max-width: 980px; margin: 0 auto;
 }
-.lp-mockup-bar { display:flex; align-items:center; gap:6px; margin-bottom:14px; }
-.lp-mockup-dot { width:7px; height:7px; border-radius:50%; background:var(--color-border); }
-.lp-mockup-row { display:flex; gap:8px; margin-bottom:10px; }
-.lp-mockup-stat {
-    flex:1; background:var(--color-surface-subtle); border-radius:8px; padding:10px 12px;
-    border:1px solid var(--color-border);
+.lp-shot-frame {
+    border: 1px solid rgba(255,255,255,0.6); border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+    overflow: hidden; background: #fff;
+    line-height: 0;
 }
+.lp-shot-frame img { display: block; width: 100%; height: auto; }
 
-.lp-section { padding:64px 24px; max-width:1040px; margin:0 auto; }
-.lp-section-head { max-width:560px; margin:0 0 36px; }
-.lp-section-head.center { margin:0 auto 36px; text-align:center; }
+/* Intro section */
+.lp-intro {
+    padding: 64px 24px;
+}
+.lp-intro-panel {
+    max-width: 1000px; margin: 0 auto;
+    background: linear-gradient(180deg, #EEEDFD 0%, #F1F0FC 100%);
+    border-radius: 28px;
+    padding: 52px 40px;
+}
+.lp-intro-head { max-width: 620px; margin: 0 0 36px; }
 .lp-section-title {
-    font-family:var(--font-display); font-weight:800;
-    font-size:clamp(22px,3vw,30px); color:var(--color-text);
-    letter-spacing:-0.02em; margin:0 0 8px;
+    font-family: var(--font-display); font-weight: 800;
+    font-size: clamp(22px, 3vw, 28px); color: var(--color-primary);
+    letter-spacing: -0.02em; margin: 0 0 10px;
 }
-.lp-section-sub { font-size:14px; color:var(--color-text-secondary); line-height:1.7; margin:0; }
+.lp-section-sub { font-size: 14.5px; color: var(--color-text-secondary); line-height: 1.7; margin: 0; }
 
-/* Features */
-.lp-features {
-    display:grid; grid-template-columns:1.2fr 1fr; gap:14px;
+.lp-intro-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;
 }
-.lp-feature-lead {
-    background:var(--color-navy); color:#fff;
-    border-radius:14px; padding:28px;
-    display:flex; flex-direction:column; justify-content:flex-end; min-height:260px;
+.lp-intro-item {
+    display: flex; flex-direction: column; gap: 12px;
+    background: #fff; border-radius: 16px; padding: 24px 22px;
+    box-shadow: 0 6px 20px rgba(15,23,42,0.06);
 }
-.lp-feature-list { display:flex; flex-direction:column; gap:14px; }
-.lp-feature-row {
-    display:flex; gap:14px; align-items:flex-start;
-    background:#fff; border:1px solid var(--color-border);
-    border-radius:12px; padding:16px;
+.lp-intro-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.lp-feature-icon {
-    width:36px; height:36px; border-radius:9px; flex-shrink:0;
-    background:var(--color-primary-light); color:var(--color-primary);
-    display:flex; align-items:center; justify-content:center;
+.lp-intro-item h3 {
+    font-family: var(--font-display); font-weight: 700; font-size: 15px;
+    color: var(--color-text); margin: 0;
 }
-
-/* Benefits Grid (Responsive) */
-.lp-benefits-grid {
-    display:grid;
-    grid-template-columns:repeat(3, 1fr);
-    gap:14px;
+.lp-intro-item p {
+    font-size: 13.5px; color: var(--color-text-muted); line-height: 1.65; margin: 0;
 }
 
-@media(max-width:840px) {
-    .lp-hero-inner { grid-template-columns:1fr; }
-    .lp-features { grid-template-columns:1fr; }
+/* Contact preview */
+.lp-contact {
+    background: var(--color-primary-light);
 }
-@media(max-width:768px) {
-    .lp-benefits-grid { grid-template-columns:1fr; gap:16px; }
+.lp-contact-inner {
+    max-width: 1000px; margin: 0 auto; padding: 44px 24px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; flex-wrap: wrap;
 }
-@media(max-width:640px) {
-    .lp-hero { padding:44px 20px; }
-    .lp-section { padding:44px 20px; }
-    .lp-nav-links { display:none; }
-    .lp-mobile-btn { display:flex !important; }
+.lp-contact-text h3 {
+    font-family: var(--font-display); font-weight: 700; font-size: 17px;
+    color: var(--color-text); margin: 0 0 6px;
 }
+.lp-contact-text p {
+    font-size: 13.5px; color: var(--color-text-secondary); margin: 0; line-height: 1.6;
+}
+.lp-contact-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.lp-contact-email {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 13px; color: var(--color-text-secondary); text-decoration: none;
+    transition: color 0.15s ease;
+}
+.lp-contact-email:hover { color: var(--color-text); }
 
-.lp-mobile-menu {
-    position:fixed; inset:0; z-index:200;
-    background:var(--color-navy);
-    padding:20px 24px; display:flex; flex-direction:column; gap:8px;
-    animation: to-fadeIn 0.18s ease both;
+@media (max-width: 720px) {
+    .lp-intro-grid { grid-template-columns: 1fr; gap: 16px; }
+    .lp-intro-panel { padding: 40px 28px; }
 }
-.lp-mobile-menu a:focus-visible,
-.lp-mobile-menu button:focus-visible {
-    outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px;
+@media (max-width: 560px) {
+    .lp-hero { padding: 48px 20px 40px; }
+    .lp-intro { padding: 48px 20px; }
+    .lp-intro-panel { padding: 32px 20px; border-radius: 20px; }
+    .lp-contact-inner { padding: 32px 20px; justify-content: flex-start; }
 }
 `
 
-const FEATURE_ROWS = [
+const INTRO_ITEMS = [
     {
-        icon:<ClipboardList size={16}/>,
-        title:'Assignment Tracking',
-        desc:'View all your assignments and due dates in one organized dashboard.'
+        icon: <ClipboardList size={18} />,
+        title: 'Assignments & Deadlines',
+        desc: 'Every assignment and due date in one dashboard, organized by course.',
+        bg: 'var(--color-primary-light)', color: 'var(--color-primary)',
     },
     {
-        icon:<ThumbsUp size={16}/>,
-        title:'Online Submissions',
-        desc:'Submit assignments online and receive grades and feedback from your teachers.'
+        icon: <UploadCloud size={18} />,
+        title: 'Submissions & Feedback',
+        desc: 'Submit coursework online and receive grades and feedback from teachers.',
+        bg: 'var(--color-green-light)', color: 'var(--color-green)',
     },
     {
-        icon:<Users size={16}/>,
-        title:'Class Enrollment',
-        desc:'Join your classes quickly using enrollment codes provided by your teachers.'
-    },
-]
-
-const BENEFITS = [
-    {
-        icon:<Upload size={18}/>,
-        title:'Easy File Uploads',
-        desc:'Upload assignment files securely from your computer or mobile device.'
-    },
-    {
-        icon:<BookOpen size={18}/>,
-        title:'Organized Workspace',
-        desc:'Keep your courses, assignments, and deadlines organized in one place.'
-    },
-    {
-        icon:<BarChart3 size={18}/>,
-        title:'Track Your Progress',
-        desc:'Monitor assignment status, submissions, and overall academic progress.'
+        icon: <LineChart size={18} />,
+        title: 'Progress Tracking',
+        desc: 'See completed, pending, and overdue work at a glance throughout the semester.',
+        bg: 'var(--color-amber-light)', color: 'var(--color-amber)',
     },
 ]
-function DashboardMockup() {
-    return (
-        <div className="lp-mockup">
-            <div className="lp-mockup-bar">
-                <div className="lp-mockup-dot"/><div className="lp-mockup-dot"/><div className="lp-mockup-dot"/>
-                <div style={{ flex:1, height:6, background:'var(--color-surface-subtle)', borderRadius:3, marginLeft:4 }}/>
-            </div>
-            <div className="lp-mockup-row">
-                {[
-                    { label:'Assignments', value:'12' },
-                    { label:'Submitted',   value:'8'  },
-                    { label:'Completed',   value:'5'  },
-                    { label:'Pending',     value:'3'  },
-                ].map(s => (
-                    <div key={s.label} className="lp-mockup-stat">
-                        <p style={{ fontSize:16, fontWeight:800, color:'var(--color-text)', margin:0, fontFamily:'var(--font-display)' }}>{s.value}</p>
-                        <p style={{ fontSize:9, color:'var(--color-text-muted)', margin:0, textTransform:'uppercase', letterSpacing:'0.06em', fontWeight:600 }}>{s.label}</p>
-                    </div>
-                ))}
-            </div>
-            {[
-                { title: 'Assignment: Implement JDBC — Connect Java Application to PostgreSQL', course: 'Advanced Java Programming', status: 'Completed' },
-                { title: 'Lab Report: Deploy an Application on AWS/Azure/GCP', course: 'Cloud Computing', status: 'Pending' },
-                { title: 'Homework: Effort Estimation Case Study', course: 'Software Project Management', status: 'Submitted' },
-            ].map((a, i) => (
-                <div key={i} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'9px 10px', background:'var(--color-surface-subtle)', borderRadius:8, marginBottom:6, border:'1px solid var(--color-border)' }}>
-                    <div style={{ minWidth:0, flex:1 }}>
-                        <p style={{ fontSize:11, fontWeight:600, color:'var(--color-text)', margin:0, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{a.title}</p>
-                        <p style={{ fontSize:9, color:'var(--color-text-muted)', margin:'1px 0 0' }}>{a.course}</p>
-                    </div>
-                    <span className={`pill pill-${a.status === 'Completed' ? 'completed' : a.status === 'Pending' ? 'pending' : 'submitted'}`} style={{ marginLeft:8, flexShrink:0 }}>{a.status}</span>
-                </div>
-            ))}
-        </div>
-    )
-}
 
 export default function LandingPage() {
     const { user } = useAuth()
-    const location = useLocation()
-    const [menuOpen, setMenuOpen] = useState(false)
-    const menuRef = useRef(null)
-    const menuBtnRef = useRef(null)
-
-    const ctaLabel = user ? 'Go to Dashboard' : 'Get Started'
-
-    // Scroll to the target section when arriving with a hash in the URL
-    // (e.g. a "Features" link from another page navigating to /#features).
-    useEffect(() => {
-        if (!location.hash) return
-        const el = document.getElementById(location.hash.slice(1))
-        el?.scrollIntoView({ behavior: 'smooth' })
-    }, [location.hash])
-
-    // Close on Escape, lock body scroll, move focus into the menu on open,
-    // and restore focus to the hamburger button on close.
-    useEffect(() => {
-        if (!menuOpen) return
-        const prevOverflow = document.body.style.overflow
-        document.body.style.overflow = 'hidden'
-        menuRef.current?.querySelector('a,button')?.focus()
-        const handler = e => { if (e.key === 'Escape') setMenuOpen(false) }
-        window.addEventListener('keydown', handler)
-        return () => {
-            document.body.style.overflow = prevOverflow
-            window.removeEventListener('keydown', handler)
-            menuBtnRef.current?.focus()
-        }
-    }, [menuOpen])
 
     return (
-        <div style={{ fontFamily:'var(--font-body)', background:'var(--color-bg)', minHeight:'100vh' }}>
+        <div style={{ fontFamily: 'var(--font-body)', background: 'var(--color-bg)', minHeight: '100vh' }}>
             <style>{LP_CSS}</style>
 
-            {menuOpen && (
-                <div className="lp-mobile-menu" ref={menuRef} role="dialog" aria-modal="true" aria-label="Site menu">
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:24 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                            <div style={{ width:30, height:30, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center' }}>
-                                <img src="/logo.png" alt="TaskOra logo" width={30} height={30} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                            </div>
-                            <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:16, color:'#fff' }}>TaskOra</span>
-                        </div>
-                        <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ background:'none', border:'none', color:'#fff', cursor:'pointer', padding:6, borderRadius:7 }}><X size={22}/></button>
-                    </div>
-                    <Link to="/" onClick={() => setMenuOpen(false)}
-                        style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
-                        Home
-                    </Link>
-                    <a href="#features" onClick={() => setMenuOpen(false)}
-                        style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
-                        Features
-                    </a>
-                    <Link to="/about" onClick={e => { setMenuOpen(false); e.currentTarget.blur() }}
-                        style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
-                        About Us
-                    </Link>
-                    <Link to="/contact" onClick={e => { setMenuOpen(false); e.currentTarget.blur() }}
-                        style={{ display:'block', color:'rgba(255,255,255,0.75)', fontSize:18, fontWeight:600, textDecoration:'none', padding:'14px 0', borderBottom:'1px solid rgba(255,255,255,0.10)', fontFamily:'var(--font-display)' }}>
-                        Contact Us
-                    </Link>
-                    <div style={{ marginTop:20, display:'flex', flexDirection:'column', gap:10 }}>
-                        <Link to={user ? '/app' : '/auth?view=signup'} onClick={() => setMenuOpen(false)}
-                            style={{ background:'#fff', color:'var(--color-navy)', textAlign:'center', fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, padding:14, borderRadius:10, textDecoration:'none' }}>
-                            {ctaLabel}
-                        </Link>
-                    </div>
-                </div>
-            )}
+            <PublicNavbar />
 
-            {/* Navbar */}
-            <nav className="lp-nav">
-                <Link to="/" style={{ display:'flex', alignItems:'center', gap:10, textDecoration:'none' }}>
-                    <div style={{ width:32, height:32, borderRadius:9, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-                        <img src="/logo.png" alt="TaskOra logo" width={32} height={32} style={{ width:'100%', height:'100%', objectFit:'cover' }}/>
-                    </div>
-                    <span style={{ fontFamily:'var(--font-display)', fontWeight:800, fontSize:17, color:'var(--color-text)', letterSpacing:'-0.02em' }}>TaskOra</span>
-                </Link>
-
-                <div className="lp-nav-links" style={{ display:'flex', alignItems:'center', gap:2 }}>
-                    <Link to="/" className="lp-nav-link">Home</Link>
-                    <a href="#features" className="lp-nav-link">Features</a>
-                    <Link to="/about" className="lp-nav-link" onClick={e => e.currentTarget.blur()}>About Us</Link>
-                    <Link to="/contact" className="lp-nav-link" onClick={e => e.currentTarget.blur()}>Contact Us</Link>
-                </div>
-
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                    {user ? (
-                        <Link to="/app" className="lp-btn-primary" style={{ padding:'8px 16px', fontSize:13 }}>
-                            Dashboard <ArrowRight size={13}/>
-                        </Link>
-                    ) : (
-                        <>
-                            <Link to="/auth?view=login" className="lp-nav-link" style={{ fontWeight:600 }}>Sign In</Link>
-                            <Link to="/auth?view=signup" className="lp-btn-primary" style={{ padding:'8px 16px', fontSize:13 }}>
-                                Sign Up <ArrowRight size={13}/>
-                            </Link>
-                        </>
-                    )}
-                    <button ref={menuBtnRef} className="lp-mobile-btn" onClick={() => setMenuOpen(true)} aria-label="Open menu"
-                        style={{ display:'none', background:'none', border:'none', cursor:'pointer', padding:6, color:'var(--color-text-secondary)', alignItems:'center', borderRadius:7 }}>
-                        <Menu size={20}/>
-                    </button>
-                </div>
-            </nav>
-
-            {/* Hero Section */}
+            {/* Hero */}
             <section className="lp-hero">
                 <div className="lp-hero-inner">
-                    <div>
-                        <span className="lp-eyebrow"><img src="/logo.png" alt="" width={16} height={16} style={{ borderRadius:4, objectFit:'cover' }}/> Smart Assignment Management</span>
-                        <h1 className="lp-h1">
-                            Manage Every Assignment,<br/><em>Meet Every Deadline.</em>
-                        </h1>
-                        <p className="lp-sub">
-                            TaskOra helps students and teachers manage assignments, track deadlines, submit coursework, and receive feedback through one organized and easy-to-use platform.
-                        </p>
-                        <div className="lp-cta-row">
-                            {user ? (
-                                <Link to="/app" className="lp-btn-primary">Go to Dashboard <ArrowRight size={15}/></Link>
-                            ) : (
-                                <>
-                                    <Link to="/auth?view=signup" className="lp-btn-primary">Create Your Account <ArrowRight size={15}/></Link>
-                                    <Link to="/auth?view=login" className="lp-btn-secondary">Sign In</Link>
-                                </>
-                            )}
-                        </div>
+                    <h1 className="lp-h1">
+                        Academic Assignment Management, Organized.
+                    </h1>
+                    <p className="lp-sub">
+                        TaskOra helps students and teachers manage assignments, track deadlines, submit
+                        coursework, and share feedback — all in one platform built for classroom use.
+                    </p>
+                    <div className="lp-cta-row">
+                        {user ? (
+                            <Link to="/app" className="lp-btn-primary">Go to Dashboard <ArrowRight size={15} /></Link>
+                        ) : (
+                            <>
+                                <Link to="/auth?view=signup" className="lp-btn-primary">Get Started <ArrowRight size={15} /></Link>
+                                <Link to="/auth?view=login" className="lp-btn-secondary">Sign In</Link>
+                            </>
+                        )}
                     </div>
-                    <DashboardMockup/>
+                </div>
+
+                {/* Hero screenshot — framed in white so it lifts off the gradient backdrop */}
+                <div className="lp-shot-wrap">
+                    <div className="lp-shot-frame">
+                        <img src="/dashboard-preview.png" alt="TaskOra dashboard showing assignments, submissions, and progress" />
+                    </div>
                 </div>
             </section>
 
-            {/* Key Features Section */}
-            <section className="lp-section" id="features">
-                <div className="lp-section-head">
-                    <h2 className="lp-section-title">Everything You Need to Stay Organized Throughout the Semester</h2>
-                    <p className="lp-section-sub">Designed to simplify assignment management for students and teachers with an intuitive, distraction-free experience.</p>
-                </div>
-                <div className="lp-features">
-                    <div className="lp-feature-lead">
-                        <BookOpen size={26} style={{ marginBottom:14, opacity:0.85 }}/>
-                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:18, margin:'0 0 8px', color:'#fff' }}>Manage Your Courses</h3>
-                        <p style={{ fontSize:13, color:'rgba(255,255,255,0.70)', margin:0, lineHeight:1.6 }}>
-                            Keep all your courses organized in one place. View assignments, monitor deadlines, submit work, and receive feedback from teachers—all from an easy-to-use dashboard.
+            {/* Short introduction */}
+            <section className="lp-intro">
+                <div className="lp-intro-panel">
+                    <div className="lp-intro-head">
+                        <h2 className="lp-section-title">Built for Real Classroom Use</h2>
+                        <p className="lp-section-sub">
+                            TaskOra brings assignment tracking, submissions, and academic progress
+                            into a single, organized workspace for students and teachers.
                         </p>
                     </div>
-                    <div className="lp-feature-list">
-                        {FEATURE_ROWS.map(f => (
-                            <div key={f.title} className="lp-feature-row">
-                                <div className="lp-feature-icon">{f.icon}</div>
-                                <div>
-                                    <h4 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'var(--color-text)', margin:'0 0 4px' }}>{f.title}</h4>
-                                    <p style={{ fontSize:13, color:'var(--color-text-secondary)', margin:0, lineHeight:1.55 }}>{f.desc}</p>
-                                </div>
+                    <div className="lp-intro-grid">
+                        {INTRO_ITEMS.map(item => (
+                            <div key={item.title} className="lp-intro-item">
+                                <div className="lp-intro-icon" style={{ background: item.bg, color: item.color }}>{item.icon}</div>
+                                <h3>{item.title}</h3>
+                                <p>{item.desc}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* Benefits Section */}
-            <section style={{ background:'var(--color-surface-subtle)', borderTop:'1px solid var(--color-border)', borderBottom:'1px solid var(--color-border)' }}>
-                <div className="lp-section" id="benefits">
-                <div className="lp-section-head center">
-                    <h2 className="lp-section-title">Simplify Your Academic Journey</h2>
-                    <p className="lp-section-sub">From enrollment to graded feedback — everything your semester needs, in one place.</p>
-                </div>
-                <div className="lp-benefits-grid">
-                    {BENEFITS.map(b => (
-                        <div key={b.title} style={{ background:'#fff', border:'1px solid var(--color-border)', borderRadius:12, padding:'20px 18px' }}>
-                            <div className="lp-feature-icon" style={{ marginBottom:12 }}>{b.icon}</div>
-                            <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:14, color:'var(--color-text)', margin:'0 0 6px' }}>{b.title}</h3>
-                            <p style={{ fontSize:13, color:'var(--color-text-secondary)', margin:0, lineHeight:1.6 }}>{b.desc}</p>
-                        </div>
-                    ))}
-                </div>
+            {/* Small contact preview */}
+            <section className="lp-contact">
+                <div className="lp-contact-inner">
+                    <div className="lp-contact-text">
+                        <h3>Have a question?</h3>
+                        <p>Reach out and we'll get back to you within a day.</p>
+                    </div>
+                    <div className="lp-contact-actions">
+                        <a className="lp-contact-email" href="mailto:taskora2083@gmail.com">
+                            <Mail size={14} /> taskora2083@gmail.com
+                        </a>
+                        <Link to="/contact" className="lp-btn-secondary">Contact Us</Link>
+                    </div>
                 </div>
             </section>
 
-            {/* Call to Action Section */}
-            <section style={{ 
-                background: 'var(--color-primary-light)', 
-                borderTop: '1px solid var(--color-border)',
-                borderBottom: '1px solid var(--color-border)',
-                padding: '64px 24px', 
-                textAlign: 'center' 
-            }}>
-                <h2 style={{ 
-                    fontFamily: 'var(--font-display)', 
-                    fontWeight: 800, 
-                    fontSize: 'clamp(22px,3.5vw,32px)', 
-                    color: 'var(--color-text)', 
-                    letterSpacing: '-0.02em', 
-                    margin: '0 0 12px' 
-                }}>
-                    Stay Organized Throughout Your Semester
-                </h2>
-                <p style={{ 
-                    fontFamily: 'var(--font-body)',
-                    fontSize: '15px', 
-                    color: 'var(--color-text-secondary)', 
-                    maxWidth: '540px',
-                    margin: '0 auto 28px',
-                    lineHeight: '1.6'
-                }}>
-                    Experience a smarter way to manage assignments, submissions, and academic progress with TaskOra.
-                </p>
-                <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-                    {user ? (
-                        <Link to="/app" className="lp-btn-primary">
-                            Go to Dashboard <ArrowRight size={15}/>
-                        </Link>
-                    ) : (
-                        <>
-                            <Link to="/auth?view=signup" className="lp-btn-primary">
-                                Create Your Account <ArrowRight size={15}/>
-                            </Link>
-                            <Link to="/auth?view=login" className="lp-btn-secondary">
-                                Sign In
-                            </Link>
-                        </>
-                    )}
-                </div>
-            </section>
-
-            {/* Footer Section (Deep brand color) */}
-            <div style={{ background: 'var(--color-navy)', color: '#FFFFFF' }}>
+            {/* Footer */}
+            <div style={{ background: 'var(--color-navy)', color: '#fff' }}>
                 <SiteFooter />
             </div>
         </div>

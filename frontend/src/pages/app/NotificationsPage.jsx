@@ -6,7 +6,6 @@ import { useNavigate } from 'react-router-dom'
 import { CheckCheck, Trash2, Inbox, Eraser } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { useNotifications } from '../../context/NotificationContext.jsx'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock } from '../../components/shared/Loader.jsx'
 import NotificationIcon from '../../components/notifications/NotificationIcon.jsx'
 
@@ -149,7 +148,6 @@ export default function NotificationsPage() {
                 ))}
             </div>
 
-            <DashboardFooter />
         </div>
     )
 }

@@ -12,7 +12,6 @@ import { useMemo, useState, useEffect } from 'react'
 import { Link }                              from 'react-router-dom'
 import { TrendingUp, Layers, AlertCircle, Star, Zap, RefreshCw, BookOpen, ChevronDown } from 'lucide-react'
 import { useRecommendations }                from '../../hooks/useAnalytics.js'
-import { DashboardFooter }                   from '../../components/layout/Footer.jsx'
 import { ErrorBlock }                        from '../../components/shared/Loader.jsx'
 import coursesService                        from '../../services/courses.service.js'
 
@@ -307,7 +306,6 @@ return (
             </div>
         )}
 
-        <DashboardFooter/>
         </div>
     )
 }

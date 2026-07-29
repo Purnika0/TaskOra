@@ -4,7 +4,6 @@ import { Plus, GraduationCap, Hash, User, Pencil, Trash2, ListChecks, LogOut, Us
 import { useAuth }        from '../../hooks/useAuth.js'
 import { useToast }       from '../../context/ToastContext.jsx'
 import coursesService     from '../../services/courses.service.js'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock }   from '../../components/shared/Loader.jsx'
 import { apiError }       from '../../utils/helpers.js'
 
@@ -414,7 +413,6 @@ export default function CoursesPage() {
                 </div>
             )}
 
-            <DashboardFooter/>
         </div>
     )
 }

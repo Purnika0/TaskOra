@@ -9,7 +9,6 @@ import { useAuth }                         from '../../hooks/useAuth.js'
 import { useTasks, isPending, isRejected, statusLabel, statusBg, statusColor } from '../../hooks/useTasks.js'
 import { useStudentSummary }               from '../../hooks/useAnalytics.js'
 import { useUpcomingHolidays, useToday, useBSCalendar }   from '../../hooks/useHolidays.js'
-import { DashboardFooter }                 from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock }        from '../../components/shared/Loader.jsx'
 import { useToast }                        from '../../context/ToastContext.jsx'
 import tasksService                        from '../../services/tasks.service.js'
@@ -767,8 +766,6 @@ export default function StudentDashboard({ user: propUser }) {
             ) : (
                 <AssignmentTable tasks={tasks} onSubmit={setSubmitTask}/>
             )}
-
-            <DashboardFooter/>
 
             {/* Submit modal */}
             {submitTask && (

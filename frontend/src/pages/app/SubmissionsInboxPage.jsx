@@ -12,7 +12,6 @@ import { Search, Inbox } from 'lucide-react'
 import tasksService from '../../services/tasks.service.js'
 import coursesService from '../../services/courses.service.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import { apiError, fmtDate } from '../../utils/helpers.js'
 import ReviewModal from '../../components/shared/ReviewSubmissionModal.jsx'
@@ -237,8 +236,6 @@ export default function SubmissionsInboxPage() {
                     )}
                 </>
             )}
-
-            <DashboardFooter/>
 
             {reviewTask && (
                 <ReviewModal task={reviewTask} onClose={() => setReviewTask(null)} onReviewed={handleReviewed}/>

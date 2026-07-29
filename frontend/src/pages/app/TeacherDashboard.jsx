@@ -9,7 +9,6 @@ Paperclip, RefreshCw, XCircle, ArrowRight, Trash2
 } from 'lucide-react'
 import { useToday, useBSCalendar } from '../../hooks/useHolidays.js'
 import { useStudentRanking, useStudentGroups, useOutliers } from '../../hooks/useAnalytics.js'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import { useToast }       from '../../context/ToastContext.jsx'
 import { useAuth }        from '../../hooks/useAuth.js'
@@ -294,7 +293,6 @@ return (
     </div>
 )
 }
-
 
 // ── Analytics stat card ───────────────────────────────────────────────────────
 function ACard({ label, value, icon: Icon, color }) {
@@ -1059,8 +1057,6 @@ return (
         </div>
     )}
     </Section>
-
-    <DashboardFooter/>
 
     {showNewModal && (
         <DashboardAssignmentFormModal courses={courses} onClose={() => setShowNewModal(false)} onSaved={handleAssignmentSaved}/>

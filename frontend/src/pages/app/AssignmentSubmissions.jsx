@@ -6,7 +6,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft } from 'lucide-react'
 import tasksService from '../../services/tasks.service.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import { apiError, fmtDate, dueDateBS } from '../../utils/helpers.js'
 import ReviewModal from '../../components/shared/ReviewSubmissionModal.jsx'
@@ -167,8 +166,6 @@ export default function AssignmentSubmissions() {
                     )}
                 </>
             )}
-
-            <DashboardFooter/>
 
             {reviewTask && (
                 <ReviewModal task={reviewTask} onClose={() => setReviewTask(null)} onReviewed={handleReviewed}/>

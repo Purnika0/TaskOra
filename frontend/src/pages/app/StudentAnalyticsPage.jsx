@@ -18,7 +18,6 @@ import {
 } from 'lucide-react'
 import { useWeeklyProgress, useCourseWorkload } from '../../hooks/useAnalytics.js'
 import { useTasks } from '../../hooks/useTasks.js'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { LoadingBlock } from '../../components/shared/Loader.jsx'
 import { getTaskTitle, fmtDateTime } from '../../utils/helpers.js'
 
@@ -446,7 +445,6 @@ export default function StudentAnalyticsPage() {
                 </>
             )}
 
-            <DashboardFooter />
         </div>
     )
 }

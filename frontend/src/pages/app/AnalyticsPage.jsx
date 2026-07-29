@@ -6,7 +6,6 @@ import {
     useCourseOverview,
 } from '../../hooks/useAnalytics.js'
 import { useAuth }            from '../../hooks/useAuth.js'
-import { DashboardFooter }    from '../../components/layout/Footer.jsx'
 import { LoadingBlock }       from '../../components/shared/Loader.jsx'
 import { dueDateBS }          from '../../utils/helpers.js'
 import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
@@ -646,7 +645,6 @@ export default function AnalyticsPage() {
                 </>
             )}
 
-            <DashboardFooter/>
         </div>
     )
 }

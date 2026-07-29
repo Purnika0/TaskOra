@@ -4,7 +4,6 @@ import { useAuth }     from '../../hooks/useAuth.js'
 import { useToast }    from '../../context/ToastContext.jsx'
 import { useConfirm }  from '../../context/ConfirmContext.jsx'
 import authService     from '../../services/auth.service.js'
-import { DashboardFooter } from '../../components/layout/Footer.jsx'
 import { apiError }    from '../../utils/helpers.js'
 
 const RESEND_COOLDOWN = 30 // seconds, matches AuthPage
@@ -404,7 +403,6 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <DashboardFooter/>
         </div>
     )
 }

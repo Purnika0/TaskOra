@@ -22,7 +22,8 @@ function FtLink({ to, href, children }) {
     return <Link to={to} style={style} onMouseEnter={on} onMouseLeave={off}>{children}</Link>
 }
 
-// Public/marketing pages use this; app dashboard pages use DashboardFooter instead.
+// Rendered only on public/marketing (portal) pages — app dashboard layouts
+// (DashboardShell) never render a footer.
 export function SiteFooter() {
     const { user } = useAuth()
 
@@ -34,22 +35,25 @@ export function SiteFooter() {
             <style>{`
                 .ft-wrap {
                     max-width: 1040px; margin: 0 auto;
-                    padding: 36px 24px 24px;
-                    display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 40px;
+                    padding: 44px 24px 28px;
+                    display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px;
                 }
-                @media (max-width: 640px) {
-                    .ft-wrap { grid-template-columns: 1fr; gap: 24px; padding: 24px 20px 16px; }
+                @media (max-width: 760px) {
+                    .ft-wrap { grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; }
+                }
+                @media (max-width: 600px) {
+                    .ft-wrap { grid-template-columns: 1fr; gap: 28px; padding: 32px 20px 20px; }
                 }
                 .ft-bar {
                     border-top: 1px solid rgba(255,255,255,0.08);
-                    padding: 14px 24px; max-width: 1040px; margin: 0 auto;
+                    padding: 16px 24px; max-width: 1040px; margin: 0 auto;
                     display: flex; align-items: center;
                     justify-content: center; flex-wrap: wrap; gap: 10px;
                 }
                 .ft-col-title {
-                    font-size: 10px; font-weight: 700;
+                    font-size: 10.5px; font-weight: 700;
                     color: rgba(255,255,255,0.80); text-transform: uppercase;
-                    letter-spacing: 0.10em; margin-bottom: 12px;
+                    letter-spacing: 0.09em; margin: 0 0 14px;
                     font-family: var(--font-display);
                 }
             `}</style>
@@ -119,10 +123,5 @@ export function SiteFooter() {
         </footer>
     )
 }
-
-// No-op placeholder used by dashboard/app layouts, which don't show a footer.
-// Keeping it as a component (instead of removing it from callers) lets those
-// layouts stay structurally identical to the public pages that do use SiteFooter.
-export function DashboardFooter() { return null }
 
 export default SiteFooter

@@ -1,6 +1,7 @@
-// App shell: Sidebar + Topbar + scrollable <Outlet> + SiteFooter (Student/Teacher only).
-// DashboardShell has one small piece of role-based rendering — whether
-// SiteFooter shows (hidden for Admin) — everything else is layout-only.
+// App shell: Sidebar + Topbar + scrollable <Outlet>.
+// No footer is rendered here — the site footer (About/Contact/Legal links)
+// is only for the public/portal pages; logged-in users never see it,
+// regardless of role.
 // Which URL maps to which component, and role access itself, are still
 // entirely handled by:
 //   • AppRoutes.jsx  (which URL maps to which component)
@@ -13,7 +14,6 @@ import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import { BookOpen, GraduationCap, ShieldCheck } from 'lucide-react'
 import Sidebar        from '../components/layout/Sidebar.jsx'
-import { SiteFooter } from '../components/layout/Footer.jsx'
 import { useAuth }    from '../hooks/useAuth.js'
 import NotificationBell from '../components/notifications/NotificationBell.jsx'
 
@@ -101,17 +101,12 @@ export default function DashboardShell() {
                 </header>
 
                 {/* Main content — <Outlet /> renders whatever AppRoutes assigned for this URL.
-                    content-inner is the flex:1 wrapper that pushes SiteFooter to the bottom
-                    on short pages, and lets it flow naturally after long pages.
-                    SiteFooter is intentionally omitted for Admin — the admin dashboard is
-                    an internal tool, not a page visitors browse, so the marketing-style
-                    footer (About/Contact/Legal links) doesn't belong there. Student and
-                    Teacher dashboards keep it. */}
+                    content-inner is the flex:1 wrapper that fills available height;
+                    */}
                 <main className="content">
                     <div className="content-inner">
                         <Outlet/>
                     </div>
-                    {user?.role !== 'admin' && <SiteFooter/>}
                 </main>
             </div>
         </div>
