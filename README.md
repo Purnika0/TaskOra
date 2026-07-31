@@ -81,7 +81,7 @@ TaskOra/
 ### Prerequisites
 - Python 3.13
 - Node.js 18+
-- PostgreSQL (or use the SQLite fallback below if you just want to run it locally without setting up Postgres)
+- PostgreSQL (or use the SQLite fallback if you just want to run it locally without setting up Postgres)
 
 ### Backend setup
 
@@ -94,6 +94,34 @@ venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 ```
 
+#### Environment variables
+
+Create a `.env` file inside `backend/` with the following:
+
+```env
+# Core
+DJANGO_SECRET_KEY=your-secret-key
+DJANGO_DEBUG=True
+DJANGO_ALLOWED_HOSTS=
+
+# Database — uses PostgreSQL by default.
+# Set USE_SQLITE=true to skip Postgres entirely and use a local db.sqlite3 file.
+USE_SQLITE=true
+DB_NAME=taskora_db
+DB_USER=taskora_user
+DB_PASSWORD=
+DB_HOST=localhost
+DB_PORT=5432
+
+# Email (Gmail SMTP) — if left blank while DEBUG=True, emails (OTP codes, etc.)
+# print to the console instead of sending, so the app still runs without Gmail creds.
+EMAIL_HOST_USER=
+EMAIL_HOST_PASSWORD=
+```
+
+`DJANGO_SECRET_KEY` is required — the app will fail to start without it. `DB_PASSWORD` is required only if `USE_SQLITE` is not `true`.
+
+> **Note:** `DJANGO_DEBUG` defaults to `True` if left unset. This is convenient for local development but must be explicitly set to `False` before any production/public deployment.
 
 ```bash
 python manage.py migrate
@@ -118,6 +146,17 @@ python manage.py seed_tasks
 ```bash
 cd frontend
 npm install
+```
+
+#### Environment variables
+
+Create a `.env` file inside `frontend/` with the following:
+
+```env
+VITE_API_URL=http://localhost:8000
+```
+
+```bash
 npm run dev
 ```
 
@@ -129,7 +168,7 @@ The dev server runs on `http://localhost:5173` and expects the backend API at `h
 
 | Name |
 |---|
-| Sanchita Karki|
+| Sanchita Karki |
 | Purnika Adhikari |
 | Xenon Saud |
 
