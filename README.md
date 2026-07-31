@@ -1,6 +1,6 @@
 # TaskOra
 
-**TaskOra** is an academic task and course management platform built for the TU BIT curriculum, designed around real student, teacher, and admin workflows at Padmakanya Multiple Campus (PKMC). It combines conventional task/assignment tracking with a machine learning layer that surfaces student performance patterns, flags at-risk behaviour, and recommends tasks based on peer activity.
+**TaskOra** is an academic task and course management platform built and designed around real student, teacher, and admin workflows at Bachelors' level campuses. It combines conventional task/assignment tracking with a machine learning layer that surfaces student performance patterns, flags at-risk behaviour, and recommends tasks based on peer activity.
 
 Final year project — BIT 7th Semester, Padmakanya Multiple Campus, Tribhuvan University.
 
@@ -9,7 +9,7 @@ Final year project — BIT 7th Semester, Padmakanya Multiple Campus, Tribhuvan U
 ## Features
 
 **For students**
-- Track assignments through a four-state lifecycle: `pending → submitted → completed` (or `overdue`)
+- Track assignments through a five-state lifecycle: `pending → submitted → completed → overdue → rejected`
 - Join courses via a teacher-issued join code, with existing assignments auto-added as tasks
 - Smart priority scoring on every task — urgency, teacher-set importance, workload, and upcoming holidays all factor into a live urgency score
 - Personalized task recommendations, generated via collaborative filtering against same-batch peers
@@ -39,7 +39,7 @@ Final year project — BIT 7th Semester, Padmakanya Multiple Campus, Tribhuvan U
 
 **Backend**
 - Django 6 + Django REST Framework
-- PostgreSQL (SQLite supported as a local fallback — see below)
+- PostgreSQL (SQLite supported as a local fallback)
 - SimpleJWT for authentication
 - scikit-learn (K-Means, Isolation Forest), SciPy (Hungarian algorithm via `linear_sum_assignment`), pandas/NumPy — the ML layer in `backend/ml/`
 - drf-spectacular for OpenAPI schema / Swagger docs
@@ -94,10 +94,6 @@ venv\Scripts\activate          # Windows
 pip install -r requirements.txt
 ```
 
-**Database:** by default the project points at a local PostgreSQL database (`taskora_db` / `taskora_user`) configured in `taskora/settings.py`. Either:
-- create a matching local Postgres database/user, or
-- update the credentials in `taskora/settings.py` under `DATABASES`, or
-- skip Postgres entirely for local dev by setting `USE_SQLITE=true` before running any `manage.py` command (see comment in `settings.py` for the exact command per shell).
 
 ```bash
 python manage.py migrate
@@ -115,14 +111,6 @@ python manage.py seed_assignments
 python manage.py seed_tasks
 ```
 
-**Running the test suite:**
-
-```bash
-python manage.py test
-```
-
-(Requires your Postgres user to have `CREATEDB` permission, or run with `USE_SQLITE=true` prefixed as above to use a throwaway in-memory database instead.)
-
 **API docs:** once the server is running, Swagger UI is available at `http://127.0.0.1:8000/api/`.
 
 ### Frontend setup
@@ -139,15 +127,14 @@ The dev server runs on `http://localhost:5173` and expects the backend API at `h
 
 ## Team
 
-| Name | Role |
-|---|---|
-| Sanchita | Backend development |
-| Purnika Adhikari | Frontend development |
-| Xenon Saud | UI/UX Design |
+| Name |
+|---|
+| Sanchita |
+| Purnika Adhikari |
+| Xenon Saud |
 
 ---
 
 ## Notes for reviewers
 
-- `DEBUG = True` and hardcoded database credentials in `taskora/settings.py` are intentional for local development/demo purposes and would need to move to environment variables before any real deployment.
 - The ML features (`backend/ml/`) require a minimum number of enrolled students per course to run (3 for clustering, 4 for outlier detection) — this is a deliberate guard against unreliable results on tiny sample sizes, not a bug.
