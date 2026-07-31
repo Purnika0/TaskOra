@@ -1,5 +1,3 @@
-// Public page — no login required.
-
 import { Link } from 'react-router-dom'
 import {
     ArrowRight, Command, MessageCircle, RotateCw, CalendarDays,
@@ -19,11 +17,28 @@ const AB_CSS = `
     display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center;
 }
 .ab-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
-.ab-hero-img {
-    width: 100%; height: auto; display: block;
-    transform: perspective(1400px) rotateY(-10deg) rotateX(4deg);
-    transform-style: preserve-3d; backface-visibility: hidden;
-    filter: drop-shadow(0 20px 30px rgba(15,23,42,0.15));
+
+/* Hero visual — a single pre-composited image (analytics screenshot baked into the
+   laptop screen with Python/Pillow, pixel-matched to the frame) so there's no CSS
+   overlay math, no aspect-ratio mismatch, and no fake 3D rotation on a real photo. */
+.ab-hero-visual {
+    position: relative;
+    width: 100%; max-width: 560px; margin: 0 auto;
+}
+.ab-hero-blob-a {
+    position: absolute; width: 300px; height: 300px; border-radius: 50%;
+    background: var(--color-primary); opacity: 0.16; filter: blur(70px);
+    top: -50px; right: -20px; z-index: 0;
+}
+.ab-hero-blob-b {
+    position: absolute; width: 240px; height: 240px; border-radius: 50%;
+    background: #2563EB; opacity: 0.12; filter: blur(70px);
+    bottom: -30px; left: -30px; z-index: 0;
+}
+.ab-hero-laptop {
+    position: relative; z-index: 1;
+    display: block; width: 100%; height: auto;
+    filter: drop-shadow(0 20px 28px rgba(15,23,42,0.18));
 }
 
 .ab-what {
@@ -74,7 +89,7 @@ const AB_CSS = `
 @media (max-width: 900px) {
     .ab-hero-grid { grid-template-columns: 1fr; gap: 32px; text-align: center; }
     .ab-hero-cta { justify-content: center; }
-    .ab-hero-img { max-width: 480px; margin: 0 auto; transform: none; }
+    .ab-hero-visual { max-width: 400px; margin: 0 auto; }
     .ab-what-grid { grid-template-columns: 1fr; gap: 32px; text-align: center; }
     .ab-goal-grid { grid-template-columns: 1fr; gap: 28px; text-align: center; }
 }
@@ -127,11 +142,17 @@ export default function AboutPage() {
                             )}
                         </div>
                     </div>
-                    <img
-                        src="/dashboard-preview.png"
-                        alt="TaskOra student dashboard preview"
-                        className="ab-hero-img"
-                    />
+
+                    {/* Hero visual — single pre-composited laptop + analytics image */}
+                    <div className="ab-hero-visual">
+                        <div className="ab-hero-blob-a" />
+                        <div className="ab-hero-blob-b" />
+                        <img
+                            className="ab-hero-laptop"
+                            src="/hero-about.png"
+                            alt="TaskOra analytics overview shown on a laptop screen"
+                        />
+                    </div>
                 </div>
             </section>
 

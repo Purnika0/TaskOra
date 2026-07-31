@@ -49,17 +49,38 @@ const LP_CSS = `
 }
 .lp-btn-secondary:hover { border-color: var(--color-text-placeholder); background: var(--color-surface-subtle); }
 
-/* Hero screenshot — sits inside the gradient hero, framed in white so it lifts off the color */
-.lp-shot-wrap {
-    width: 100%;
+/* Hero visual — real laptop mockup photo with the dashboard screenshot placed into its screen.
+   Screen crop below was measured directly from /laptop-mockup.png's pixels (bezel edges),
+   not guessed — left:14%, top:6%, width:77.7%, height:65.6% of the frame image. */
+.lp-hero-visual {
+    position: relative;
+    width: 100%; max-width: 600px; margin: 0 auto;
 }
-.lp-shot-frame {
-    border: 1px solid rgba(255,255,255,0.6); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    overflow: hidden; background: #fff;
-    line-height: 0;
+.lp-hero-blob-a {
+    position: absolute; width: 340px; height: 340px; border-radius: 50%;
+    background: var(--color-primary); opacity: 0.18; filter: blur(70px);
+    top: -60px; right: -20px; z-index: 0;
 }
-.lp-shot-frame img { display: block; width: 100%; height: auto; }
+.lp-hero-blob-b {
+    position: absolute; width: 260px; height: 260px; border-radius: 50%;
+    background: #2563EB; opacity: 0.14; filter: blur(70px);
+    bottom: -40px; left: -30px; z-index: 0;
+}
+.lp-laptop-3d {
+    position: relative; z-index: 1;
+    transform: perspective(1300px) rotateY(-9deg) rotateX(2deg);
+    transform-origin: center bottom;
+    filter: drop-shadow(0 35px 45px rgba(15,23,42,0.28));
+}
+.lp-laptop-mockup { position: relative; width: 100%; line-height: 0; }
+.lp-laptop-mockup img.lp-laptop-frame { display: block; width: 100%; height: auto; }
+.lp-laptop-screenshot {
+    position: absolute;
+    left: 14%; top: 6%; width: 77.7%; height: 65.6%;
+    overflow: hidden;
+    background: #fff;
+}
+.lp-laptop-screenshot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 
 /* Intro section */
 .lp-intro {
@@ -139,6 +160,7 @@ const LP_CSS = `
     .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
     .lp-hero-inner { max-width: 620px; margin: 0 auto; text-align: center; }
     .lp-cta-row { justify-content: center; }
+    .lp-laptop-3d { transform: perspective(1300px) rotateY(-5deg) rotateX(1deg); }
 }
 @media (max-width: 720px) {
     .lp-intro-grid { grid-template-columns: 1fr; gap: 16px; }
@@ -148,6 +170,7 @@ const LP_CSS = `
 }
 @media (max-width: 560px) {
     .lp-hero { padding: 48px 20px 40px; }
+    .lp-laptop-3d { transform: none; filter: drop-shadow(0 20px 24px rgba(15,23,42,0.22)); }
     .lp-intro { padding: 48px 20px; }
     .lp-intro-panel { padding: 32px 20px; border-radius: 20px; }
     .lp-contact { padding: 56px 16px; }
@@ -209,10 +232,17 @@ export default function LandingPage() {
                         </div>
                     </div>
 
-                    {/* Hero screenshot — framed in white so it lifts off the gradient backdrop */}
-                    <div className="lp-shot-wrap">
-                        <div className="lp-shot-frame">
-                            <img src="/dashboard-preview.png" alt="TaskOra dashboard showing assignments, submissions, and progress" />
+                    {/* Hero visual — dashboard screenshot placed inside a real laptop mockup photo */}
+                    <div className="lp-hero-visual">
+                        <div className="lp-hero-blob-a" />
+                        <div className="lp-hero-blob-b" />
+                        <div className="lp-laptop-3d">
+                            <div className="lp-laptop-mockup">
+                                <img className="lp-laptop-frame" src="/laptop-mockup.png" alt="" aria-hidden="true" />
+                                <div className="lp-laptop-screenshot">
+                                    <img src="/dashboard.png" alt="TaskOra dashboard showing assignments, submissions, and progress" />
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

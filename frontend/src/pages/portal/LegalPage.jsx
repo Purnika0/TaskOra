@@ -69,7 +69,6 @@ const LEGAL_CSS = `
 .legal-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
 .legal-card-icon {
     width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
-    background: var(--color-primary-light); color: var(--color-primary);
     display: flex; align-items: center; justify-content: center;
 }
 .legal-card h3 {
@@ -98,11 +97,18 @@ const LEGAL_CSS = `
 }
 `
 
-function LegalCard({ id, icon: Icon, heading, children }) {
+const GROUP_THEME = {
+    terms: { bg: 'var(--color-primary-light)', color: 'var(--color-primary)' },
+    privacy: { bg: 'var(--color-primary-light)', color: 'var(--color-primary)' },
+    disclaimer: { bg: 'var(--color-primary-light)', color: 'var(--color-primary)' },
+}
+
+function LegalCard({ id, icon: Icon, heading, theme, children }) {
+    const { bg, color } = GROUP_THEME[theme]
     return (
         <section id={id} className="legal-card">
             <div className="legal-card-header">
-                <div className="legal-card-icon"><Icon size={18}/></div>
+                <div className="legal-card-icon" style={{ background: bg, color }}><Icon size={18}/></div>
                 <h3>{heading}</h3>
             </div>
             {children}
@@ -213,10 +219,11 @@ export default function LegalPage() {
 
                         <SectionDivider id="terms" label="Terms & Conditions"/>
 
-                        <LegalCard id="responsibilities" icon={Users} heading="User Responsibilities">
+                        <LegalCard id="responsibilities" icon={Users} heading="User Responsibilities" theme="terms">
                             <p>
                                 TaskOra is intended for students, teachers, and administrators affiliated with a
-                                participating institution, for academic purposes only. Using TaskOra, you agree to:
+                                participating institution, for academic purposes only. By using TaskOra, you agree
+                                to the following:
                             </p>
                             <ul>
                                 <li>Use your own account, not one issued to someone else</li>
@@ -229,34 +236,35 @@ export default function LegalPage() {
                             <p>Violating these terms may lead to suspension or removal of an account.</p>
                         </LegalCard>
 
-                        <LegalCard id="accounts" icon={FolderLock} heading="Account Management">
+                        <LegalCard id="accounts" icon={FolderLock} heading="Account Management" theme="terms">
                             <p>
                                 Students register with their institutional or personal email address, verified
                                 through a one-time code sent by TaskOra. Teacher and administrator accounts are
                                 provisioned manually by the school's system team rather than self-registered.
                             </p>
                             <p>
-                                You're responsible for keeping your login credentials confidential and for all
-                                activity under your account. Let us know right away if you suspect unauthorized
-                                access. TaskOra or an institution's administrators may suspend or remove an account
-                                that violates these terms or poses a security risk; where possible, you'll be
-                                notified of the reason.
+                                Account holders are responsible for keeping their login credentials confidential
+                                and for all activity under their account. Notify us promptly if unauthorized
+                                access is suspected. TaskOra or an institution's administrators may suspend or
+                                remove an account that violates these terms or poses a security risk; where
+                                possible, the account holder will be notified of the reason.
                             </p>
                         </LegalCard>
 
-                        <LegalCard id="submission" icon={FileCheck} heading="Assignment Submission">
+                        <LegalCard id="submission" icon={FileCheck} heading="Assignment Submission" theme="terms">
                             <p>
                                 Assignments can be submitted as PDF, DOC, or DOCX. Deadlines are tracked
-                                automatically, and late submissions remain visible to instructors. Submit well
-                                ahead of time and keep a personal backup of important work.
+                                automatically, and late submissions remain visible to instructors. Students are
+                                encouraged to submit well ahead of time and keep a personal backup of important
+                                work.
                             </p>
                             <p>
-                                Students keep ownership of the files they upload. TaskOra stores and displays
+                                Students retain ownership of the files they upload. TaskOra stores and displays
                                 submitted work only for grading, feedback, and academic record-keeping.
                             </p>
                         </LegalCard>
 
-                        <LegalCard id="platform-usage" icon={Copyright} heading="Platform Usage">
+                        <LegalCard id="platform-usage" icon={Copyright} heading="Platform Usage" theme="terms">
                             <p>
                                 The TaskOra platform, its interface, and its underlying code belong to the TaskOra
                                 team. Course materials, assignment content, and grading rubrics remain the property
@@ -266,21 +274,21 @@ export default function LegalPage() {
 
                         <SectionDivider id="privacy" label="Privacy Policy"/>
 
-                        <LegalCard id="collection" icon={Database} heading="Information Collection">
-                            <p>TaskOra collects only what's needed to run the platform:</p>
+                        <LegalCard id="collection" icon={Database} heading="Information Collection" theme="privacy">
+                            <p>TaskOra collects only the information needed to run the platform:</p>
                             <ul>
-                                <li>Your name and email address</li>
+                                <li>Name and email address</li>
                                 <li>Course enrollment and join-code activity</li>
                                 <li>Assignment submissions, grades, and feedback</li>
                                 <li>Basic usage data used to power notifications and analytics</li>
                             </ul>
                             <p>
-                                We do not sell or share this information for advertising, and we don't use
-                                third-party trackers or ad networks.
+                                This information is never sold or shared for advertising purposes, and TaskOra
+                                does not use third-party trackers or ad networks.
                             </p>
                         </LegalCard>
 
-                        <LegalCard id="protection" icon={Lock} heading="Data Protection">
+                        <LegalCard id="protection" icon={Lock} heading="Data Protection" theme="privacy">
                             <p>
                                 TaskOra uses security measures designed to protect user accounts and information,
                                 including verification steps at sign-in and restricted access for administrator
@@ -289,41 +297,41 @@ export default function LegalPage() {
                             </p>
                         </LegalCard>
 
-                        <LegalCard id="visibility" icon={Eye} heading="Data Visibility">
+                        <LegalCard id="visibility" icon={Eye} heading="Data Visibility" theme="privacy">
                             <p>
-                                Your uploaded work and grades are visible only to you, your instructor for that
+                                Uploaded work and grades are visible only to the student, the instructor for that
                                 course, and system administrators supporting the platform. Class-wide analytics,
                                 such as performance groupings or completion rates, are shown to teachers in
                                 aggregate form and are not shared with other students.
                             </p>
                         </LegalCard>
 
-                        <LegalCard id="retention" icon={Archive} heading="Data Retention">
+                        <LegalCard id="retention" icon={Archive} heading="Data Retention" theme="privacy">
                             <p>
-                                If you delete your account, your personal information is removed from active
-                                systems except where records must be kept for security, academic record-keeping,
-                                or legal reasons.
+                                If an account is deleted, the associated personal information is removed from
+                                active systems except where records must be kept for security, academic
+                                record-keeping, or legal reasons.
                             </p>
                         </LegalCard>
 
                         <SectionDivider id="disclaimer" label="Disclaimer"/>
 
-                        <LegalCard id="availability" icon={CloudOff} heading="Service Availability">
+                        <LegalCard id="availability" icon={CloudOff} heading="Service Availability" theme="disclaimer">
                             <p>
                                 TaskOra is provided for educational use on an "as-is" basis. Reasonable effort is
-                                made to keep it accurate, reliable, and available, but uninterrupted service can't
-                                be guaranteed.
+                                made to keep it accurate, reliable, and available, but uninterrupted service
+                                cannot be guaranteed.
                             </p>
                             <p>
-                                Deadlines are tracked automatically. Submit assignments well ahead of time, and
-                                keep a personal backup of important work, since TaskOra can't guarantee delivery
-                                during connectivity issues or downtime.
+                                Deadlines are tracked automatically. Students are encouraged to submit assignments
+                                well ahead of time and keep a personal backup of important work, as TaskOra cannot
+                                guarantee delivery during connectivity issues or downtime.
                             </p>
                         </LegalCard>
 
-                        <LegalCard id="liability" icon={Scale} heading="Limitation of Liability">
+                        <LegalCard id="liability" icon={Scale} heading="Limitation of Liability" theme="disclaimer">
                             <p>
-                                TaskOra and its developers aren't liable for indirect damages such as data loss,
+                                TaskOra and its developers are not liable for indirect damages such as data loss,
                                 missed deadlines caused by service interruptions, or decisions made based on
                                 analytics, rankings, or recommendations generated by the platform.
                             </p>
@@ -331,7 +339,7 @@ export default function LegalPage() {
 
                         <div className="legal-contact-card">
                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                <div className="legal-card-icon"><Mail size={18}/></div>
+                                <div className="legal-card-icon" style={{ background: 'var(--color-primary-light)', color: 'var(--color-primary)' }}><Mail size={18}/></div>
                                 <div>
                                     <p style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 14, color: 'var(--color-text)', margin: '0 0 2px' }}>Need Help?</p>
                                     <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0 }}>
