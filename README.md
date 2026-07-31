@@ -129,7 +129,7 @@ The dev server runs on `http://localhost:5173` and expects the backend API at `h
 
 | Name |
 |---|
-| Sanchita |
+| Sanchita Karki|
 | Purnika Adhikari |
 | Xenon Saud |
 
