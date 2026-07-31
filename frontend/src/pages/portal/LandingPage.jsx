@@ -9,12 +9,16 @@ import {
 const LP_CSS = `
 .lp-hero {
     background: linear-gradient(135deg, #EEEDFD 0%, #E6E5FB 100%);
-    padding: 72px 24px 64px;
-    text-align: center;
+    padding: 72px 24px;
+}
+.lp-hero-grid {
+    max-width: 1140px; margin: 0 auto;
+    display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 48px;
 }
 .lp-hero-inner {
-    max-width: 720px; margin: 0 auto 48px;
+    max-width: 480px; text-align: left;
 }
+.lp-h1-accent { color: var(--color-primary); }
 .lp-h1 {
     font-family: var(--font-display); font-weight: 800;
     font-size: clamp(28px, 4.4vw, 44px); color: var(--color-text);
@@ -23,9 +27,9 @@ const LP_CSS = `
 }
 .lp-sub {
     font-size: 15.5px; color: var(--color-text-secondary);
-    max-width: 560px; margin: 0 auto 30px; line-height: 1.7;
+    margin: 0 0 30px; line-height: 1.7;
 }
-.lp-cta-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.lp-cta-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-start; }
 
 .lp-btn-primary {
     display: inline-flex; align-items: center; gap: 8px;
@@ -45,17 +49,38 @@ const LP_CSS = `
 }
 .lp-btn-secondary:hover { border-color: var(--color-text-placeholder); background: var(--color-surface-subtle); }
 
-/* Hero screenshot — sits inside the gradient hero, framed in white so it lifts off the color */
-.lp-shot-wrap {
-    max-width: 980px; margin: 0 auto;
+/* Hero visual — real laptop mockup photo with the dashboard screenshot placed into its screen.
+   Screen crop below was measured directly from /laptop-mockup.png's pixels (bezel edges),
+   not guessed — left:14%, top:6%, width:77.7%, height:65.6% of the frame image. */
+.lp-hero-visual {
+    position: relative;
+    width: 100%; max-width: 600px; margin: 0 auto;
 }
-.lp-shot-frame {
-    border: 1px solid rgba(255,255,255,0.6); border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    overflow: hidden; background: #fff;
-    line-height: 0;
+.lp-hero-blob-a {
+    position: absolute; width: 340px; height: 340px; border-radius: 50%;
+    background: var(--color-primary); opacity: 0.18; filter: blur(70px);
+    top: -60px; right: -20px; z-index: 0;
 }
-.lp-shot-frame img { display: block; width: 100%; height: auto; }
+.lp-hero-blob-b {
+    position: absolute; width: 260px; height: 260px; border-radius: 50%;
+    background: #2563EB; opacity: 0.14; filter: blur(70px);
+    bottom: -40px; left: -30px; z-index: 0;
+}
+.lp-laptop-3d {
+    position: relative; z-index: 1;
+    transform: perspective(1300px) rotateY(-9deg) rotateX(2deg);
+    transform-origin: center bottom;
+    filter: drop-shadow(0 35px 45px rgba(15,23,42,0.28));
+}
+.lp-laptop-mockup { position: relative; width: 100%; line-height: 0; }
+.lp-laptop-mockup img.lp-laptop-frame { display: block; width: 100%; height: auto; }
+.lp-laptop-screenshot {
+    position: absolute;
+    left: 14%; top: 6%; width: 77.7%; height: 65.6%;
+    overflow: hidden;
+    background: #fff;
+}
+.lp-laptop-screenshot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
 
 /* Intro section */
 .lp-intro {
@@ -95,39 +120,61 @@ const LP_CSS = `
     font-size: 13.5px; color: var(--color-text-muted); line-height: 1.65; margin: 0;
 }
 
-/* Contact preview */
+/* Contact preview — floating card that overlaps into the footer */
 .lp-contact {
-    background: var(--color-primary-light);
+    background: #fff;
+    padding: 80px 24px;
+    position: relative;
 }
-.lp-contact-inner {
-    max-width: 1000px; margin: 0 auto; padding: 44px 24px;
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 24px; flex-wrap: wrap;
+.lp-contact-card {
+    max-width: 640px; margin: 0 auto; position: relative; z-index: 2;
+    background: #fff;
+    border-radius: 24px;
+    box-shadow: 0 24px 60px -12px rgba(84,82,228,0.35), 0 4px 14px rgba(15,23,42,0.07);
+    padding: 48px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    gap: 20px;
+}
+.lp-contact-left { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.lp-contact-icon {
+    width: 52px; height: 52px; border-radius: 14px; flex-shrink: 0;
+    background: var(--color-primary-light); color: var(--color-primary);
+    display: flex; align-items: center; justify-content: center;
 }
 .lp-contact-text h3 {
-    font-family: var(--font-display); font-weight: 700; font-size: 17px;
-    color: var(--color-text); margin: 0 0 6px;
+    font-family: var(--font-display); font-weight: 800; font-size: 21px;
+    color: var(--color-text); margin: 0 0 6px; letter-spacing: -0.01em;
 }
 .lp-contact-text p {
-    font-size: 13.5px; color: var(--color-text-secondary); margin: 0; line-height: 1.6;
+    font-size: 14px; color: var(--color-text-secondary); margin: 0; line-height: 1.6;
 }
-.lp-contact-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.lp-contact-actions { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
 .lp-contact-email {
     display: inline-flex; align-items: center; gap: 7px;
-    font-size: 13px; color: var(--color-text-secondary); text-decoration: none;
+    font-size: 13.5px; color: var(--color-text-secondary); text-decoration: none;
     transition: color 0.15s ease;
 }
-.lp-contact-email:hover { color: var(--color-text); }
+.lp-contact-email:hover { color: var(--color-primary); }
 
+@media (max-width: 900px) {
+    .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+    .lp-hero-inner { max-width: 620px; margin: 0 auto; text-align: center; }
+    .lp-cta-row { justify-content: center; }
+    .lp-laptop-3d { transform: perspective(1300px) rotateY(-5deg) rotateX(1deg); }
+}
 @media (max-width: 720px) {
     .lp-intro-grid { grid-template-columns: 1fr; gap: 16px; }
     .lp-intro-panel { padding: 40px 28px; }
+    .lp-contact-card { padding: 32px 28px; }
+    .lp-contact-actions { width: 100%; flex-direction: column; }
 }
 @media (max-width: 560px) {
     .lp-hero { padding: 48px 20px 40px; }
+    .lp-laptop-3d { transform: none; filter: drop-shadow(0 20px 24px rgba(15,23,42,0.22)); }
     .lp-intro { padding: 48px 20px; }
     .lp-intro-panel { padding: 32px 20px; border-radius: 20px; }
-    .lp-contact-inner { padding: 32px 20px; justify-content: flex-start; }
+    .lp-contact { padding: 56px 16px; }
+    .lp-contact-card { padding: 28px 22px; border-radius: 18px; }
 }
 `
 
@@ -135,19 +182,19 @@ const INTRO_ITEMS = [
     {
         icon: <ClipboardList size={18} />,
         title: 'Assignments & Deadlines',
-        desc: 'Every assignment and due date in one dashboard, organized by course.',
+        desc: 'View assignments, due dates, and course tasks in one place.',
         bg: 'var(--color-primary-light)', color: 'var(--color-primary)',
     },
     {
         icon: <UploadCloud size={18} />,
         title: 'Submissions & Feedback',
-        desc: 'Submit coursework online and receive grades and feedback from teachers.',
+        desc: 'Submit your work online and receive feedback and grades directly from teachers.',
         bg: 'var(--color-green-light)', color: 'var(--color-green)',
     },
     {
         icon: <LineChart size={18} />,
         title: 'Progress Tracking',
-        desc: 'See completed, pending, and overdue work at a glance throughout the semester.',
+        desc: 'Track completed, pending, and overdue assignments throughout your semester.',
         bg: 'var(--color-amber-light)', color: 'var(--color-amber)',
     },
 ]
@@ -163,30 +210,40 @@ export default function LandingPage() {
 
             {/* Hero */}
             <section className="lp-hero">
-                <div className="lp-hero-inner">
-                    <h1 className="lp-h1">
-                        Academic Assignment Management, Organized.
-                    </h1>
-                    <p className="lp-sub">
-                        TaskOra helps students and teachers manage assignments, track deadlines, submit
-                        coursework, and share feedback — all in one platform built for classroom use.
-                    </p>
-                    <div className="lp-cta-row">
-                        {user ? (
-                            <Link to="/app" className="lp-btn-primary">Go to Dashboard <ArrowRight size={15} /></Link>
-                        ) : (
-                            <>
-                                <Link to="/auth?view=signup" className="lp-btn-primary">Get Started <ArrowRight size={15} /></Link>
-                                <Link to="/auth?view=login" className="lp-btn-secondary">Sign In</Link>
-                            </>
-                        )}
+                <div className="lp-hero-grid">
+                    <div className="lp-hero-inner">
+                        <h1 className="lp-h1">
+                            Manage Assignments. Track Progress.<br />
+                            <span className="lp-h1-accent">Stay Organized.</span>
+                        </h1>
+                        <p className="lp-sub">
+                            TaskOra helps students and teachers manage assignments, track deadlines, submit
+                            coursework, and share feedback in one organized academic workspace.
+                        </p>
+                        <div className="lp-cta-row">
+                            {user ? (
+                                <Link to="/app" className="lp-btn-primary">Go to Dashboard <ArrowRight size={15} /></Link>
+                            ) : (
+                                <>
+                                    <Link to="/auth?view=signup" className="lp-btn-primary">Get Started <ArrowRight size={15} /></Link>
+                                    <Link to="/auth?view=login" className="lp-btn-secondary">Sign In</Link>
+                                </>
+                            )}
+                        </div>
                     </div>
-                </div>
 
-                {/* Hero screenshot — framed in white so it lifts off the gradient backdrop */}
-                <div className="lp-shot-wrap">
-                    <div className="lp-shot-frame">
-                        <img src="/dashboard-preview.png" alt="TaskOra dashboard showing assignments, submissions, and progress" />
+                    {/* Hero visual — dashboard screenshot placed inside a real laptop mockup photo */}
+                    <div className="lp-hero-visual">
+                        <div className="lp-hero-blob-a" />
+                        <div className="lp-hero-blob-b" />
+                        <div className="lp-laptop-3d">
+                            <div className="lp-laptop-mockup">
+                                <img className="lp-laptop-frame" src="/laptop-mockup.png" alt="" aria-hidden="true" />
+                                <div className="lp-laptop-screenshot">
+                                    <img src="/dashboard.png" alt="TaskOra dashboard showing assignments, submissions, and progress" />
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -195,10 +252,10 @@ export default function LandingPage() {
             <section className="lp-intro">
                 <div className="lp-intro-panel">
                     <div className="lp-intro-head">
-                        <h2 className="lp-section-title">Built for Real Classroom Use</h2>
+                        <h2 className="lp-section-title">Designed for Students and Teachers</h2>
                         <p className="lp-section-sub">
-                            TaskOra brings assignment tracking, submissions, and academic progress
-                            into a single, organized workspace for students and teachers.
+                            Manage coursework, submissions, and progress from one place
+                            without losing track of important deadlines.
                         </p>
                     </div>
                     <div className="lp-intro-grid">
@@ -213,18 +270,21 @@ export default function LandingPage() {
                 </div>
             </section>
 
-            {/* Small contact preview */}
+            {/* Small contact preview — floating card, overlaps into the footer below */}
             <section className="lp-contact">
-                <div className="lp-contact-inner">
-                    <div className="lp-contact-text">
-                        <h3>Have a question?</h3>
-                        <p>Reach out and we'll get back to you within a day.</p>
+                <div className="lp-contact-card">
+                    <div className="lp-contact-left">
+                        <div className="lp-contact-icon"><Mail size={22} /></div>
+                        <div className="lp-contact-text">
+                            <h3>Have a question?</h3>
+                            <p>Have questions about TaskOra? Contact us and we'll be happy to help.</p>
+                        </div>
                     </div>
                     <div className="lp-contact-actions">
                         <a className="lp-contact-email" href="mailto:taskora2083@gmail.com">
-                            <Mail size={14} /> taskora2083@gmail.com
+                            taskora2083@gmail.com
                         </a>
-                        <Link to="/contact" className="lp-btn-secondary">Contact Us</Link>
+                        <Link to="/contact" className="lp-btn-primary">Contact Us <ArrowRight size={15} /></Link>
                     </div>
                 </div>
             </section>
