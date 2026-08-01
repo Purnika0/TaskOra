@@ -13,17 +13,17 @@ const AB_CSS = `
     padding: 64px 24px;
 }
 .ab-hero-grid {
-    max-width: 1100px; margin: 0 auto;
-    display: grid; grid-template-columns: 1.1fr 1fr; gap: 48px; align-items: center;
+    max-width: 1260px; margin: 0 auto;
+    display: grid; grid-template-columns: 0.9fr 1.25fr; gap: 40px; align-items: center;
 }
 .ab-hero-cta { display: flex; gap: 12px; flex-wrap: wrap; }
 
-/* Hero visual — a single pre-composited image (analytics screenshot baked into the
-   laptop screen with Python/Pillow, pixel-matched to the frame) so there's no CSS
-   overlay math, no aspect-ratio mismatch, and no fake 3D rotation on a real photo. */
+/* Hero visual — the real My Analytics screenshot, shown as-is (no cropping, no
+   browser-chrome overlay) with a subtle 3D tilt for depth. */
 .ab-hero-visual {
     position: relative;
-    width: 100%; max-width: 560px; margin: 0 auto;
+    width: 100%; max-width: 780px; margin: 0 auto;
+    padding: 40px 70px;
 }
 .ab-hero-blob-a {
     position: absolute; width: 300px; height: 300px; border-radius: 50%;
@@ -35,10 +35,13 @@ const AB_CSS = `
     background: #2563EB; opacity: 0.12; filter: blur(70px);
     bottom: -30px; left: -30px; z-index: 0;
 }
-.ab-hero-laptop {
+.ab-hero-shot {
     position: relative; z-index: 1;
     display: block; width: 100%; height: auto;
-    filter: drop-shadow(0 20px 28px rgba(15,23,42,0.18));
+    border-radius: 10px;
+    transform: perspective(1170px) rotateY(-28deg);
+    transform-origin: center center;
+    box-shadow: 40px 34px 60px -20px rgba(15, 23, 42, 0.40);
 }
 
 .ab-what {
@@ -89,7 +92,7 @@ const AB_CSS = `
 @media (max-width: 900px) {
     .ab-hero-grid { grid-template-columns: 1fr; gap: 32px; text-align: center; }
     .ab-hero-cta { justify-content: center; }
-    .ab-hero-visual { max-width: 400px; margin: 0 auto; }
+    .ab-hero-visual { max-width: 540px; margin: 0 auto; }
     .ab-what-grid { grid-template-columns: 1fr; gap: 32px; text-align: center; }
     .ab-goal-grid { grid-template-columns: 1fr; gap: 28px; text-align: center; }
 }
@@ -123,7 +126,7 @@ export default function AboutPage() {
                             Simplifying Academic Assignment Management
                         </h1>
                         <p style={{ fontSize: 15, color: 'var(--color-text-secondary)', lineHeight: 1.7, maxWidth: 460, margin: '0 0 28px' }}>
-                            TaskOra is an academic assignment management platform designed to help students and teachers organize coursework, track deadlines, submit assignments, and manage academic activities through one centralized system.
+                            TaskOra is a course-based assignment and task management platform designed to help students and teachers organize coursework, track deadlines, submit assignments, and manage academic activities through one centralized system.
                         </p>
                         <div className="ab-hero-cta">
                             {user ? (
@@ -143,14 +146,14 @@ export default function AboutPage() {
                         </div>
                     </div>
 
-                    {/* Hero visual — single pre-composited laptop + analytics image */}
+                    {/* Hero visual — real My Analytics screenshot, shown as-is with a slight tilt */}
                     <div className="ab-hero-visual">
                         <div className="ab-hero-blob-a" />
                         <div className="ab-hero-blob-b" />
                         <img
-                            className="ab-hero-laptop"
-                            src="/hero-about.png"
-                            alt="TaskOra analytics overview shown on a laptop screen"
+                            className="ab-hero-shot"
+                            src="/analytics-preview.png"
+                            alt="TaskOra analytics overview showing completion rate, course progress, and recent activity"
                         />
                     </div>
                 </div>

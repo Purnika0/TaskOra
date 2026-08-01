@@ -12,8 +12,8 @@ const LP_CSS = `
     padding: 72px 24px;
 }
 .lp-hero-grid {
-    max-width: 1140px; margin: 0 auto;
-    display: grid; grid-template-columns: 1fr 1fr; align-items: center; gap: 48px;
+    max-width: 1320px; margin: 0 auto;
+    display: grid; grid-template-columns: 0.85fr 1.3fr; align-items: center; gap: 40px;
 }
 .lp-hero-inner {
     max-width: 480px; text-align: left;
@@ -49,12 +49,13 @@ const LP_CSS = `
 }
 .lp-btn-secondary:hover { border-color: var(--color-text-placeholder); background: var(--color-surface-subtle); }
 
-/* Hero visual — real laptop mockup photo with the dashboard screenshot placed into its screen.
-   Screen crop below was measured directly from /laptop-mockup.png's pixels (bezel edges),
-   not guessed — left:14%, top:6%, width:77.7%, height:65.6% of the frame image. */
+/* Hero visual — the real Dashboard screenshot, shown as-is (no cropping, no
+   browser-chrome overlay) with a subtle 3D tilt so it reads as a dynamic
+   product shot rather than a flat rectangle pasted on the page. */
 .lp-hero-visual {
     position: relative;
-    width: 100%; max-width: 600px; margin: 0 auto;
+    width: 100%; max-width: 820px; margin: 0 auto;
+    padding: 40px 70px;
 }
 .lp-hero-blob-a {
     position: absolute; width: 340px; height: 340px; border-radius: 50%;
@@ -66,25 +67,47 @@ const LP_CSS = `
     background: #2563EB; opacity: 0.14; filter: blur(70px);
     bottom: -40px; left: -30px; z-index: 0;
 }
-.lp-laptop-3d {
+.lp-hero-shot {
     position: relative; z-index: 1;
-    transform: perspective(1300px) rotateY(-9deg) rotateX(2deg);
-    transform-origin: center bottom;
-    filter: drop-shadow(0 35px 45px rgba(15,23,42,0.28));
+    display: block; width: 100%; height: auto;
+    border-radius: 10px;
+    transform: perspective(1230px) rotateY(-28deg);
+    transform-origin: center center;
+    box-shadow: 40px 34px 60px -20px rgba(15, 23, 42, 0.45);
 }
-.lp-laptop-mockup { position: relative; width: 100%; line-height: 0; }
-.lp-laptop-mockup img.lp-laptop-frame { display: block; width: 100%; height: auto; }
-.lp-laptop-screenshot {
-    position: absolute;
-    left: 14%; top: 6%; width: 77.7%; height: 65.6%;
-    overflow: hidden;
+
+/* Course-based positioning line — section keeps its subtle background, but
+   the content now sits in its own white boxed panel (same rounded-box idea
+   as the intro section's panel below it) so it reads as a distinct card. */
+.lp-about {
     background: #fff;
+    padding: 56px 24px;
 }
-.lp-laptop-screenshot img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; }
+.lp-about-inner {
+    max-width: 780px; margin: 0 auto;
+}
+.lp-about-panel {
+    background: #fff;
+    border-radius: 24px;
+    padding: 44px 40px;
+    text-align: center;
+    box-shadow: 0 6px 20px rgba(15,23,42,0.06);
+}
+.lp-about-title {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(19px, 2.6vw, 24px); color: var(--color-text);
+    letter-spacing: -0.01em; line-height: 1.45;
+    margin: 0 0 12px;
+}
+.lp-about-highlight { color: var(--color-primary); font-weight: 800; }
+.lp-about-sub {
+    font-size: 14px; color: var(--color-text-secondary);
+    line-height: 1.7; margin: 0;
+}
 
 /* Intro section */
 .lp-intro {
-    padding: 64px 24px;
+    padding: 56px 24px 64px;
 }
 .lp-intro-panel {
     max-width: 1000px; margin: 0 auto;
@@ -160,9 +183,9 @@ const LP_CSS = `
     .lp-hero-grid { grid-template-columns: 1fr; gap: 40px; text-align: center; }
     .lp-hero-inner { max-width: 620px; margin: 0 auto; text-align: center; }
     .lp-cta-row { justify-content: center; }
-    .lp-laptop-3d { transform: perspective(1300px) rotateY(-5deg) rotateX(1deg); }
 }
 @media (max-width: 720px) {
+    .lp-about-panel { padding: 36px 28px; }
     .lp-intro-grid { grid-template-columns: 1fr; gap: 16px; }
     .lp-intro-panel { padding: 40px 28px; }
     .lp-contact-card { padding: 32px 28px; }
@@ -170,8 +193,9 @@ const LP_CSS = `
 }
 @media (max-width: 560px) {
     .lp-hero { padding: 48px 20px 40px; }
-    .lp-laptop-3d { transform: none; filter: drop-shadow(0 20px 24px rgba(15,23,42,0.22)); }
-    .lp-intro { padding: 48px 20px; }
+    .lp-about { padding: 40px 20px; }
+    .lp-about-panel { padding: 28px 22px; border-radius: 18px; }
+    .lp-intro { padding: 40px 20px 48px; }
     .lp-intro-panel { padding: 32px 20px; border-radius: 20px; }
     .lp-contact { padding: 56px 16px; }
     .lp-contact-card { padding: 28px 22px; border-radius: 18px; }
@@ -218,7 +242,7 @@ export default function LandingPage() {
                         </h1>
                         <p className="lp-sub">
                             TaskOra helps students and teachers manage assignments, track deadlines, submit
-                            coursework, and share feedback in one organized academic workspace.
+                            coursework, and share feedback in one organized, course-based workspace.
                         </p>
                         <div className="lp-cta-row">
                             {user ? (
@@ -232,18 +256,33 @@ export default function LandingPage() {
                         </div>
                     </div>
 
-                    {/* Hero visual — dashboard screenshot placed inside a real laptop mockup photo */}
+                    {/* Hero visual — real Dashboard screenshot, shown as-is with a slight tilt */}
                     <div className="lp-hero-visual">
                         <div className="lp-hero-blob-a" />
                         <div className="lp-hero-blob-b" />
-                        <div className="lp-laptop-3d">
-                            <div className="lp-laptop-mockup">
-                                <img className="lp-laptop-frame" src="/laptop-mockup.png" alt="" aria-hidden="true" />
-                                <div className="lp-laptop-screenshot">
-                                    <img src="/dashboard.png" alt="TaskOra dashboard showing assignments, submissions, and progress" />
-                                </div>
-                            </div>
-                        </div>
+                        <img
+                            className="lp-hero-shot"
+                            src="/dashboard-preview.png"
+                            alt="TaskOra student dashboard showing assignments, deadlines, and progress"
+                        />
+                    </div>
+                </div>
+            </section>
+
+            {/* Course-based positioning line — section background stays the
+                subtle tone; content sits inside a white boxed panel, mirroring
+                the boxed-panel idea used by the intro section below it. */}
+            <section className="lp-about">
+                <div className="lp-about-inner">
+                    <div className="lp-about-panel">
+                        <h2 className="lp-about-title">
+                            TaskOra is a <span className="lp-about-highlight">course-based assignment and task management system</span> designed for higher education institutions.
+                        </h2>
+                        <p className="lp-about-sub">
+                            TaskOra helps students and teachers organize coursework, manage assignments, track
+                            deadlines, submit work, provide feedback, and monitor academic progress through a
+                            centralized platform.
+                        </p>
                     </div>
                 </div>
             </section>

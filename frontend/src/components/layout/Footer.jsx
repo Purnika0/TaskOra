@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
-import { Mail, LogIn } from 'lucide-react'
-import { useAuth } from '../../hooks/useAuth.js'
+import { Mail } from 'lucide-react'
 import { currentBSYear } from '../../utils/helpers.js'
 
 // Renders as <a> (href) for external/mailto links or <Link> (to) for
@@ -23,10 +22,11 @@ function FtLink({ to, href, children }) {
 }
 
 // Rendered only on public/marketing (portal) pages — app dashboard layouts
-// (DashboardShell) never render a footer.
+// (DashboardShell) never render a footer. Since signed-in users never see
+// this, there's no Portal/Dashboard column or Sign In button here — just the
+// public redirects a visitor actually needs, split into Explore / Legal /
+// Get in touch so each group stays short and scannable.
 export function SiteFooter() {
-    const { user } = useAuth()
-
     return (
         <footer style={{
             background: 'var(--color-navy)', // same token as .sidebar, for a consistent dark UI chrome
@@ -36,13 +36,14 @@ export function SiteFooter() {
                 .ft-wrap {
                     max-width: 1040px; margin: 0 auto;
                     padding: 44px 24px 28px;
-                    display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 48px;
+                    display: grid; grid-template-columns: 1.4fr 0.8fr 0.8fr 1fr; gap: 40px;
                 }
-                @media (max-width: 760px) {
-                    .ft-wrap { grid-template-columns: 1.4fr 1fr 1fr; gap: 28px; }
+                @media (max-width: 900px) {
+                    .ft-wrap { grid-template-columns: 1fr 1fr; gap: 32px 28px; }
                 }
                 @media (max-width: 600px) {
-                    .ft-wrap { grid-template-columns: 1fr; gap: 28px; padding: 32px 20px 20px; }
+                    .ft-wrap { grid-template-columns: 1fr; gap: 28px; padding: 32px 20px 20px; text-align: center; }
+                    .ft-wrap > div { display: flex; flex-direction: column; align-items: center; }
                 }
                 .ft-bar {
                     border-top: 1px solid rgba(255,255,255,0.08);
@@ -59,6 +60,7 @@ export function SiteFooter() {
             `}</style>
 
             <div className="ft-wrap">
+                {/* Brand */}
                 <div>
                     <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                         <div style={{ width:28, height:28, borderRadius:8, overflow:'hidden', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
@@ -68,56 +70,42 @@ export function SiteFooter() {
                             TaskOra
                         </span>
                     </div>
-                    <p style={{ fontSize:13, color:'rgba(255,255,255,0.65)', lineHeight:1.65, margin:'0 0 14px', maxWidth:300 }}>
-                        Academic task management for IT students. Built for real classroom use.
+                    <p style={{ fontSize:13, color:'rgba(255,255,255,0.65)', lineHeight:1.65, margin:0, maxWidth:280 }}>
+                        Course-based assignment and task management for students. Built for real classroom use.
                     </p>
-                    <a href="mailto:taskora2083@gmail.com"
-                        style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:12, color:'rgba(255,255,255,0.65)', textDecoration:'none', transition:'color 0.13s' }}
-                        onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
-                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.65)')}>
-                        <Mail size={12}/> taskora2083@gmail.com
-                    </a>
                 </div>
 
+                {/* Explore */}
                 <div>
                     <p className="ft-col-title">Explore</p>
                     <FtLink to="/">Home</FtLink>
                     <FtLink to="/about">About</FtLink>
                     <FtLink to="/contact">Contact Us</FtLink>
+                </div>
+
+                {/* Legal */}
+                <div>
+                    <p className="ft-col-title">Legal</p>
                     <FtLink to="/legal">Privacy & Terms</FtLink>
                 </div>
 
-                {/* Portal links — point straight into the app for signed-in users,
-                    or to login (plus a Sign In button) for everyone else. */}
+                {/* Get in touch */}
                 <div>
-                    <p className="ft-col-title">Portal</p>
-                    {user ? (
-                        <>
-                            <FtLink to="/app">Dashboard</FtLink>
-                            <FtLink to="/app/assignments">Assignments</FtLink>
-                            <FtLink to="/app/calendar">Calendar</FtLink>
-                            <FtLink to="/app/analytics">Analytics</FtLink>
-                        </>
-                    ) : (
-                        <>
-                            <FtLink to="/auth?view=login">Dashboard</FtLink>
-                            <FtLink to="/auth?view=login">Assignments</FtLink>
-                            <FtLink to="/auth?view=login">Calendar</FtLink>
-                            <FtLink to="/auth?view=login">Analytics</FtLink>
-                            <Link to="/auth?view=login"
-                                style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'#fff', textDecoration:'none', border:'1px solid rgba(255,255,255,0.20)', borderRadius:7, padding:'6px 12px', marginTop:6, fontFamily:'var(--font-display)', transition:'background 0.13s, border-color 0.13s' }}
-                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.32)' }}
-                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.20)' }}>
-                                <LogIn size={12}/> Sign In
-                            </Link>
-                        </>
-                    )}
+                    <p style={{ fontSize:13, fontWeight:600, color:'#fff', margin:'0 0 14px', fontFamily:'var(--font-body)' }}>
+                        Get in touch:
+                    </p>
+                    <a href="mailto:taskora2083@gmail.com"
+                        style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:13, color:'rgba(255,255,255,0.75)', textDecoration:'none', transition:'color 0.13s' }}
+                        onMouseEnter={e => (e.currentTarget.style.color = '#fff')}
+                        onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.75)')}>
+                        <Mail size={13}/> taskora2083@gmail.com
+                    </a>
                 </div>
             </div>
 
             <div className="ft-bar">
                 <p style={{ fontSize:12, color:'rgba(255,255,255,0.60)', margin:0 }}>
-                    © {currentBSYear()} TaskOra · Academic Task Management System
+                    © {currentBSYear()} TaskOra · Course-Based Assignment and Task Management System
                 </p>
             </div>
         </footer>
