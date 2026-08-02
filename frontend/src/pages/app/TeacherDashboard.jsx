@@ -524,7 +524,7 @@ return (
             ) : assignments.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '32px 20px' }}>
                     <ClipboardList size={24} style={{ color: '#d4cec6', margin: '0 auto 10px', display: 'block' }} />
-                    <p style={{ fontSize: 13, color: '#b0a898', margin: 0 }}>No assignments yet.</p>
+                    <p style={{ fontSize: 13, color: 'var(--color-text-muted)', margin: 0 }}>No assignments yet.</p>
                 </div>
             ) : (
                 /* Auto-fit container layout: Stretches edge-to-edge eliminating dead right-side space */
@@ -764,7 +764,7 @@ return (
             ))}
 
             {!ranking?.length && (
-                <p style={{ fontSize:12, color:'#b0a898' }}>
+                <p style={{ fontSize:12, color:'var(--color-text-muted)' }}>
                     No student data available to generate rankings.
                 </p>
             )}
@@ -801,7 +801,7 @@ return (
         error={grErr}
     >
         {!grL && (!groups?.students?.length) && (
-            <p style={{ fontSize:12, color:'#b0a898' }}>
+            <p style={{ fontSize:12, color:'var(--color-text-muted)' }}>
                 Not enough student data to generate performance groups. At least 3 students with task data are required.
             </p>
         )}
@@ -871,7 +871,7 @@ return (
                     className="assignment-columns-scroll"
                 >
                     {groupFilter && !groups.students.some(s => s.group === groupFilter) && (
-                        <p style={{ fontSize:12, color:'#b0a898' }}>
+                        <p style={{ fontSize:12, color:'var(--color-text-muted)' }}>
                             No students in this group.
                         </p>
                     )}
@@ -954,7 +954,7 @@ return (
     error={olErr}
     >
     {!olL && outliers?.error && (
-        <p style={{ fontSize:12, color:'#b0a898' }}>
+        <p style={{ fontSize:12, color:'var(--color-text-muted)' }}>
             Not enough student data to detect outliers. At least 4 students with task data are required.
         </p>
     )}

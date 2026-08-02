@@ -10,7 +10,7 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { Link }                              from 'react-router-dom'
-import { TrendingUp, Layers, AlertCircle, Star, Zap, RefreshCw, BookOpen, ChevronDown } from 'lucide-react'
+import { TrendingUp, Layers, AlertCircle, Star, RefreshCw, BookOpen, Sparkles, ChevronDown } from 'lucide-react'
 import { useRecommendations }                from '../../hooks/useAnalytics.js'
 import { ErrorBlock }                        from '../../components/shared/Loader.jsx'
 import coursesService                        from '../../services/courses.service.js'
@@ -254,17 +254,17 @@ return (
         {/* No recommendations exist yet for this student at all */}
         {!loading && !error && recs.length === 0 && (
             <div className="white-card" style={{ padding:'52px 24px', textAlign:'center' }}>
-            <div style={{ width:52, height:52, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
-                <Zap size={22} style={{ color:'#c0b8ae' }}/>
+            <div style={{ width:52, height:52, borderRadius:'50%', background:'var(--color-primary-light)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
+                <Sparkles size={22} style={{ color:'var(--color-primary)' }}/>
             </div>
-            <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:'0 0 6px' }}>
+            <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'var(--color-text)', margin:'0 0 6px' }}>
                 No recommendations yet
             </p>
-            <p style={{ fontSize:12, color:'#b0a898', maxWidth:300, margin:'0 auto 18px' }}>
+            <p style={{ fontSize:12, color:'var(--color-text-muted)', maxWidth:300, margin:'0 auto 18px' }}>
                 Complete a few tasks first — the recommendation engine learns from your patterns.
             </p>
             <Link to="/app/tasks"
-                style={{ display:'inline-flex', alignItems:'center', gap:6, background:'#1a1f35', color:'#fff', padding:'9px 16px', borderRadius:9, fontSize:12, fontWeight:600, fontFamily:'var(--font-display)', textDecoration:'none', letterSpacing:'-0.01em' }}>
+                style={{ display:'inline-flex', alignItems:'center', gap:6, background:'var(--color-primary)', color:'#fff', padding:'9px 16px', borderRadius:9, fontSize:12, fontWeight:600, fontFamily:'var(--font-display)', textDecoration:'none', letterSpacing:'-0.01em' }}>
                 Go to Tasks
             </Link>
             </div>
@@ -273,17 +273,17 @@ return (
         {/* Recommendations exist, but none match the selected course filter */}
         {!loading && !error && recs.length > 0 && visibleRecs.length === 0 && (
             <div className="white-card" style={{ padding:'52px 24px', textAlign:'center' }}>
-            <div style={{ width:52, height:52, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
-                <BookOpen size={22} style={{ color:'#c0b8ae' }}/>
+            <div style={{ width:52, height:52, borderRadius:'50%', background:'var(--color-surface-subtle)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
+                <BookOpen size={22} style={{ color:'var(--color-text-placeholder)' }}/>
             </div>
-            <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:'0 0 6px' }}>
+            <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'var(--color-text)', margin:'0 0 6px' }}>
                 No recommendations for {selectedCourse}
             </p>
-            <p style={{ fontSize:12, color:'#b0a898', maxWidth:300, margin:'0 auto 18px' }}>
+            <p style={{ fontSize:12, color:'var(--color-text-muted)', maxWidth:300, margin:'0 auto 18px' }}>
                 Try another course, or view all courses instead.
             </p>
             <button onClick={() => setSelectedCourse('all')}
-                style={{ display:'inline-flex', alignItems:'center', gap:6, background:'#1a1f35', color:'#fff', padding:'9px 16px', borderRadius:9, fontSize:12, fontWeight:600, fontFamily:'var(--font-display)', border:'none', cursor:'pointer', letterSpacing:'-0.01em' }}>
+                style={{ display:'inline-flex', alignItems:'center', gap:6, background:'var(--color-text)', color:'#fff', padding:'9px 16px', borderRadius:9, fontSize:12, fontWeight:600, fontFamily:'var(--font-display)', border:'none', cursor:'pointer', letterSpacing:'-0.01em' }}>
                 View all courses
             </button>
             </div>

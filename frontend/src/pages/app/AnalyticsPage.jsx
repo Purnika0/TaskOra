@@ -54,12 +54,12 @@ function EmptyState({ icon, message }) {
             padding:'36px 20px', minHeight:180, height:'100%',
         }}>
             <div style={{
-                width:44, height:44, borderRadius:12, background:'#f5f1e9',
+                width:44, height:44, borderRadius:12, background:'var(--color-surface-subtle)',
                 display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0,
             }} aria-hidden="true">
-                {React.cloneElement(icon, { size:20, style:{ color:'#b0a898' } })}
+                {React.cloneElement(icon, { size:20, style:{ color:'var(--color-text-placeholder)' } })}
             </div>
-            <p style={{ fontSize:13, color:'#8a7e6e', lineHeight:1.55, maxWidth:280, margin:0 }}>
+            <p style={{ fontSize:13, color:'var(--color-text-muted)', lineHeight:1.55, maxWidth:280, margin:0 }}>
                 {message}
             </p>
         </div>
@@ -304,7 +304,7 @@ function StudentGroupsSection() {
                                 Individual Students {groupFilter !== 'all' && `— ${filteredStudents.length} shown`}
                             </p>
                             {filteredStudents.length === 0 ? (
-                                <p style={{ fontSize:12, color:'#b0a898' }}>No students in this group.</p>
+                                <p style={{ fontSize:12, color:'var(--color-text-muted)' }}>No students in this group.</p>
                             ) : (
                                 <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                                     {filteredStudents.map((s, i) => {
@@ -391,7 +391,7 @@ function OutliersSection() {
                     </p>
 
                     {filteredOutliers.length === 0 ? (
-                        <p style={{ fontSize:12, color:'#b0a898' }}>No flagged students for this course.</p>
+                        <p style={{ fontSize:12, color:'var(--color-text-muted)' }}>No flagged students for this course.</p>
                     ) : filteredOutliers.map((o, i) => {
                         // Map completion_rate to a visual indicator — never show z_score/flagged_by
                         const rate = typeof o.completion_rate === 'number'
@@ -467,9 +467,9 @@ function AssignmentCompletionSection() {
             }
         >
             {all.length === 0 && !pl ? (
-                <p style={{ fontSize:13, color:'#b0a898' }}>No assignment data yet.</p>
+                <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>No assignment data yet.</p>
             ) : filtered.length === 0 ? (
-                <p style={{ fontSize:13, color:'#b0a898' }}>No assignments for this course.</p>
+                <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>No assignments for this course.</p>
             ) : (
                 <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                     {filtered.map((p, i) => (
@@ -566,7 +566,7 @@ function CourseOverviewSection() {
             <div className="course-overview-grid">
                 <Section title="Students Enrolled by Course" icon={<Users/>} loading={loading}>
                     {pieData.length === 0 && !loading ? (
-                        <p style={{ fontSize:13, color:'#b0a898' }}>No enrollments yet.</p>
+                        <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>No enrollments yet.</p>
                     ) : (
                         <ResponsiveContainer width="100%" height={300}>
                             <PieChart>
@@ -585,7 +585,7 @@ function CourseOverviewSection() {
 
                 <Section title="Completion Rate by Course" icon={<BarChart3/>} loading={loading}>
                     {list.length === 0 && !loading ? (
-                        <p style={{ fontSize:13, color:'#b0a898' }}>No course data yet.</p>
+                        <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>No course data yet.</p>
                     ) : (
                         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
                             {list.map((c, i) => (

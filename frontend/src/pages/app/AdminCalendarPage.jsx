@@ -46,6 +46,14 @@ function DayCell({ day, isToday, isSelected, onClick }) {
         txtColor = '#fff'
         border   = `1.5px solid ${BLUE}`
         fontW    = 700
+    } else if (isSelected && isRed) {
+        // Selected AND a holiday — keep the holiday red for the text so the
+        // holiday status stays visible, but still show a blue ring/tint so
+        // the day reads as selected.
+        bgColor  = RED_BG
+        border   = `1.5px solid ${BLUE}`
+        txtColor = RED
+        fontW    = 700
     } else if (isSelected) {
         bgColor  = BLUE_BG
         border   = `1.5px solid ${BLUE}`

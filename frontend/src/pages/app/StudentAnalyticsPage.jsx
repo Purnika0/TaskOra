@@ -14,7 +14,7 @@
 import React from 'react'
 import {
     TrendingUp, CheckCircle2, Clock, AlertTriangle, XCircle, Send,
-    History, Sparkles, GraduationCap, ListChecks,
+    History, BarChart3, GraduationCap, ListChecks,
 } from 'lucide-react'
 import { useWeeklyProgress, useCourseWorkload } from '../../hooks/useAnalytics.js'
 import { useTasks } from '../../hooks/useTasks.js'
@@ -268,7 +268,7 @@ function WeeklyBarChart({ data }) {
 function NoDataState() {
     return (
         <div className="sap-card sap-welcome">
-            <div className="sap-welcome-icon"><Sparkles size={22} /></div>
+            <div className="sap-welcome-icon"><BarChart3 size={22} /></div>
             <h3>Your analytics will appear here</h3>
             <p>
                 Once you're enrolled in a course and have assignments to work on,

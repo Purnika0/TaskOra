@@ -229,13 +229,13 @@ export default function CoursesPage() {
                 <div className="white-card" style={{ padding:28 }}><LoadingBlock/></div>
             ) : courses.length === 0 ? (
                 <div className="white-card" style={{ padding:'56px 24px', textAlign:'center' }}>
-                    <div style={{ width:56, height:56, borderRadius:'50%', background:'#f0ece5', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
-                        <GraduationCap size={24} style={{ color:'#b0a898' }}/>
+                    <div style={{ width:56, height:56, borderRadius:'50%', background:'var(--color-primary-light)', display:'flex', alignItems:'center', justifyContent:'center', margin:'0 auto 14px' }} aria-hidden="true">
+                        <GraduationCap size={24} style={{ color:'var(--color-primary)' }}/>
                     </div>
-                    <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'#1a1f35', margin:'0 0 6px' }}>
+                    <p style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'var(--color-text)', margin:'0 0 6px' }}>
                         No courses yet
                     </p>
-                    <p style={{ fontSize:13, color:'#b0a898' }}>
+                    <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>
                         {isTeacher ? 'Create your first course above.' : 'Use a join code to enroll in a course.'}
                     </p>
                 </div>

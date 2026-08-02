@@ -36,6 +36,14 @@ function DayCell({ day, isToday, isSelected, taskCount, onClick }) {
         txtColor = '#fff'
         border   = `1.5px solid ${BLUE}`
         fontW    = 700
+    } else if (isSelected && isRed) {
+        // Selected AND a holiday — keep the holiday red for the text so the
+        // holiday status stays visible, but still show a blue ring/tint so
+        // the day reads as selected.
+        bgColor  = RED_BG
+        border   = `1.5px solid ${BLUE}`
+        txtColor = RED
+        fontW    = 700
     } else if (isSelected) {
         bgColor  = BLUE_BG
         border   = `1.5px solid ${BLUE}`
@@ -224,10 +232,10 @@ function SidePanel({ day, bsMonth, bsYear, tasks, loadingTasks, onDeleteTask, is
             {/* Bottom info banner for everyone */}
             <div style={{ padding:'8px 12px', background:'#F8FAFC', border:'1px solid #E2E8F0', borderRadius:8, flexShrink:0 }}>
                 <p style={{ fontSize:11, color:'#94A3B8', margin:0, textAlign:'center' }}>
-                    <button style={{display: 'inline-flex',alignItems: 'center',gap: 4,color: '#b91c1c',fontSize: 12,fontWeight: 500}}            >
+                    <span style={{display: 'inline-flex',alignItems: 'center',gap: 4,color: 'var(--color-primary)',fontSize: 12,fontWeight: 500}}>
                         <Info size={12} />
-                            Upcoming Assigment dates
-                    </button>
+                            Upcoming Assignment dates
+                    </span>
                 </p>
             </div>
         </div>

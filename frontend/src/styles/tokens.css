@@ -22,7 +22,9 @@
 
       /* Primary Accent */
       --color-primary:        #5452e4;
+      --color-primary-rgb:    84, 82, 228; /* Same color as --color-primary, for use in rgba() shadows/glows */
       --color-primary-hover:  #3E3CBD;
+      --color-primary-dark:   var(--color-primary-hover); /* Alias — used for hover states needing a darker primary shade */
       --color-primary-light:  #EEEDFD; /* Tinted overlay background */
 
       /* Legacy aliases — kept for backward compatibility with older class
