@@ -32,9 +32,9 @@ function Bar({ label, value, max, accent = '#3b6fd4' }) {
     const pct = max > 0 ? Math.round((value / max) * 100) : 0
     return (
         <div>
-            <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}>
-                <p style={{ fontSize:13, fontWeight:500, color:'#1a1f35', margin:0 }}>{label}</p>
-                <span style={{ fontSize:12, fontWeight:700, color:'#1a1f35' }}>{value}</span>
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:8, flexWrap:'wrap', marginBottom:5 }}>
+                <p style={{ fontSize:13, fontWeight:500, color:'#1a1f35', margin:0, flex:'1 1 160px', minWidth:0, wordBreak:'break-word' }}>{label}</p>
+                <span style={{ fontSize:12, fontWeight:700, color:'#1a1f35', flexShrink:0 }}>{value}</span>
             </div>
             <div className="progress-bar-track" aria-label={`${pct}%`} aria-hidden="true">
                 <div className="progress-bar-fill" style={{ width:`${pct}%`, background:accent }}/>
@@ -584,15 +584,25 @@ function CourseOverviewSection() {
                 </Section>
 
                 <Section title="Completion Rate by Course" icon={<BarChart3/>} loading={loading}>
-                    {list.length === 0 && !loading ? (
-                        <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>No course data yet.</p>
-                    ) : (
-                        <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-                            {list.map((c, i) => (
-                                <Bar key={i} label={c.course} value={c.completion_rate} max={100} accent="#5452e4"/>
-                            ))}
-                        </div>
-                    )}
+                    {(() => {
+                        // Only show courses that actually have students enrolled —
+                        // a 0%/empty bar for an unenrolled course is misleading noise,
+                        // and mirrors the filter already applied to the pie chart above.
+                        const enrolledList = list.filter(c => (c.students_enrolled || 0) > 0)
+                        if (list.length === 0 && !loading) {
+                            return <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>No course data yet.</p>
+                        }
+                        if (enrolledList.length === 0 && !loading) {
+                            return <p style={{ fontSize:13, color:'var(--color-text-muted)' }}>No enrollments yet.</p>
+                        }
+                        return (
+                            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+                                {enrolledList.map((c, i) => (
+                                    <Bar key={i} label={c.course} value={c.completion_rate} max={100} accent="#5452e4"/>
+                                ))}
+                            </div>
+                        )
+                    })()}
                 </Section>
             </div>
         </>
