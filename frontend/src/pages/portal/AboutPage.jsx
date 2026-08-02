@@ -24,6 +24,9 @@ const AB_CSS = `
     position: relative;
     width: 100%; max-width: 780px; margin: 0 auto;
     padding: 40px 70px;
+    /* See the matching comment in LandingPage.jsx — clips the blur blobs
+       so they can't widen the page's scrollable area past 100vw. */
+    overflow: hidden;
 }
 .ab-hero-blob-a {
     position: absolute; width: 300px; height: 300px; border-radius: 50%;

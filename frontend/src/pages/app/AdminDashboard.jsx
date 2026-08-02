@@ -374,7 +374,7 @@ function OverviewTab({ users, courses, loading, coursesLoading, adminName }) {
                 </p>
             </div>
 
-            <div className="stat-grid" style={{ gridTemplateColumns:'repeat(3,1fr)' }}>
+            <div className="stat-grid stat-grid-3">
                 <StatCard label="Total Users"   value={counts.total}    icon={Users}         color={A.blue}   loading={loading}/>
                 <StatCard label="Teachers"      value={counts.teachers} icon={GraduationCap} color={A.purple} loading={loading}/>
                 <StatCard label="Students"      value={counts.students} icon={BookOpen}      color={A.blue}   loading={loading}/>
@@ -933,7 +933,7 @@ function AnalyticsTab({ users, courses, loading }) {
 
     return (
         <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
-            <div className="stat-grid" style={{ gridTemplateColumns:'repeat(4,1fr)' }}>
+            <div className="stat-grid stat-grid-4">
                 <StatCard label="Total Users"     value={users.length}   icon={Users}         color={A.blue}/>
                 <StatCard label="Total Courses"   value={courses.length} icon={ClipboardList} color={A.blue}/>
                 <StatCard label="Teacher:Student" value={`${teachers.length}:${students.length}`} icon={GraduationCap} color={A.purple}/>

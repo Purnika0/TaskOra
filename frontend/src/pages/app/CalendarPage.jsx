@@ -312,9 +312,13 @@ export default function CalendarPage() {
             if (!bk) return day
             return {
                 ...day,
-                // both Saturday and Sunday count as weekend holidays
-                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
-                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+                // Backend is the ONLY source of holiday data (besides weekends).
+                // Don't fall back to day.holidayTitle — that field no longer
+                // carries any local/hardcoded data, so falling back to it would
+                // just be a no-op at best, or reintroduce a stale-data bug if
+                // anyone adds local holiday data back in later.
+                isHoliday:    Boolean(bk.is_holiday) || Boolean(bk.holiday_title) || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || null,
             }
         })
     }, [rawDays, backendCal])

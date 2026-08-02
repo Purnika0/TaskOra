@@ -22,6 +22,12 @@
     padding: 36px 32px;
     width: 100%;
     max-width: 410px;
+    min-width: 0; /* .auth-root is a flex row — without this, a flex item can
+        never shrink below its content's natural minimum width. Without it,
+        the unwrappable "Teacher" tab label below set a hard floor on how
+        narrow this card could get, so on narrow screens the whole card
+        (tabs, username, password) overflowed the viewport instead of
+        shrinking to fit. */
     box-shadow: var(--shadow-lg);
     animation: to-scaleIn 0.24s ease both;
 }
@@ -31,6 +37,7 @@
     display: flex;
     width: 100%;
     max-width: 820px;
+    min-width: 0; /* same fix as .login-card — see comment there */
     border-radius: var(--radius-xl);
     overflow: hidden;
     box-shadow: var(--shadow-lg);
@@ -51,6 +58,7 @@
 
 .signup-right {
     flex: 1;
+    min-width: 0;
     background: var(--color-surface);
     padding: 36px 32px;
     overflow-y: auto;
@@ -68,6 +76,9 @@
 }
 .role-tab {
     flex: 1;
+    min-width: 0; /* the actual root cause — without this, "Teacher" + its
+        icon set a hard floor on this button's width that propagated all
+        the way up to .login-card (see comment there) */
     padding: 8px 12px;
     border-radius: var(--radius-sm);
     font-size: var(--text-sm);
@@ -82,6 +93,12 @@
     justify-content: center;
     gap: 6px;
     font-family: var(--font-body);
+}
+.role-tab-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
 }
 .role-tab:hover  { color: var(--color-text); }
 .role-tab.active {
@@ -121,6 +138,13 @@
     box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.15); /* Soft royal focus glow */
 }
 .auth-input::placeholder { color: var(--color-text-placeholder); font-size: var(--text-sm); }
+
+/* Reserve real space for the eye-toggle button on password fields — without
+   this, the button just sits on top of the input's own edge (its right
+   padding was only 14px, but the button+icon need ~38px of clearance),
+   so it never had a proper "slot" and looked like it was floating outside
+   the box, especially at compact sizes. */
+.auth-input-has-toggle { padding-right: 38px; }
 
 .auth-input-icon {
     position: absolute; left: 12px; top: 50%; transform: translateY(-50%);

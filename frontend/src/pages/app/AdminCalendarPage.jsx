@@ -341,8 +341,9 @@ export default function AdminCalendarPage() {
             if (!bk) return day
             return {
                 ...day,
-                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
-                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+                // Backend is the ONLY source of holiday data (besides weekends).
+                isHoliday:    Boolean(bk.is_holiday) || Boolean(bk.holiday_title) || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || null,
                 holidayType:  bk.holiday_type || null,
                 holidayId:    bk.holiday_id || null,
             }

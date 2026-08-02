@@ -66,8 +66,8 @@ function BSCalWidget({ tasks }) {
     const next = () => setCur(c => c.m === 12 ? { y:c.y+1, m:1  } : { y:c.y, m:c.m+1 })
     const rawDays     = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
     const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
-    // Same merge as CalendarPage.jsx / TeacherDashboard.jsx: backend holiday
-    // data overrides the hardcoded NEPAL_HOLIDAYS fallback when available.
+    // Same merge as CalendarPage.jsx / TeacherDashboard.jsx: the backend is
+    // the only source of holiday data, merged in once it loads.
     const days = useMemo(() => {
         if (!backendCal?.days?.length) return rawDays
         const bkMap = {}
@@ -77,8 +77,9 @@ function BSCalWidget({ tasks }) {
             if (!bk) return day
             return {
                 ...day,
-                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
-                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+                // Backend is the ONLY source of holiday data (besides weekends).
+                isHoliday:    Boolean(bk.is_holiday) || Boolean(bk.holiday_title) || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || null,
             }
         })
     }, [rawDays, backendCal])

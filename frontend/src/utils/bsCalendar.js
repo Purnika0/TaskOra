@@ -24,100 +24,13 @@ export const BS_DAYS = {
   2087:    [ 31,  31,  32,  31,  31,  31,  30,  29,  30,  30,  30,  30 ], // 366
 }
 
-// ── All Nepal public holidays — RED only, no type distinction ─────────────────
-export const NEPAL_HOLIDAYS = {
-    // ── 2081 BS ───────────────────────────────────────────────────────────────
-    '2081-01-01': 'Naya Barsha (नयाँ वर्ष)',
-    '2081-01-08': 'Ram Nawami (राम नवमी)',
-    '2081-02-07': 'Buddha Jayanti (बुद्ध जयन्ती)',
-    '2081-03-05': 'Naag Panchami (नाग पञ्चमी)',
-    '2081-04-02': 'Janai Purnima (जनै पूर्णिमा)',
-    '2081-04-03': 'Gai Jatra (गाई जात्रा)',
-    '2081-05-06': 'Teej (तीज)',
-    '2081-06-07': 'Ghatasthapana (घटस्थापना)',
-    '2081-06-14': 'Fulpati (फूलपाती)',
-    '2081-06-15': 'Maha Astami (महा अष्टमी)',
-    '2081-06-16': 'Maha Nawami (महा नवमी)',
-    '2081-06-17': 'Vijaya Dashami (विजया दशमी)',
-    '2081-07-22': 'Lakshmi Puja / Diwali (लक्ष्मीपूजा)',
-    '2081-07-23': 'Govardhan Puja',
-    '2081-07-24': 'Bhai Tika (भाई टीका)',
-    '2081-08-04': 'Chhath Parba (छठ पर्व)',
-    '2081-10-01': 'Maghe Sankranti (माघे सङ्क्रान्ति)',
-    '2081-10-20': 'Sonam Losar (सोनाम ल्होसार)',
-    '2081-11-17': 'Maha Shivaratri (महाशिवरात्री)',
-    '2081-11-20': 'Gyalpo Losar (ग्याल्पो ल्होसार)',
-    '2081-12-12': 'Fagu Purnima / Holi (फागु पूर्णिमा)',
-    '2081-12-28': 'Ghode Jatra (घोडे जात्रा)',
-
-    // ── 2082 BS ───────────────────────────────────────────────────────────────
-    '2082-01-01': 'Naya Barsha (नयाँ वर्ष)',
-    '2082-01-07': 'Ram Nawami (राम नवमी)',
-    '2082-02-01': 'Buddha Jayanti (बुद्ध जयन्ती)',
-    '2082-02-15': 'Sithinakha',
-    '2082-03-01': 'Naag Panchami (नाग पञ्चमी)',
-    '2082-04-01': 'Janai Purnima (जनै पूर्णिमा)',
-    '2082-04-02': 'Gai Jatra (गाई जात्रा)',
-    '2082-04-29': 'Krishna Astami (कृष्णाष्टमी)',
-    '2082-05-01': 'Teej (तीज)',
-    '2082-05-08': 'Indra Jatra (इन्द्र जात्रा)',
-    '2082-06-04': 'Ghatasthapana (घटस्थापना)',
-    '2082-06-11': 'Fulpati (फूलपाती)',
-    '2082-06-12': 'Maha Astami (महा अष्टमी)',
-    '2082-06-13': 'Maha Nawami (महा नवमी)',
-    '2082-06-14': 'Vijaya Dashami (विजया दशमी)',
-    '2082-06-25': 'Kojagrat Purnima (कोजाग्रत पूर्णिमा)',
-    '2082-07-17': 'Tihar — Kaag Tihar',
-    '2082-07-18': 'Tihar — Kukur Tihar',
-    '2082-07-19': 'Lakshmi Puja / Diwali (लक्ष्मीपूजा)',
-    '2082-07-20': 'Govardhan Puja',
-    '2082-07-21': 'Bhai Tika (भाई टीका)',
-    '2082-08-01': 'Chhath Parba (छठ पर्व)',
-    '2082-08-16': 'Vivah Panchami (विवाह पञ्चमी)',
-    '2082-09-01': 'Udhauli Parba',
-    '2082-10-01': 'Maghe Sankranti (माघे सङ्क्रान्ति)',
-    '2082-10-15': 'Sonam Losar (सोनाम ल्होसार)',
-    '2082-11-14': 'Maha Shivaratri (महाशिवरात्री)',
-    '2082-11-17': 'Gyalpo Losar (ग्याल्पो ल्होसार)',
-    '2082-12-07': 'Fagu Purnima / Holi (फागु पूर्णिमा)',
-    '2082-12-25': 'Ghode Jatra (घोडे जात्रा)',
-    '2082-12-29': 'Ram Nawami (राम नवमी)',
-
-    // ── 2083 BS ───────────────────────────────────────────────────────────────
-    '2083-01-01': 'Naya Barsha (नयाँ वर्ष)',
-    '2083-01-18': 'Buddha Jayanti (बुद्ध जयन्ती)',
-    '2083-03-06': 'Sithinakha',
-    '2083-05-01': 'Naag Panchami (नाग पञ्चमी)',
-    '2083-05-12': 'Janai Purnima / Raksha Bandhan (जनै पूर्णिमा)',
-    '2083-05-13': 'Gai Jatra (गाई जात्रा)',
-    '2083-05-19': 'Krishna Astami / Janmashtami (कृष्णाष्टमी)',
-    '2083-05-29': 'Teej (तीज)',
-    '2083-06-09': 'Indra Jatra (इन्द्र जात्रा)',
-    '2083-06-25': 'Ghatasthapana (घटस्थापना)',
-    '2083-06-31': 'Fulpati (फूलपाती)',
-    '2083-07-01': 'Maha Astami (महा अष्टमी)',
-    '2083-07-02': 'Maha Nawami (महा नवमी)',
-    '2083-07-03': 'Vijaya Dashami (विजया दशमी)',
-    '2083-07-08': 'Kojagrat Purnima (कोजाग्रत पूर्णिमा)',
-    '2083-07-20': 'Tihar — Kaag Tihar',
-    '2083-07-21': 'Tihar — Kukur Tihar',
-    '2083-07-22': 'Lakshmi Puja / Diwali (लक्ष्मीपूजा)',
-    '2083-07-23': 'Govardhan Puja',
-    '2083-07-24': 'Bhai Tika (भाई टीका)',
-    '2083-07-29': 'Chhath Parba (छठ पर्व)',
-    '2083-10-01': 'Maghe Sankranti (माघे सङ्क्रान्ति)',
-    '2083-10-24': 'Sonam Losar (सोनाम ल्होसार)',
-    '2083-11-22': 'Maha Shivaratri (महाशिवरात्री)',
-    '2083-11-25': 'Gyalpo Losar (ग्याल्पो ल्होसार)',
-    '2083-12-07': 'Fagu Purnima / Holi (फागु पूर्णिमा)',
-    '2083-12-23': 'Ghode Jatra (घोडे जात्रा)',
-
-    // ── 2084 BS ───────────────────────────────────────────────────────────────
-    '2084-01-01': 'Naya Barsha (नयाँ वर्ष)',
-    '2084-02-06': 'Buddha Jayanti (बुद्ध जयन्ती)',
-    '2084-11-21': 'Maha Shivaratri (महाशिवरात्री)',
-    '2084-12-16': 'Fagu Purnima / Holi (फागु पूर्णिमा)',
-}
+// NOTE: Holidays are NOT hardcoded here anymore. This used to contain a
+// static NEPAL_HOLIDAYS lookup table that duplicated the backend's Holiday
+// database — the two drifted apart over time (e.g. this file once claimed
+// Vijaya Dashami 2083 fell on Kartik 3, while the database seed had it two
+// days later with no entry for Kartik 3 at all). The backend Holiday table
+// is now the single source of truth for all non-weekend holidays; this file
+// only computes Saturday/Sunday, which are locale-fixed and never change.
 
 // ── Conversion engine ─────────────────────────────────────────────────────────
 const EPOCH_YEAR = 2077
@@ -167,15 +80,17 @@ export function buildMonthDays(bsYear, bsMonth) {
         const dow    = adDate.getDay() // 0=Sun … 6=Sat
         const bsDay  = i + 1
         const bsKey  = `${bsYear}-${String(bsMonth).padStart(2,'0')}-${String(bsDay).padStart(2,'0')}`
-        const hTitle = NEPAL_HOLIDAYS[bsKey] || null
         const isSat  = dow === 6
         const isSun  = dow === 0
         return {
             bsDay, adDate, adDay: adDate.getDate(), dow,
             isSat, isSun,
-            // Saturday and Sunday both count as weekend holidays
-            isHoliday: !!hTitle || isSat || isSun,
-            holidayTitle: hTitle,
+            // Saturday and Sunday are the only holidays known before the
+            // backend responds. Real holidays are merged in from the
+            // backend by each page — see the `days` useMemo in
+            // CalendarPage.jsx / AdminCalendarPage.jsx / the dashboards.
+            isHoliday: isSat || isSun,
+            holidayTitle: null,
             bsKey,
             // ISO string of AD date for task due_date matching (local date, not UTC — avoids off-by-one in +UTC timezones)
             adISO: `${adDate.getFullYear()}-${String(adDate.getMonth() + 1).padStart(2, '0')}-${String(adDate.getDate()).padStart(2, '0')}`,

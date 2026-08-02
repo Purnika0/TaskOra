@@ -59,10 +59,10 @@ function BSCalWidget({ assignments }) {
     const next = () => setCur(c => c.m === 12 ? { y:c.y+1, m:1  } : { y:c.y, m:c.m+1 })
     const rawDays     = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
     const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
-    // Backend holiday data (DB-editable via the admin) overrides the hardcoded
-    // NEPAL_HOLIDAYS fallback baked into buildMonthDays whenever it's available —
+    // Backend holiday data (DB-editable via the admin) is merged in here —
     // same merge CalendarPage.jsx uses, so this mini calendar's holiday tooltip
-    // stays in sync with the admin-managed list.
+    // stays in sync with the admin-managed list. If the backend call hasn't
+    // resolved yet, rawDays still shows correct weekends, just no holidays.
     const days = useMemo(() => {
         if (!backendCal?.days?.length) return rawDays
         const bkMap = {}
@@ -72,8 +72,9 @@ function BSCalWidget({ assignments }) {
             if (!bk) return day
             return {
                 ...day,
-                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
-                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+                // Backend is the ONLY source of holiday data (besides weekends).
+                isHoliday:    Boolean(bk.is_holiday) || Boolean(bk.holiday_title) || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || null,
             }
         })
     }, [rawDays, backendCal])
@@ -687,7 +688,7 @@ return (
         </div>
     )}
 
-    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }} className="grid-2">
+    <div className="grid-2">
 
     <Section
         title="Student Ranking"

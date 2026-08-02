@@ -33,7 +33,7 @@ function Field({ id, label, iconL, showEye, eyeOpen, onEye, error, ...props }) {
             )}
             <div className="auth-input-wrap">
                 {iconL && <span className="auth-input-icon" aria-hidden="true">{iconL}</span>}
-                <input id={id} className={`auth-input${error ? ' auth-input-error' : ''}`}
+                <input id={id} className={`auth-input${showEye ? ' auth-input-has-toggle' : ''}${error ? ' auth-input-error' : ''}`}
                     aria-invalid={!!error} aria-describedby={error ? `${id}-err` : undefined} {...props}/>
                 {showEye && (
                     <button type="button" className="auth-input-right" onClick={onEye}

@@ -44,10 +44,9 @@ export default function BSDatePicker({ value, onChange, placeholder = 'Select da
 
     const rawDays  = useMemo(() => buildMonthDays(cur.y, cur.m), [cur.y, cur.m])
     const { calendar: backendCal } = useBSCalendar(cur.y, cur.m)
-    // Backend holiday data (DB-editable) overrides the hardcoded fallback list
-    // when available, so the red weekend/holiday coloring and hover title
-    // stay accurate. Same merge logic as CalendarPage.jsx and the dashboard
-    // mini calendars — keep them in sync if this changes.
+    // Backend is the ONLY source of holiday data (besides weekends), merged
+    // in once it loads. Same merge logic as CalendarPage.jsx and the
+    // dashboard mini calendars — keep them in sync if this changes.
     const days = useMemo(() => {
         if (!backendCal?.days?.length) return rawDays
         const bkMap = {}
@@ -57,8 +56,8 @@ export default function BSDatePicker({ value, onChange, placeholder = 'Select da
             if (!bk) return day
             return {
                 ...day,
-                isHoliday:    bk.is_holiday || day.isSat || day.isSun,
-                holidayTitle: bk.holiday_title || day.holidayTitle || null,
+                isHoliday:    Boolean(bk.is_holiday) || Boolean(bk.holiday_title) || day.isSat || day.isSun,
+                holidayTitle: bk.holiday_title || null,
             }
         })
     }, [rawDays, backendCal])

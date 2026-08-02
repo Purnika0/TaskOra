@@ -178,7 +178,17 @@ CARDS
 GRIDS
 ═══════════════════════════════════════════════════════════ */
 .stat-grid   { display:grid; grid-template-columns:repeat(auto-fit, minmax(150px, 1fr)); gap:14px; }
-@media(max-width:480px)  { .stat-grid { grid-template-columns:1fr 1fr; gap:10px; } }
+/* Desktop column-count variants — used instead of an inline style, which
+   would have higher specificity than any of these rules (including the
+   @media overrides below) and silently prevent the grid from ever
+   collapsing on mobile. */
+.stat-grid.stat-grid-3 { grid-template-columns: repeat(3,1fr); }
+.stat-grid.stat-grid-4 { grid-template-columns: repeat(4,1fr); }
+@media(max-width:480px) {
+    .stat-grid,
+    .stat-grid.stat-grid-3,
+    .stat-grid.stat-grid-4 { grid-template-columns:1fr 1fr; gap:10px; }
+}
 
 .widget-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
 @media(max-width:900px) { .widget-grid { grid-template-columns:1fr 1fr; } }
@@ -573,7 +583,9 @@ RESPONSIVE SIDEBAR
     }
     .content        { padding: 14px; }
     .page-header    { margin-bottom: 14px; }
-    .stat-grid      { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .stat-grid,
+    .stat-grid.stat-grid-3,
+    .stat-grid.stat-grid-4 { grid-template-columns: 1fr 1fr; gap: 10px; }
     .page-title     { font-size: 17px; }
     .stat-value     { font-size: 24px !important; }
 }

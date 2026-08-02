@@ -5,6 +5,11 @@ import { useState, useEffect, useCallback } from 'react'
 import tasksService from '../services/tasks.service.js'
 
 // ── Status helpers ─────────────────────────────────────────────────────────
+// Single source of truth for task-status checks and display colors —
+// utils/helpers.js re-exports these instead of keeping its own copies.
+// (Previously it had a second copy that disagreed on both isPending()'s
+// edge case and on the status → color mapping, which made "Overdue" render
+// in two different shades of red depending on which page you were on.)
 export function isCompleted(task)  { return task.status === 'completed'  }
 export function isPending(task)    { return task.status === 'pending'    }
 export function isSubmitted(task)  { return task.status === 'submitted'  }
@@ -39,6 +44,19 @@ export function statusBg(task) {
         case 'rejected':  return '#fde8e8'
         case 'overdue':   return '#fde8e8'
         default:          return '#fff8e6'
+    }
+}
+
+// Border shade for the 5-state badge (consumed by utils/helpers.js's
+// statusBadge()) — kept alongside statusColor/statusBg so all three stay
+// in sync for the same status instead of being hand-maintained separately.
+export function statusBorder(task) {
+    switch (task.status) {
+        case 'completed': return '#bbf7d0'
+        case 'submitted': return '#bfdbfe'
+        case 'rejected':  return '#fecaca'
+        case 'overdue':   return '#fecaca'
+        default:          return '#fde68a'
     }
 }
 

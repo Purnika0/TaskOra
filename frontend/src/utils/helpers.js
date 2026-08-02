@@ -3,6 +3,10 @@
 //   'pending' | 'submitted' | 'completed' | 'rejected' | 'overdue'
 
 import { adToBS, BS_MONTH_NAMES } from './bsCalendar.js'
+import {
+    isCompleted, isPending, isSubmitted, isOverdue, isRejected, isActionable,
+    statusLabel, statusColor, statusBg, statusBorder,
+} from '../hooks/useTasks.js'
 
 // ── "Today" in Nepal local time ──────────────────────────────────────────────
 // Never use `new Date().toISOString()` for "today's date" — that reads UTC,
@@ -64,35 +68,19 @@ export function getTaskDueDate(task) {
 }
 
 // ── Status helpers (5-state) ────────────────────────────────────────────────
-export function isOverdue(task) {
-    return task.status === 'overdue'
-}
-export function isCompleted(task) {
-    return task.status === 'completed'
-}
-export function isSubmitted(task) {
-    return task.status === 'submitted'
-}
-export function isRejected(task) {
-    return task.status === 'rejected'
-}
-export function isPending(task) {
-    return task.status === 'pending' || !task.status
-}
+// Re-exported from hooks/useTasks.js, the single source of truth — do not
+// redefine these here. (This file used to have its own copies that quietly
+// disagreed with useTasks.js on both isPending()'s edge case and the
+// status → color mapping.)
+export { isCompleted, isPending, isSubmitted, isOverdue, isRejected, isActionable, statusLabel, statusColor, statusBg }
 
 // ── 5-state status badge ────────────────────────────────────────────────────
 export function statusBadge(task) {
-    switch (task.status) {
-        case 'completed':
-            return { label: 'Completed', color: '#166534', bg: '#e0f7ee', border: '#bbf7d0' }
-        case 'submitted':
-            return { label: 'Submitted', color: '#1e40af', bg: '#eff3fd', border: '#bfdbfe' }
-        case 'rejected':
-            return { label: 'Rejected',  color: '#991b1b', bg: '#fde8e8', border: '#fecaca' }
-        case 'overdue':
-            return { label: 'Overdue',   color: '#991b1b', bg: '#fde8e8', border: '#fecaca' }
-        default:
-            return { label: 'Pending',   color: '#92400e', bg: '#fff8e6', border: '#fde68a' }
+    return {
+        label:  statusLabel(task),
+        color:  statusColor(task),
+        bg:     statusBg(task),
+        border: statusBorder(task),
     }
 }
 

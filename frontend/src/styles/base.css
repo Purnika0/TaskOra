@@ -17,6 +17,16 @@ html {
 
 html, body, #root { height: 100%; }
 
+/* Prevents any element (decorative blur blobs, 3D-tilted images, etc.)
+   from silently widening the page past the viewport and making it
+   horizontally scrollable. Without this, a sticky/fixed navbar stays
+   pinned to the true viewport edge while the rest of the page can be
+   scrolled sideways underneath it, which looks like the navbar and page
+   have drifted out of sync. Scoped utilities like .overflow-x-auto
+   (used for things like data tables) are unaffected — this only
+   constrains the page's outermost scroll container. */
+html, body { overflow-x: hidden; }
+
 body {
     font-family: var(--font-body);
     font-size: var(--text-base);

@@ -23,6 +23,9 @@ a.pnav-link:visited { color: var(--color-text-secondary); }
     content: ''; position: absolute; left: 14px; right: 14px; bottom: 2px;
     height: 2px; border-radius: 2px; background: var(--color-primary);
 }
+.pnav-links {
+    display: flex; align-items: center; gap: 4px;
+}
 .pnav-cta {
     display: inline-flex; align-items: center; gap: 6px;
     font-family: var(--font-display); font-weight: 700; font-size: 13.5px;
@@ -110,7 +113,7 @@ export default function PublicNavbar() {
                 </span>
             </Link>
 
-            <nav className="pnav-links" style={{ display: 'flex', alignItems: 'center', gap: 4 }} aria-label="Primary">
+            <nav className="pnav-links" aria-label="Primary">
                 {NAV_LINKS.map(link => (
                     <Link
                         key={link.to}
