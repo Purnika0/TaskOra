@@ -335,7 +335,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
                     </p>
                 </div>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
+                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
                         {saving ? 'Saving…' : <><Send size={13}/> {actionLabel}</>}

@@ -150,7 +150,7 @@ export function ConfirmProvider({ children }) {
                         </div>
 
                         {/* Action buttons */}
-                        <div style={{
+                        <div className="confirm-footer-row" style={{
                             display: 'flex',
                             justifyContent: 'flex-end',
                             gap: 8,

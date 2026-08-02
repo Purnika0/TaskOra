@@ -70,7 +70,7 @@ export default function NotificationBell() {
             </button>
 
             {open && (
-                <div className="anim-scale-in" style={{
+                <div className="anim-scale-in notif-dropdown" style={{
                     position: 'absolute', top: 'calc(100% + 10px)', right: 0, width: 360, maxWidth: '90vw',
                     background: '#fff', borderRadius: 14, boxShadow: 'var(--shadow-xl)', border: '1px solid var(--color-border)',
                     zIndex: 200, overflow: 'hidden', transformOrigin: 'top right',
@@ -98,7 +98,7 @@ export default function NotificationBell() {
                     </div>
 
                     {/* List */}
-                    <div style={{ maxHeight: 380, overflowY: 'auto' }}>
+                    <div style={{ maxHeight: 'min(380px, 60vh)', overflowY: 'auto' }}>
                         {loading && recent.length === 0 && (
                             <div style={{ padding: '28px 14px', textAlign: 'center', color: 'var(--color-text-muted)', fontSize: 12 }}>
                                 Loading…

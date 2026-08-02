@@ -558,7 +558,7 @@ export default function CalendarPage() {
                         <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
                             This will permanently delete <strong style={{ color:'#1a1f35' }}>"{deleteTarget.title || deleteTarget.assignment?.title || 'this assignment'}"</strong>. This action cannot be undone.
                         </p>
-                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                             <button
                                 onClick={cancelDelete}
                                 disabled={!!deletingId}

@@ -15,6 +15,7 @@ import { Outlet } from 'react-router-dom'
 import { BookOpen, GraduationCap, ShieldCheck } from 'lucide-react'
 import Sidebar        from '../components/layout/Sidebar.jsx'
 import { useAuth }    from '../hooks/useAuth.js'
+import { useConfirm } from '../context/ConfirmContext.jsx'
 import NotificationBell from '../components/notifications/NotificationBell.jsx'
 
 // Same icon/design language as the Student / Teacher role toggle on the
@@ -39,6 +40,7 @@ function HamburgerIcon() {
 
 export default function DashboardShell() {
     const { user, logout } = useAuth()
+    const confirm = useConfirm()
     const [collapsed,  setCollapsed]  = useState(false)
     const [mobileOpen, setMobileOpen] = useState(false)
 
@@ -47,9 +49,21 @@ export default function DashboardShell() {
         else setCollapsed(c => !c)
     }
 
+    // Signing out is a one-click action in the sidebar (unlike the Settings
+    // page version), so it needs its own confirm step — otherwise a single
+    // misclick instantly ends the session with no way back.
+    async function handleLogout() {
+        const ok = await confirm({
+            title: 'Sign out?',
+            message: 'You will be returned to the login screen.',
+            confirmLabel: 'Sign Out',
+        })
+        if (ok) logout()
+    }
+
     return (
         <div className="shell">
-            <Sidebar user={user} onLogout={logout} collapsed={collapsed} mobileOpen={mobileOpen}/>
+            <Sidebar user={user} onLogout={handleLogout} collapsed={collapsed} mobileOpen={mobileOpen}/>
 
             {/* Mobile dim overlay — close sidebar on outside click */}
             {mobileOpen && (

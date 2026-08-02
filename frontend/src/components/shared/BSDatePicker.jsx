@@ -26,6 +26,12 @@ function todayISO() {
 // disablePast: convenience shorthand for minDate = today (use for due-date fields, where only upcoming dates make sense)
 export default function BSDatePicker({ value, onChange, placeholder = 'Select date', hasError = false, minDate = null, disablePast = false, background = '#FFFFFF' }) {
     const [open, setOpen] = useState(false)
+    // Whether the popup has to anchor from the right edge (openLeft) and/or
+    // open upward (openUp) instead of the default top-left, so it never
+    // renders off the edge of the viewport — most commonly the right edge
+    // on mobile, where these fields often sit in a narrow two-column form.
+    const [openLeft, setOpenLeft] = useState(false)
+    const [openUp,   setOpenUp]   = useState(false)
     const wrapRef = useRef(null)
     const effectiveMin = disablePast ? todayISO() : minDate
 
@@ -77,7 +83,17 @@ export default function BSDatePicker({ value, onChange, placeholder = 'Select da
 
     function openPicker() {
         if (value) { const bs = adISOToBS(value); setCur({ y: bs.year, m: bs.month }) }
-        setOpen(o => !o)
+        setOpen(o => {
+            const next = !o
+            if (next && wrapRef.current) {
+                const rect = wrapRef.current.getBoundingClientRect()
+                const POPUP_WIDTH  = 264
+                const POPUP_HEIGHT = 340 // approximate rendered height
+                setOpenLeft(rect.left + POPUP_WIDTH > window.innerWidth - 8)
+                setOpenUp(rect.bottom + POPUP_HEIGHT > window.innerHeight - 8)
+            }
+            return next
+        })
     }
 
     return (
@@ -95,9 +111,13 @@ export default function BSDatePicker({ value, onChange, placeholder = 'Select da
 
             {open && (
                 <div style={{
-                    position: 'absolute', top: 'calc(100% + 6px)', left: 0, zIndex: 60,
+                    position: 'absolute',
+                    ...(openUp   ? { bottom: 'calc(100% + 6px)' } : { top: 'calc(100% + 6px)' }),
+                    ...(openLeft ? { right: 0 } : { left: 0 }),
+                    zIndex: 60,
                     background: '#fff', borderRadius: 12, boxShadow: '0 12px 32px rgba(15,23,42,0.18)',
-                    border: '1px solid var(--color-border)', padding: 14, width: 264,
+                    border: '1px solid var(--color-border)', padding: 14,
+                    width: 264, maxWidth: 'calc(100vw - 24px)', boxSizing: 'border-box',
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                         <button type="button" onClick={prev} aria-label="Previous month"

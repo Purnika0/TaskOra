@@ -302,7 +302,7 @@ export default function SettingsPage() {
             title: 'Delete Account',
             message: 'Are you sure you want to delete this account permanently?',
             confirmLabel: 'Delete',
-            isDanger: true 
+            danger: true 
         })
 
         if (ok) {

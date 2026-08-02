@@ -346,7 +346,7 @@ export default function CoursesPage() {
                         <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
                             Are you sure you want to delete this course? This action cannot be undone.
                         </p>
-                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                             <button
                                 onClick={cancelDelete}
                                 disabled={!!deletingId}
@@ -391,7 +391,7 @@ export default function CoursesPage() {
                         <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
                             Are you sure you want to leave "{leaveTarget.title}"? Your assignments and progress will be restored if you re-enroll later.
                         </p>
-                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                             <button
                                 onClick={cancelLeave}
                                 disabled={!!leavingId}

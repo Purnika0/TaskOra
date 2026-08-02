@@ -177,7 +177,7 @@ function SubmitModal({ task, onClose, onSubmitted }) {
                     </p>
                 </div>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
+                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
                         {saving ? 'Saving…' : <><Send size={13}/> {actionLabel}</>}
@@ -344,7 +344,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                     </div>
                 </div>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
+                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
                         {saving ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Assignment')}
@@ -372,7 +372,7 @@ function DeleteAssignmentModal({ assignment, deleting, onCancel, onConfirm }) {
                 <p style={{ fontSize:13, color:'var(--color-text-secondary)', lineHeight:1.55, margin:'0 0 22px' }}>
                     Are you sure you want to delete <strong>{getTaskTitle(assignment)}</strong>? This action cannot be undone.
                 </p>
-                <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                     <button onClick={onCancel} disabled={deleting} className="btn-secondary">Cancel</button>
                     <button onClick={onConfirm} disabled={deleting} className="btn-primary"
                         style={{ background:'var(--color-red)', opacity:deleting?0.75:1 }}>
@@ -519,7 +519,7 @@ function StudentAssignments() {
             </div>
 
             {/* Tabs */}
-            <div className="am-tabs">
+            <div className="tab-bar" style={{ borderRadius:14 }}>
                 {TABS.map(t => {
                     const active = activeTab === t.key
                     return (

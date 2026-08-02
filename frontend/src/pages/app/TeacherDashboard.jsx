@@ -284,7 +284,7 @@ return (
                 </div>
             </div>
 
-            <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
+            <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
                 <button onClick={onClose} className="btn-secondary">Cancel</button>
                 <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
                     {saving ? (isEdit ? 'Saving…' : 'Creating…') : (isEdit ? 'Save Changes' : 'Create Assignment')}
@@ -666,7 +666,7 @@ return (
                 <p style={{ fontSize: 13, color: '#7a7060', lineHeight: 1.55, margin: '0 0 22px' }}>
                     Are you sure you want to delete this assignment? 
                 </p>
-                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                <div className="modal-footer-row" style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                     <button
                         onClick={cancelDelete}
                         disabled={!!deletingId}

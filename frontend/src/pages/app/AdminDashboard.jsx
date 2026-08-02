@@ -252,7 +252,7 @@ function AddTeacherModal({ onClose, onCreated }) {
                     </div>
                 </div>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid var(--color-border)' }}>
+                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid var(--color-border)' }}>
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={submit} disabled={saving} className="btn-primary" style={{ opacity: saving ? 0.7 : 1 }}>
                         {saving ? 'Creating…' : <><GraduationCap size={13}/> Create Teacher</>}
@@ -285,7 +285,7 @@ function UserTable({ users, loading, currentUser, onDelete, onSuspend, emptyTitl
                     className="form-input" style={{ paddingLeft:32 }}/>
             </div>
 
-            <div className="white-card" style={{ overflow:'hidden' }}>
+            <div className="white-card scroll-fade-x" style={{ overflow:'hidden' }}>
                 {loading ? (
                     <div style={{ padding:24 }}><LoadingBlock/></div>
                 ) : filtered.length === 0 ? (
@@ -515,11 +515,11 @@ function StudentsTab({ students, courses, loading, currentUser, onDelete, onSusp
                 <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:16, color:'var(--color-text)', margin:0 }}>
                     Students <span style={{ fontSize:13, color:'var(--color-text-muted)', fontWeight:400 }}>({shownUsers.length})</span>
                 </h3>
-                <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                     <Filter size={13} style={{ color:'var(--color-text-muted)' }}/>
                     <select value={courseId} onChange={e => setCourseId(e.target.value)}
                         aria-label="Filter students by course"
-                        className="form-input" style={{ width:'auto', minWidth:200, cursor:'pointer' }}>
+                        className="form-input" style={{ width:'auto', minWidth:200, maxWidth:'100%', cursor:'pointer' }}>
                         <option value="">All Students</option>
                         {courses.map(c => (
                             <option key={c.id} value={c.id}>{c.title}</option>
@@ -613,7 +613,7 @@ function CourseModal({ course, teachers, onClose, onSaved }) {
                     </div>
                 </form>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid var(--color-border)' }}>
+                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid var(--color-border)' }}>
                     <button onClick={onClose} className="btn-secondary">Cancel</button>
                     <button onClick={submit} disabled={saving} className="btn-primary" style={{ opacity: saving ? 0.7 : 1 }}>
                         {saving ? 'Saving…' : (isEdit ? 'Save Changes' : 'Create Course')}
@@ -776,7 +776,7 @@ function ViewMessageModal({ message, onClose, onMarkResolved }) {
                     </div>
                 </div>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid var(--color-border)' }}>
+                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 22px', borderTop:'1px solid var(--color-border)' }}>
                     <button onClick={onClose} className="btn-secondary">Close</button>
                     {message.status !== 'RESOLVED' && (
                         <button onClick={onMarkResolved} className="btn-primary">Mark Resolved</button>
@@ -807,7 +807,7 @@ function MessagesTab({ messages, loading, onView, onMarkRead, onMarkResolved, on
                     className="form-input" style={{ paddingLeft:32 }}/>
             </div>
 
-            <div className="white-card" style={{ overflow:'hidden' }}>
+            <div className="white-card scroll-fade-x" style={{ overflow:'hidden' }}>
                 {loading ? (
                     <div style={{ padding:24 }}><LoadingBlock/></div>
                 ) : filtered.length === 0 ? (
@@ -1228,7 +1228,7 @@ export default function AdminDashboard({ initialTab }) {
             </div>
 
             {/* Tab bar — stretches full width, each tab gets equal space */}
-            <div className="tab-bar" style={{ marginBottom:20, borderRadius:'var(--radius-lg)', borderBottom:'1px solid var(--color-border)', display:'flex', width:'100%' }} role="tablist" aria-label="Admin sections">
+            <div className="tab-bar" style={{ marginBottom:20, borderRadius:'var(--radius-lg)', borderBottom:'1px solid var(--color-border)', width:'100%' }} role="tablist" aria-label="Admin sections">
                 {TABS.map(t => {
                     const Icon = t.icon
                     const active = tab === t.key

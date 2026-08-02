@@ -201,7 +201,7 @@ function HolidayModal({ initial, onClose, onSaved }) {
                     {error && <p style={{ fontSize:11.5, color:RED, margin:0 }}>{error}</p>}
                 </div>
 
-                <div style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
+                <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end', marginTop:20 }}>
                     <button onClick={onClose} disabled={saving} className="btn-primary"
                         style={{ background:'#f0ece5', color:'#7a7060', cursor: saving ? 'default' : 'pointer' }}>
                         Cancel
@@ -651,7 +651,7 @@ export default function AdminCalendarPage() {
                         <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
                             Are you sure you want to delete <strong style={{ color:'#1a1f35' }}>"{deleteTarget.holidayTitle || 'this holiday'}"</strong> permanently?
                         </p>
-                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                             <button
                                 onClick={() => setDeleteTarget(null)}
                                 disabled={deleting}

@@ -1,7 +1,6 @@
 // src/pages/portal/ContactPage.jsx
 
 import { useState } from 'react'
-import { useAuth }             from '../../hooks/useAuth.js'
 import { useToast }            from '../../context/ToastContext.jsx'
 import contactService          from '../../services/contact.service.js'
 import { Mail, Phone, MapPin, CheckCircle2, ArrowRight } from 'lucide-react'
@@ -35,7 +34,6 @@ import PublicNavbar from '../../components/layout/PublicNavbar.jsx'
     }
 
     export default function ContactPage() {
-    const { user } = useAuth()
     const toast = useToast()
     const [form, setForm] = useState({ name:'', email:'', subject:'', message:'' })
     const [errs, setErrs] = useState({})

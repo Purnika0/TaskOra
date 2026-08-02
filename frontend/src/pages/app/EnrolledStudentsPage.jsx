@@ -97,7 +97,7 @@ export default function EnrolledStudentsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="white-card overflow-hidden">
+                    <div className="white-card overflow-hidden scroll-fade-x">
                         <div className="overflow-x-auto">
                             <table className="task-table">
                                 <thead>
@@ -161,7 +161,7 @@ export default function EnrolledStudentsPage() {
                         <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
                             Are you sure you want to un-enroll {removeTarget.student.full_name || removeTarget.student.username} from "{course?.title}"? Their progress will be restored if they re-enroll later.
                         </p>
-                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                             <button
                                 onClick={cancelUnenroll}
                                 disabled={!!removingId}

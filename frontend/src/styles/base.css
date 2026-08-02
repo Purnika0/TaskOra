@@ -63,6 +63,20 @@ button, input, select, textarea {
 }
 button { cursor: pointer; }
 
+/* Native <select> elements size themselves to their widest <option> text,
+   not their container. Combined with html/body's overflow-x:hidden above,
+   an oversized select doesn't scroll into view — it silently clips, which
+   looks like a broken/unresponsive box (e.g. a "Subject" filter with long
+   course names). This keeps every select in the app within its parent no
+   matter how long its options are. */
+select {
+    max-width: 100%;
+    box-sizing: border-box;
+}
+@media (max-width: 480px) {
+    select { min-width: 0 !important; }
+}
+
 /* ── Hide native password icons ── */
 input[type="password"]::-ms-reveal,
 input[type="password"]::-ms-clear { display: none !important; }
@@ -82,10 +96,21 @@ input[type="password"]::-webkit-caps-lock-indicator { display: none !important; 
 :focus-visible             { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 :focus:not(:focus-visible)  { outline: none; }
 
-/* ── Keyframes ── */
+/* ── Keyframes ──
+    IMPORTANT: the "to" state ends at transform:none (not scale(1) or
+    translateY(0)). Those look identical but are NOT the same to the
+    browser — any non-"none" transform value, even an identity one,
+    establishes a new containing block on the element. Since these
+    animation classes are used on modal/card wrappers that contain
+    native <select> elements, a lingering scale(1)/translateY(0) is a
+    known trigger for Android Chrome/WebView to position that select's
+    native option-list popup relative to the wrong coordinate space —
+    which shows up as the dropdown rendering off-screen on mobile.
+    Ending at literal "none" removes the containing block once the
+   animation finishes, so native pickers behave normally again. */
 @keyframes to-fadeIn    { from { opacity:0 }                             to { opacity:1 } }
-@keyframes to-slideUp   { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:translateY(0) } }
-@keyframes to-scaleIn   { from { opacity:0; transform:scale(0.96) }      to { opacity:1; transform:scale(1) } }
+@keyframes to-slideUp   { from { opacity:0; transform:translateY(12px) } to { opacity:1; transform:none } }
+@keyframes to-scaleIn   { from { opacity:0; transform:scale(0.96) }      to { opacity:1; transform:none } }
 @keyframes to-pulseLoad { 0%,100%{ opacity:1 } 50%{ opacity:0.4 } }
 @keyframes to-spin      { to { transform:rotate(360deg) } }
 

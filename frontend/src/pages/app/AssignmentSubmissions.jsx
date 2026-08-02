@@ -83,19 +83,16 @@ export default function AssignmentSubmissions() {
 
             {!loading && !error && (
                 <>
-                    <div style={{ display:'flex', gap:4, overflowX:'auto', paddingBottom:2 }}>
+                    <div className="tab-bar" style={{ borderRadius:14 }}>
                         {TABS.map(t => {
                             const active = activeTab === t.key
                             return (
-                                <button key={t.key} onClick={() => setActiveTab(t.key)}
-                                    style={{ display:'flex', alignItems:'center', gap:6, padding:'7px 12px', borderRadius:8, border:'none', cursor:'pointer', whiteSpace:'nowrap',
-                                        background: active ? 'var(--color-text)' : 'var(--color-surface)',
-                                        color:      active ? 'var(--color-white)' : 'var(--color-text-secondary)',
-                                        fontSize:12.5, fontWeight:600 }}>
+                                <button key={t.key} className={`tab-btn${active ? ' active' : ''}`}
+                                    onClick={() => setActiveTab(t.key)}>
                                     {t.label}
-                                    <span style={{ fontSize:10, fontWeight:700, padding:'1px 6px', borderRadius:99,
-                                        background: active ? 'rgba(255,255,255,0.25)' : 'var(--color-surface-subtle)',
-                                        color:      active ? 'var(--color-white)' : 'var(--color-text-secondary)' }}>
+                                    <span style={{ marginLeft:5, fontSize:11, fontWeight:600, padding:'1px 6px', borderRadius:99,
+                                        background: active ? 'rgba(84,82,228,0.12)' : 'var(--color-surface-subtle)',
+                                        color:'inherit' }}>
                                         {count(t.key)}
                                     </span>
                                 </button>
@@ -111,7 +108,7 @@ export default function AssignmentSubmissions() {
                             <p style={{ fontSize:12, color:'var(--color-text-placeholder)' }}>Nothing matches this filter yet.</p>
                         </div>
                     ) : (
-                        <div className="white-card overflow-hidden">
+                        <div className="white-card overflow-hidden scroll-fade-x">
                             <div className="overflow-x-auto">
                                 <table className="task-table">
                                     <thead>

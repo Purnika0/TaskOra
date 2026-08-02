@@ -25,9 +25,11 @@ export default function ReviewPanel({
     if (!submission) {
         return (
             <div
+                className="review-panel-shell"
                 style={{
                     position: "relative",
                     width: 360,
+                    maxWidth: "100%",
                     height: "100%",
                     minHeight: "100%",
                     boxSizing: "border-box",
@@ -93,10 +95,11 @@ export default function ReviewPanel({
 
     return (
         <div
+            className="review-panel-shell"
             style={{
                 width: 360,
                 minWidth: 360,
-                maxWidth: 360,
+                maxWidth: "100%",
                 height: "100%",
                 position: "relative",
                 display: "flex",

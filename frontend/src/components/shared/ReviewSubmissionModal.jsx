@@ -103,7 +103,7 @@ export default function ReviewSubmissionModal({ task, onClose, onReviewed }) {
                     )}
                 </div>
 
-                <div style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
+                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
                     {readOnly ? (
                         <button onClick={onClose} className="btn-secondary">Close</button>
                     ) : (

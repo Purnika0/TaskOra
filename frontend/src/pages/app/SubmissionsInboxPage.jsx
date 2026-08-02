@@ -167,14 +167,13 @@ export default function SubmissionsInboxPage() {
                             </p>
                         </div>
                     ) : (
-                        <div className="white-card overflow-hidden">
+                        <div className="white-card overflow-hidden scroll-fade-x">
                             <div className="overflow-x-auto">
                                 <table className="task-table">
                                     <thead>
                                         <tr>
                                             <th style={{ paddingLeft:18 }}>Student</th>
                                             <th>Assignment</th>
-                                            <th className="hide-sm">Course</th>
                                             <th>Status</th>
                                             <th className="hide-sm">Submitted</th>
                                             <th style={{ width:110 }}>Action</th>
@@ -191,14 +190,14 @@ export default function SubmissionsInboxPage() {
                                                 <td>
                                                     <button
                                                         onClick={() => navigate(`/app/assignments/${t.assignment?.id}/submissions`)}
-                                                        style={{ fontSize:12.5, color:'var(--color-primary)', background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left', fontWeight:600 }}
+                                                        style={{ fontSize:12.5, color:'var(--color-primary)', background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left', fontWeight:600, display:'block' }}
                                                         title="Open this assignment's full submissions list"
                                                     >
                                                         {t.assignment?.title || '—'}
                                                     </button>
-                                                </td>
-                                                <td className="hide-sm" style={{ fontSize:12, color:'var(--color-text-secondary)' }}>
-                                                    {t.assignment?.course_name || '—'}
+                                                    <p style={{ fontSize:11, color:'var(--color-text-placeholder)', margin:'2px 0 0' }}>
+                                                        {t.assignment?.course_name || '—'}
+                                                    </p>
                                                 </td>
                                                 <td>
                                                     <span style={{ fontSize:10, fontWeight:700, padding:'3px 8px', borderRadius:99, background:statusBg(t), color:statusColor(t), whiteSpace:'nowrap' }}>

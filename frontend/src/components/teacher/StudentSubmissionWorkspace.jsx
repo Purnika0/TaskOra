@@ -102,6 +102,10 @@ export default function StudentSubmissionWorkspace({ assignment, onClose }) {
             grid-template-columns: 1fr !important;
             grid-template-rows: 180px 1fr 200px !important;
           }
+          .review-panel-shell {
+            width: 100% !important;
+            min-width: 0 !important;
+          }
         }
         @media (max-width: 500px) {
           .workspace-grid {
