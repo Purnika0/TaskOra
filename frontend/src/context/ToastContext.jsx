@@ -6,17 +6,40 @@
 import { createContext, useContext, useState, useCallback, useRef } from 'react'
 import { CheckCircle2, XCircle, AlertTriangle, X } from 'lucide-react'
 
-const ICON = {
-    success: <CheckCircle2 size={15} className="text-[#3cb87a] shrink-0" />,
-    error:   <XCircle      size={15} className="text-[#e05252] shrink-0" />,
-    warning: <AlertTriangle size={15} className="text-[#d4a93c] shrink-0" />,
+const ICON_COLOR = {
+    success: '#3cb87a',
+    error:   '#e05252',
+    warning: '#d4a93c',
 }
 
-const BORDER = {
-    success: 'border-l-[3px] border-[#3cb87a]',
-    error:   'border-l-[3px] border-[#e05252]',
-    warning: 'border-l-[3px] border-[#d4a93c]',
+const ICON = {
+    success: <CheckCircle2 size={15} style={{ color: ICON_COLOR.success, flexShrink: 0 }} />,
+    error:   <XCircle      size={15} style={{ color: ICON_COLOR.error, flexShrink: 0 }} />,
+    warning: <AlertTriangle size={15} style={{ color: ICON_COLOR.warning, flexShrink: 0 }} />,
 }
+
+const TOAST_CSS = `
+.toast-region {
+    position: fixed; bottom: 20px; right: 20px; z-index: 9999;
+    display: flex; flex-direction: column; gap: 8px;
+    pointer-events: none;
+}
+.toast-item {
+    pointer-events: auto;
+    display: flex; align-items: center; gap: 12px;
+    background: #fff;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15), 0 8px 10px -6px rgba(0,0,0,0.08);
+    border-radius: 12px;
+    padding: 12px 16px;
+    min-width: 240px; max-width: 320px;
+}
+.toast-message { font-size: 14px; color: #1a1f35; font-weight: 500; margin: 0; flex: 1; }
+.toast-dismiss {
+    color: #b0a898; background: none; border: none; cursor: pointer;
+    margin-left: 4px; transition: color 0.15s ease; padding: 0; line-height: 0;
+}
+.toast-dismiss:hover { color: #1a1f35; }
+`
 
 const ToastContext = createContext(null)
 
@@ -45,29 +68,33 @@ export function ToastProvider({ children }) {
         <ToastContext.Provider value={toast}>
         {children}
         {toasts.length > 0 && (
+            <>
+            <style>{TOAST_CSS}</style>
             <div
             role="region"
             aria-label="Notifications"
-            className="fixed bottom-5 right-5 z-9999 flex flex-col gap-2 pointer-events-none"
+            className="toast-region"
             >
             {toasts.map(t => (
                 <div
                 key={t.id}
                 role="alert"
-                className={`pointer-events-auto flex items-center gap-3 bg-white shadow-lg rounded-xl px-4 py-3 min-w-60 max-w-[320px] animate-slide-up ${BORDER[t.type]}`}
+                className="toast-item anim-slide-up"
+                style={{ borderLeft: `3px solid ${ICON_COLOR[t.type]}` }}
                 >
                 {ICON[t.type]}
-                <p className="text-sm text-[#1a1f35] font-medium flex-1">{t.message}</p>
+                <p className="toast-message">{t.message}</p>
                 <button
                     onClick={() => dismiss(t.id)}
                     aria-label="Dismiss"
-                    className="text-[#b0a898] hover:text-[#1a1f35] transition-colors ml-1"
+                    className="toast-dismiss"
                 >
                     <X size={13} />
                 </button>
                 </div>
             ))}
             </div>
+            </>
         )}
         </ToastContext.Provider>
     )

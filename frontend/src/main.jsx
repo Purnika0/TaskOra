@@ -3,7 +3,6 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 
-import './styles/tailwind.css'    // Tailwind v4
 import './styles/tokens.css'      // Design tokens / CSS variables
 import './styles/base.css'        // Reset, typography, animations
 import './styles/auth.css'        // Auth pages

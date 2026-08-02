@@ -3,7 +3,7 @@
     "private": true,
     "version": "2.0.0",
     "type": "module",
-    "description": "TaskOra — IT Academic Task Tracker",
+    "description": "TaskOra —Course-Based Assignement and Task Management System",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
@@ -20,20 +20,17 @@
         "recharts": "^3.8.1"
     },
     "devDependencies": {
-        "@eslint/js": "^10.0.1",
-        "@tailwindcss/postcss": "^4.2.2",
-        "@tailwindcss/vite": "^4.2.1",
-        "@types/react": "^19.2.14",
-        "@types/react-dom": "^19.2.3",
-        "@vitejs/plugin-react": "^6.0.1",
-        "autoprefixer": "^10.4.27",
-        "eslint": "^10.3.0",
-        "eslint-plugin-react-hooks": "^7.1.1",
-        "eslint-plugin-react-refresh": "^0.5.2",
-        "globals": "^17.6.0",
-        "postcss": "^8.5.8",
-        "tailwindcss": "^4.2.2",
-        "vite": "^8.0.12"
+    "@eslint/js": "^10.0.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "autoprefixer": "^10.4.27",
+    "eslint": "^10.3.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.6.0",
+    "postcss": "^8.5.8",
+    "vite": "^8.0.12"
     },
     "engines": {
         "node": ">=22.0.0"

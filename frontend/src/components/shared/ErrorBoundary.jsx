@@ -5,6 +5,9 @@ import { AlertTriangle, RefreshCw } from 'lucide-react'
 // a fallback screen instead of an unstyled crash/blank page. Does not catch
 // errors from event handlers, async code, or effects — only React itself
 // calls getDerivedStateFromError/componentDidCatch, and only for render errors.
+//
+// Uses inline styles (not the shared stylesheets) so the fallback still
+// renders correctly even if a CSS load/parse issue was part of what broke.
 export default class ErrorBoundary extends React.Component {
     constructor(props) { super(props); this.state = { hasError: false } }
     static getDerivedStateFromError() { return { hasError: true } }
@@ -13,21 +16,25 @@ export default class ErrorBoundary extends React.Component {
     render() {
         if (!this.state.hasError) return this.props.children
         return (
-        <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6">
-            <div className="bg-white rounded-2xl shadow-md p-10 text-center max-w-sm w-full">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 flex items-center justify-center mx-auto mb-4">
-                <AlertTriangle size={24} className="text-red-500" />
+            <div style={{ minHeight: '100vh', background: '#F8FAFC', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+                <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 4px 12px rgba(0,0,0,0.08)', padding: 40, textAlign: 'center', maxWidth: 384, width: '100%' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 16, background: '#FEF2F2', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                        <AlertTriangle size={24} color="#EF4444" />
+                    </div>
+                    <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 20, color: '#0F172A', margin: '0 0 8px' }}>
+                        Something went wrong
+                    </h2>
+                    <p style={{ fontSize: 14, color: '#64748B', margin: '0 0 24px' }}>
+                        Refreshing the page will fix this. Your data is safe.
+                    </p>
+                    <button
+                        onClick={() => window.location.reload()}
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: '#0F172A', color: '#fff', fontSize: 14, fontWeight: 700, padding: '10px 20px', borderRadius: 12, border: 'none', cursor: 'pointer' }}
+                    >
+                        <RefreshCw size={14} /> Refresh Page
+                    </button>
+                </div>
             </div>
-            <h2 className="font-display font-bold text-xl text-[#0F172A] mb-2">Something went wrong</h2>
-            <p className="text-sm text-[#64748B] mb-6">Refreshing the page will fix this. Your data is safe.</p>
-            <button
-                onClick={() => window.location.reload()}
-                className="inline-flex items-center gap-2 bg-[#0F172A] text-white text-sm font-bold px-5 py-2.5 rounded-xl hover:bg-[#0F172A] transition-colors"
-            >
-                <RefreshCw size={14} /> Refresh Page
-            </button>
-            </div>
-        </div>
         )
     }
 }
