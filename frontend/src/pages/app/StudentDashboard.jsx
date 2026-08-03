@@ -11,6 +11,7 @@ import { useStudentSummary }               from '../../hooks/useAnalytics.js'
 import { useUpcomingHolidays, useToday, useBSCalendar }   from '../../hooks/useHolidays.js'
 import { LoadingBlock, ErrorBlock }        from '../../components/shared/Loader.jsx'
 import SubmitAssignmentModal               from '../../components/shared/SubmitAssignmentModal.jsx'
+import Select                              from '../../components/shared/Select.jsx'
 import { getTaskTitle, getTaskDueDate, daysUntil, priorityColor, dueDateBS, nepalNow, nepalHour, todayNepalISO } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { TASK_TYPES } from '../../constants/assignmentChoices.js'
@@ -327,7 +328,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                     align-items:center; column-gap:14px; row-gap:8px;
                 }
                 .at-row-head span { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-placeholder); }
-                @media (max-width:900px) { .at-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .at-row-head { display:none; } }
+                @media (max-width:1180px) { .at-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .at-row-head { display:none; } }
                 .at-view-all { transition:background-color 0.15s ease, gap 0.15s ease; }
                 .at-view-all:hover { background:color-mix(in srgb, var(--color-primary) 10%, white) !important; gap:11px; }
                 .at-view-all:hover .at-view-all-arrow { background:var(--color-primary); color:#fff; }
@@ -347,18 +348,23 @@ function AssignmentTable({ tasks, onSubmit }) {
                     ))}
                 </div>
                 <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
-                    <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={courseSelStyle} aria-label="Sort assignments">
-                        <option value="due">Due Date: Earliest First</option>
-                        <option value="due-desc">Due Date: Latest First</option>
-                        <option value="title">Title (A–Z)</option>
-                        <option value="importance">Importance: Highest First</option>
-                        <option value="urgency">Urgency: Highest First</option>
-                    </select>
+                    <Select
+                        value={sortBy} onChange={setSortBy} ariaLabel="Sort assignments"
+                        style={{ width:'auto', minWidth:170 }} triggerStyle={courseSelStyle}
+                        options={[
+                            { value:'due',        label:'Due Date: Earliest First' },
+                            { value:'due-desc',   label:'Due Date: Latest First' },
+                            { value:'title',      label:'Title (A–Z)' },
+                            { value:'importance', label:'Importance: Highest First' },
+                            { value:'urgency',    label:'Urgency: Highest First' },
+                        ]}
+                    />
                     {courses.length > 0 && (
-                        <select value={courseFocus} onChange={e => setCourseFocus(e.target.value)} style={courseSelStyle}>
-                            <option value="all">All Subjects</option>
-                            {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                        </select>
+                        <Select
+                            value={courseFocus} onChange={setCourseFocus}
+                            style={{ width:'auto', minWidth:150 }} triggerStyle={courseSelStyle}
+                            options={[{ value:'all', label:'All Subjects' }, ...courses.map(c => ({ value:c.id, label:c.name }))]}
+                        />
                     )}
                 </div>
             </div>

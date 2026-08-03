@@ -15,6 +15,7 @@ import tasksService        from '../../services/tasks.service.js'
 import coursesService      from '../../services/courses.service.js'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
 import BSDatePicker         from '../../components/shared/BSDatePicker.jsx'
+import Select                from '../../components/shared/Select.jsx'
 import SubmitAssignmentModal from '../../components/shared/SubmitAssignmentModal.jsx'
 import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, dueDateBS } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
@@ -41,6 +42,10 @@ const selStyle = {
 function getCourseName(t) {
     return t.assignment?.course_name || t.course_name || 'Uncategorized'
 }
+
+// selStyle mapped onto Select's trigger — keeps the same visual weight as
+// before (padding/border/bg), just applied to a button instead of <select>.
+const selTriggerStyle = { ...selStyle, width:'auto', fontWeight:500 }
 
 // ── Stat card — same icon-badge style used on the Student Dashboard ────────
 function StatCard({ label, value, icon, accent }) {
@@ -146,10 +151,13 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Course *</label>
-                            <select value={form.course} onChange={e => update('course', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {courses.length === 0 && <option value="">No courses yet</option>}
-                                {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                            </select>
+                            <Select
+                                value={form.course} onChange={v => update('course', v)}
+                                triggerStyle={{ ...selTriggerStyle, background:'var(--color-surface-subtle)' }}
+                                options={courses.length === 0
+                                    ? [{ value:'', label:'No courses yet' }]
+                                    : courses.map(c => ({ value:c.id, label:c.title }))}
+                            />
                         </div>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Due date *</label>
@@ -160,15 +168,19 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Type</label>
-                            <select value={form.task_type} onChange={e => update('task_type', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                            </select>
+                            <Select
+                                value={form.task_type} onChange={v => update('task_type', v)}
+                                triggerStyle={{ ...selTriggerStyle, background:'var(--color-surface-subtle)' }}
+                                options={TASK_TYPES.map(t => ({ value:t.value, label:t.label }))}
+                            />
                         </div>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Importance</label>
-                            <select value={form.priority} onChange={e => update('priority', Number(e.target.value))} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                                {PRIORITY_CHOICES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                            </select>
+                            <Select
+                                value={form.priority} onChange={v => update('priority', Number(v))}
+                                triggerStyle={{ ...selTriggerStyle, background:'var(--color-surface-subtle)' }}
+                                options={PRIORITY_CHOICES.map(p => ({ value:p.value, label:p.label }))}
+                            />
                         </div>
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Est. hours</label>
@@ -337,7 +349,7 @@ function StudentAssignments() {
                     align-items:center; column-gap:14px; row-gap:8px;
                 }
                 .am-row-head span { font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.03em; color:var(--color-text-placeholder); }
-                @media (max-width:900px) { .am-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .am-row-head { display:none; } }
+                @media (max-width:1180px) { .am-row-grid { grid-template-columns:minmax(0,1fr); gap:6px; } .am-row-head { display:none; } }
             `}</style>
 
             {/* Header */}
@@ -370,18 +382,23 @@ function StudentAssignments() {
                         style={{ ...selStyle, paddingLeft:28, width:'100%', boxSizing:'border-box' }}/>
                 </div>
                 {courses.length > 0 && (
-                    <select value={courseFilter} onChange={e => handleCourseFilterChange(e.target.value)} style={selStyle}>
-                        <option value="all">All Subjects</option>
-                        {courses.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                    <Select
+                        value={courseFilter} onChange={handleCourseFilterChange}
+                        style={{ width:'auto', minWidth:150 }} triggerStyle={selTriggerStyle}
+                        options={[{ value:'all', label:'All Subjects' }, ...courses.map(c => ({ value:c.id, label:c.name }))]}
+                    />
                 )}
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selStyle} aria-label="Sort assignments">
-                    <option value="due">Due Date: Earliest First</option>
-                    <option value="due-desc">Due Date: Latest First</option>
-                    <option value="title">Title (A–Z)</option>
-                    <option value="importance">Importance: Highest First</option>
-                    <option value="urgency">Urgency: Highest First</option>
-                </select>
+                <Select
+                    value={sortBy} onChange={setSortBy} ariaLabel="Sort assignments"
+                    style={{ width:'auto', minWidth:170 }} triggerStyle={selTriggerStyle}
+                    options={[
+                        { value:'due',        label:'Due Date: Earliest First' },
+                        { value:'due-desc',   label:'Due Date: Latest First' },
+                        { value:'title',      label:'Title (A–Z)' },
+                        { value:'importance', label:'Importance: Highest First' },
+                        { value:'urgency',    label:'Urgency: Highest First' },
+                    ]}
+                />
                 <button onClick={refetch} className="btn-secondary" style={{ padding:'7px 10px' }}>
                     <RefreshCw size={12}/>
                 </button>
@@ -751,22 +768,31 @@ function TeacherAssignments() {
                         placeholder="Search by title…"
                         style={{ ...selStyle, paddingLeft:28, width:'100%', boxSizing:'border-box' }}/>
                 </div>
-                <select value={courseFilter} onChange={e => handleCourseFilterChange(e.target.value)} style={selStyle}>
-                    <option value="all">All Courses</option>
-                    {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-                </select>
-                <select value={dueFilter} onChange={e => setDueFilter(e.target.value)} style={selStyle}>
-                    <option value="all">Any Due Date</option>
-                    <option value="overdue">Overdue</option>
-                    <option value="today">Due Today</option>
-                    <option value="week">Due This Week</option>
-                    <option value="upcoming">Upcoming</option>
-                </select>
-                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={selStyle}>
-                    <option value="due">Sort by Due Date</option>
-                    <option value="title">Sort by Title</option>
-                    <option value="course">Sort by Course</option>
-                </select>
+                <Select
+                    value={courseFilter} onChange={handleCourseFilterChange}
+                    style={{ width:'auto', minWidth:150 }} triggerStyle={selTriggerStyle}
+                    options={[{ value:'all', label:'All Courses' }, ...courses.map(c => ({ value:c.id, label:c.title }))]}
+                />
+                <Select
+                    value={dueFilter} onChange={setDueFilter}
+                    style={{ width:'auto', minWidth:150 }} triggerStyle={selTriggerStyle}
+                    options={[
+                        { value:'all',      label:'Any Due Date' },
+                        { value:'overdue',  label:'Overdue' },
+                        { value:'today',    label:'Due Today' },
+                        { value:'week',     label:'Due This Week' },
+                        { value:'upcoming', label:'Upcoming' },
+                    ]}
+                />
+                <Select
+                    value={sortBy} onChange={setSortBy}
+                    style={{ width:'auto', minWidth:150 }} triggerStyle={selTriggerStyle}
+                    options={[
+                        { value:'due',    label:'Sort by Due Date' },
+                        { value:'title',  label:'Sort by Title' },
+                        { value:'course', label:'Sort by Course' },
+                    ]}
+                />
             </div>
 
             {loading && <div className="white-card" style={{ padding:28 }}><LoadingBlock/></div>}

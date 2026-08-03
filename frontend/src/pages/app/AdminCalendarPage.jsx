@@ -9,6 +9,7 @@ import { useToast } from '../../context/ToastContext.jsx'
 import holidaysService from '../../services/holidays.service.js'
 import { apiError, fmtDate, nepalNow, todayNepalISO } from '../../utils/helpers.js'
 import BSDatePicker from '../../components/shared/BSDatePicker.jsx'
+import Select        from '../../components/shared/Select.jsx'
 import {
     BS_MONTH_NAMES, buildMonthDays, daysInBSMonth, adToBS,
 } from '../../utils/bsCalendar.js'
@@ -183,9 +184,11 @@ function HolidayModal({ initial, onClose, onSaved }) {
                     </div>
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'#64748B', display:'block', marginBottom:5 }}>Type</label>
-                        <select value={holidayType} onChange={e => setHolidayType(e.target.value)} className="form-input">
-                            {HOLIDAY_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                        </select>
+                        <Select
+                            value={holidayType} onChange={setHolidayType}
+                            triggerStyle={{ border:'1.5px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'10px 12px', fontSize:13, background:'#FFFFFF', color:'var(--color-text)' }}
+                            options={HOLIDAY_TYPES.map(t => ({ value:t.value, label:t.label }))}
+                        />
                     </div>
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'#64748B', display:'block', marginBottom:5 }}>Description (optional)</label>

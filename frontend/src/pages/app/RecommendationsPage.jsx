@@ -10,9 +10,10 @@
 
 import { useMemo, useState, useEffect } from 'react'
 import { Link }                              from 'react-router-dom'
-import { TrendingUp, Layers, AlertCircle, Star, RefreshCw, BookOpen, Sparkles, ChevronDown } from 'lucide-react'
+import { TrendingUp, Layers, AlertCircle, Star, RefreshCw, BookOpen, Sparkles } from 'lucide-react'
 import { useRecommendations }                from '../../hooks/useAnalytics.js'
 import { ErrorBlock }                        from '../../components/shared/Loader.jsx'
+import Select                                 from '../../components/shared/Select.jsx'
 import coursesService                        from '../../services/courses.service.js'
 
 // Course titles carry an optional parenthetical (e.g. "Software Project
@@ -139,23 +140,17 @@ function CourseFilter({ courses, selected, onSelect }) {
     return (
         <label style={{ display:'inline-flex', alignItems:'center', gap:7, fontSize:11, color:'#4a4030', fontWeight:600 }}>
         <BookOpen size={12} aria-hidden="true"/> Course:
-        <span style={{ position:'relative', display:'inline-flex', alignItems:'center' }}>
-            <select
+        <Select
             value={selected}
-            onChange={e => onSelect(e.target.value)}
-            style={{
-                appearance:'none', WebkitAppearance:'none', MozAppearance:'none',
+            onChange={onSelect}
+            style={{ width:'auto', minWidth:130 }}
+            triggerStyle={{
                 fontSize:12, fontWeight:600, color:'#1a1f35',
                 background:'#fff', border:'1.5px solid #e2dbd0', borderRadius:8,
-                padding:'6px 28px 6px 11px', cursor:'pointer',
-                fontFamily:'var(--font-body)',
+                padding:'6px 11px',
             }}
-            >
-            <option value="all">All courses</option>
-            {courses.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <ChevronDown size={12} style={{ position:'absolute', right:9, pointerEvents:'none', color:'#8a8070' }} aria-hidden="true"/>
-        </span>
+            options={[{ value:'all', label:'All courses' }, ...courses.map(c => ({ value:c, label:c }))]}
+        />
         </label>
     )
 }

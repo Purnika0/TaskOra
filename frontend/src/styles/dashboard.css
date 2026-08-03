@@ -414,6 +414,56 @@ TASK / ASSIGNMENT TABLE
     transition: background 0.12s;
 }
 
+/* ── Responsive card mode ──
+   Opt-in via an extra `task-table--card` class alongside `task-table`.
+   Below the breakpoint, rows stop being a horizontally-scrollable strip
+   ("sliding" table) and instead stack as self-contained cards — each
+   cell becomes its own row with a small uppercase label (from the
+   `data-label` attribute on the <td>) instead of a column header.
+   Two opt-out helper cells:
+     .tc-header  — the identity cell (avatar/name); shown as the card's
+                   title with no label and a bottom divider.
+     .tc-actions — the actions cell; right-aligned, no label, top divider. */
+@media (max-width: 768px) {
+    .task-table--card {
+        min-width: 0 !important; /* override any inline minWidth used for the desktop/scroll layout */
+    }
+    .task-table--card thead { display: none; }
+    .task-table--card, .task-table--card tbody { display: block; width: 100%; }
+    .task-table--card tr {
+        display: block;
+        border: 1px solid var(--color-border);
+        border-radius: 12px;
+        padding: 12px 14px;
+        margin-bottom: 10px;
+        background: var(--color-surface);
+    }
+    .task-table--card tr:last-child { margin-bottom: 0; }
+    .task-table--card tbody tr:hover td { background: none; }
+    .task-table--card td {
+        display: flex; align-items: center; justify-content: space-between; gap: 10px;
+        padding: 7px 0;
+        border-bottom: none;
+    }
+    .task-table--card td[data-label]::before {
+        content: attr(data-label);
+        font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em;
+        color: var(--color-text-placeholder);
+        flex-shrink: 0;
+    }
+    .task-table--card td.tc-header {
+        padding: 0 0 10px;
+        margin-bottom: 6px;
+        border-bottom: 1px solid var(--color-cream-border);
+    }
+    .task-table--card td.tc-actions {
+        justify-content: flex-end;
+        padding-top: 10px;
+        margin-top: 4px;
+        border-top: 1px solid var(--color-cream-border);
+    }
+}
+
 /* ── Tab bar ──
    Wraps onto additional lines when tabs don't fit, rather than sliding
    off-screen — every tab stays visible and reachable at any width. */
@@ -614,8 +664,8 @@ plain class can't override without !important. */
     }
 
     /* Notification bell dropdown: stop anchoring to the bell button
-       (which sits near the screen edge) and instead pin it to the
-       viewport so it can never run off-screen. */
+        (which sits near the screen edge) and instead pin it to the
+        viewport so it can never run off-screen. */
     .notif-dropdown {
         position: fixed !important;
         top: 60px !important;
@@ -654,14 +704,14 @@ plain class can't override without !important. */
 .truncate        { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ── Scroll-fade hint ──
-   For horizontally-scrollable boxes (tab bars, tables) on narrow screens.
-   The hidden native scrollbar on .tab-bar (and the hard edge of a
-   scrolled table) gives no visual cue that more content sits off-screen,
-   which reads as a broken/clipped layout rather than "swipe for more".
-   Add this class to the non-scrolling box (the element itself, if it's
-   the one with overflow-x; or its static wrapper, e.g. .white-card
-   around a .overflow-x-auto table) so the fade stays fixed while the
-   content underneath scrolls. */
+    For horizontally-scrollable boxes (tab bars, tables) on narrow screens.
+    The hidden native scrollbar on .tab-bar (and the hard edge of a
+    scrolled table) gives no visual cue that more content sits off-screen,
+    which reads as a broken/clipped layout rather than "swipe for more".
+    Add this class to the non-scrolling box (the element itself, if it's
+    the one with overflow-x; or its static wrapper, e.g. .white-card
+    around a .overflow-x-auto table) so the fade stays fixed while the
+    content underneath scrolls. */
 .scroll-fade-x { position: relative; }
 .scroll-fade-x::after {
     content: '';

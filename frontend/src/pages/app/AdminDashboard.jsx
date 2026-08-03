@@ -19,6 +19,7 @@ import { useToast }   from '../../context/ToastContext.jsx'
 import { useConfirm } from '../../context/ConfirmContext.jsx'
 import { useAuth }    from '../../hooks/useAuth.js'
 import { LoadingBlock } from '../../components/shared/Loader.jsx'
+import Select            from '../../components/shared/Select.jsx'
 import { apiError, fmtDate, fmtDateTime }   from '../../utils/helpers.js'
 import { adToBS, BS_MONTH_NAMES } from '../../utils/bsCalendar.js'
 import AdminCalendarPage from './AdminCalendarPage.jsx'
@@ -294,7 +295,7 @@ function UserTable({ users, loading, currentUser, onDelete, onSuspend, emptyTitl
                         message={search ? `Nothing matches "${search}".` : emptyMsg}/>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="task-table" style={{ minWidth: extraColumn ? 660 : 560 }}>
+                        <table className="task-table task-table--card" style={{ minWidth: extraColumn ? 660 : 560 }}>
                             <thead>
                                 <tr>
                                     {['Name', 'Username', 'Email', ...(extraColumn ? [extraColumn.header] : []), 'Status', 'Actions'].map(h => (
@@ -308,7 +309,7 @@ function UserTable({ users, loading, currentUser, onDelete, onSuspend, emptyTitl
                                     const isSuspended = u.is_active === false
                                     return (
                                         <tr key={u.id}>
-                                            <td>
+                                            <td className="tc-header">
                                                 <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                                                     <Avatar name={u.full_name || u.username} size={32}/>
                                                     <div>
@@ -317,11 +318,11 @@ function UserTable({ users, loading, currentUser, onDelete, onSuspend, emptyTitl
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td style={{ color:'var(--color-text-secondary)' }}>@{u.username}</td>
-                                            <td style={{ color:'var(--color-text-secondary)' }}>{u.email || '—'}</td>
-                                            {extraColumn && <td>{extraColumn.render(u)}</td>}
-                                            <td><StatusBadge active={!isSuspended}/></td>
-                                            <td>
+                                            <td data-label="Username" style={{ color:'var(--color-text-secondary)' }}>@{u.username}</td>
+                                            <td data-label="Email" style={{ color:'var(--color-text-secondary)' }}>{u.email || '—'}</td>
+                                            {extraColumn && <td data-label={extraColumn.header}>{extraColumn.render(u)}</td>}
+                                            <td data-label="Status"><StatusBadge active={!isSuspended}/></td>
+                                            <td className="tc-actions">
                                                 {!isMe ? (
                                                     <div style={{ display:'flex', gap:6 }}>
                                                         <IconBtn icon={isSuspended ? UserCheck : UserX} tone={isSuspended ? 'good' : 'warn'}
@@ -517,14 +518,12 @@ function StudentsTab({ students, courses, loading, currentUser, onDelete, onSusp
                 </h3>
                 <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                     <Filter size={13} style={{ color:'var(--color-text-muted)' }}/>
-                    <select value={courseId} onChange={e => setCourseId(e.target.value)}
-                        aria-label="Filter students by course"
-                        className="form-input" style={{ width:'auto', minWidth:200, maxWidth:'100%', cursor:'pointer' }}>
-                        <option value="">All Students</option>
-                        {courses.map(c => (
-                            <option key={c.id} value={c.id}>{c.title}</option>
-                        ))}
-                    </select>
+                    <Select
+                        value={courseId} onChange={setCourseId} ariaLabel="Filter students by course"
+                        style={{ width:'auto', minWidth:200, maxWidth:'100%' }}
+                        triggerStyle={{ border:'1.5px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'10px 12px', fontSize:13, background:'#FFFFFF', color:'var(--color-text)' }}
+                        options={[{ value:'', label:'All Students' }, ...courses.map(c => ({ value:c.id, label:c.title }))]}
+                    />
                 </div>
             </div>
             <UserTable
@@ -603,13 +602,11 @@ function CourseModal({ course, teachers, onClose, onSaved }) {
 
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-muted)', display:'block', marginBottom:5 }}>Assigned teacher</label>
-                        <select value={form.teacher_id} onChange={e => set('teacher_id', e.target.value)}
-                            className="form-input" style={{ cursor:'pointer' }}>
-                            <option value="">— Unassigned —</option>
-                            {teachers.map(t => (
-                                <option key={t.id} value={t.id}>{t.full_name || t.username}</option>
-                            ))}
-                        </select>
+                        <Select
+                            value={form.teacher_id} onChange={v => set('teacher_id', v)}
+                            triggerStyle={{ border:'1.5px solid var(--color-border)', borderRadius:'var(--radius-md)', padding:'10px 12px', fontSize:13, background:'#FFFFFF', color:'var(--color-text)' }}
+                            options={[{ value:'', label:'— Unassigned —' }, ...teachers.map(t => ({ value:t.id, label:t.full_name || t.username }))]}
+                        />
                     </div>
                 </form>
 
@@ -816,7 +813,7 @@ function MessagesTab({ messages, loading, onView, onMarkRead, onMarkResolved, on
                         message={search ? `Nothing matches "${search}".` : 'Contact form submissions will show up here.'}/>
                 ) : (
                     <div className="overflow-x-auto">
-                        <table className="task-table" style={{ minWidth:680 }}>
+                        <table className="task-table task-table--card" style={{ minWidth:680 }}>
                             <thead>
                                 <tr>
                                     {['Name', 'Email', 'Subject', 'Status', 'Date', 'Actions'].map(h => (
@@ -827,21 +824,21 @@ function MessagesTab({ messages, loading, onView, onMarkRead, onMarkResolved, on
                             <tbody>
                                 {filtered.map(m => (
                                     <tr key={m.id}>
-                                        <td>
+                                        <td className="tc-header">
                                             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                                                 <Avatar name={m.full_name} size={32}/>
                                                 <p style={{ fontSize:13, fontWeight:600, color:'var(--color-text)', margin:0 }}>{m.full_name}</p>
                                             </div>
                                         </td>
-                                        <td style={{ color:'var(--color-text-secondary)' }}>{m.email}</td>
-                                        <td style={{ color:'var(--color-text-secondary)', maxWidth:220, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                        <td data-label="Email" style={{ color:'var(--color-text-secondary)' }}>{m.email}</td>
+                                        <td data-label="Subject" style={{ color:'var(--color-text-secondary)', maxWidth:220, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
                                             {m.subject || <span style={{ color:'var(--color-text-placeholder)' }}>(no subject)</span>}
                                         </td>
-                                        <td><MessageStatusBadge status={m.status}/></td>
-                                        <td style={{ color:'var(--color-text-secondary)', whiteSpace:'nowrap' }}>
+                                        <td data-label="Status"><MessageStatusBadge status={m.status}/></td>
+                                        <td data-label="Date" style={{ color:'var(--color-text-secondary)', whiteSpace:'nowrap' }}>
                                             {fmtDate(m.submitted_at)}
                                         </td>
-                                        <td>
+                                        <td className="tc-actions">
                                             <div style={{ display:'flex', gap:6 }}>
                                                 <IconBtn icon={MessageSquareText} onClick={() => onView(m)} title="View message"/>
                                                 {m.status === 'NEW' && (

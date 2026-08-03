@@ -13,6 +13,7 @@ import tasksService from '../../services/tasks.service.js'
 import coursesService from '../../services/courses.service.js'
 import { statusLabel, statusColor, statusBg } from '../../hooks/useTasks.js'
 import { LoadingBlock, ErrorBlock } from '../../components/shared/Loader.jsx'
+import Select                        from '../../components/shared/Select.jsx'
 import { apiError, fmtDate } from '../../utils/helpers.js'
 import ReviewModal from '../../components/shared/ReviewSubmissionModal.jsx'
 
@@ -105,16 +106,13 @@ export default function SubmissionsInboxPage() {
                                 style={{ width:'100%', padding:'8px 12px 8px 32px', fontSize:12.5, border:'1px solid var(--color-border)', borderRadius:9, boxSizing:'border-box' }}
                             />
                         </div>
-                        <select
+                        <Select
                             value={courseFilter}
-                            onChange={e => setCourseFilter(e.target.value)}
-                            style={{ padding:'8px 10px', fontSize:12.5, border:'1px solid var(--color-border)', borderRadius:9, background:'#fff' }}
-                        >
-                            <option value="all">All Courses</option>
-                            {courses.map(c => (
-                                <option key={c.id} value={c.id}>{c.title || c.name}</option>
-                            ))}
-                        </select>
+                            onChange={setCourseFilter}
+                            style={{ width:'auto', minWidth:150 }}
+                            triggerStyle={{ padding:'8px 10px', fontSize:12.5, border:'1px solid var(--color-border)', borderRadius:9, background:'#fff' }}
+                            options={[{ value:'all', label:'All Courses' }, ...courses.map(c => ({ value:c.id, label:c.title || c.name }))]}
+                        />
                     </div>
 
                     <div className="tab-bar" style={{ borderRadius:14 }}>

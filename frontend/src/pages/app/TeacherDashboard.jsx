@@ -19,6 +19,7 @@ import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js
 import { BS_MONTH_NAMES, buildMonthDays, adToBS } from '../../utils/bsCalendar.js'
 import StudentSubmissionWorkspace from "../../components/teacher/StudentSubmissionWorkspace"
 import BSDatePicker from '../../components/shared/BSDatePicker.jsx'
+import Select        from '../../components/shared/Select.jsx'
 import { TASK_TYPES, PRIORITY_CHOICES } from '../../constants/assignmentChoices.js'
 
 const DOW_LABELS = ['S','M','T','W','T','F','S']
@@ -229,10 +230,13 @@ return (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Course *</label>
-                        <select value={form.course} onChange={e => update('course', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                            {courses.length === 0 && <option value="">No courses yet</option>}
-                            {courses.map(c => <option key={c.id} value={c.id}>{c.title || c.name}</option>)}
-                        </select>
+                        <Select
+                            value={form.course} onChange={v => update('course', v)}
+                            triggerStyle={{ ...selStyle, background:'var(--color-surface-subtle)', fontWeight:500 }}
+                            options={courses.length === 0
+                                ? [{ value:'', label:'No courses yet' }]
+                                : courses.map(c => ({ value:c.id, label:c.title || c.name }))}
+                        />
                     </div>
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Due date *</label>
@@ -243,15 +247,19 @@ return (
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Type</label>
-                        <select value={form.task_type} onChange={e => update('task_type', e.target.value)} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                            {TASK_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-                        </select>
+                        <Select
+                            value={form.task_type} onChange={v => update('task_type', v)}
+                            triggerStyle={{ ...selStyle, background:'var(--color-surface-subtle)', fontWeight:500 }}
+                            options={TASK_TYPES.map(t => ({ value:t.value, label:t.label }))}
+                        />
                     </div>
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Importance</label>
-                        <select value={form.priority} onChange={e => update('priority', Number(e.target.value))} style={{ ...selStyle, width:'100%', boxSizing:'border-box' }}>
-                            {PRIORITY_CHOICES.map(p => <option key={p.value} value={p.value}>{p.label}</option>)}
-                        </select>
+                        <Select
+                            value={form.priority} onChange={v => update('priority', Number(v))}
+                            triggerStyle={{ ...selStyle, background:'var(--color-surface-subtle)', fontWeight:500 }}
+                            options={PRIORITY_CHOICES.map(p => ({ value:p.value, label:p.label }))}
+                        />
                     </div>
                     <div>
                         <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Est. hours</label>

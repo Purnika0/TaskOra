@@ -7,6 +7,7 @@ import {
 } from '../../hooks/useAnalytics.js'
 import { useAuth }            from '../../hooks/useAuth.js'
 import { LoadingBlock }       from '../../components/shared/Loader.jsx'
+import Select                  from '../../components/shared/Select.jsx'
 import { dueDateBS }          from '../../utils/helpers.js'
 import { getOutlierSeverity, splitReasons } from '../../utils/outlierSeverity.js'
 import StudentAnalyticsPage from './StudentAnalyticsPage.jsx'
@@ -97,19 +98,16 @@ function Section({ title, icon, children, loading, badge, filters }) {
 
 function FilterSelect({ value, onChange, options }) {
     return (
-        <select
+        <Select
             value={value}
-            onChange={e => onChange(e.target.value)}
-            style={{
+            onChange={onChange}
+            options={options}
+            style={{ width:'auto', minWidth:130 }}
+            triggerStyle={{
                 fontSize:12, fontWeight:600, color:'#1a1f35', background:'#fff',
                 border:'1px solid #ece5dc', borderRadius:8, padding:'6px 10px',
-                cursor:'pointer', outline:'none',
             }}
-        >
-            {options.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-        </select>
+        />
     )
 }
 
