@@ -24,13 +24,9 @@ export const BS_DAYS = {
   2087:    [ 31,  31,  32,  31,  31,  31,  30,  29,  30,  30,  30,  30 ], // 366
 }
 
-// NOTE: Holidays are NOT hardcoded here anymore. This used to contain a
-// static NEPAL_HOLIDAYS lookup table that duplicated the backend's Holiday
-// database — the two drifted apart over time (e.g. this file once claimed
-// Vijaya Dashami 2083 fell on Kartik 3, while the database seed had it two
-// days later with no entry for Kartik 3 at all). The backend Holiday table
-// is now the single source of truth for all non-weekend holidays; this file
-// only computes Saturday/Sunday, which are locale-fixed and never change.
+// NOTE: Holidays are not hardcoded here. The backend Holiday table is the
+// single source of truth for all non-weekend holidays; this file only
+// computes Saturday/Sunday, which are locale-fixed and never change.
 
 // ── Conversion engine ─────────────────────────────────────────────────────────
 const EPOCH_YEAR = 2077

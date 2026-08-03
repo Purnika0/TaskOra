@@ -3,16 +3,15 @@ import { Link } from 'react-router-dom'
 import {
     Star, BookOpen, Clock, CheckCircle2, ClipboardList, XCircle,
     ChevronLeft, ChevronRight, ChevronDown, Upload, AlertCircle, Send,
-    X, FileText, MessageSquare, Paperclip, Pencil, Circle, Download, Users, Calendar,
+    FileText, MessageSquare, Pencil, Circle, Download, Users, Calendar,
 } from 'lucide-react'
 import { useAuth }                         from '../../hooks/useAuth.js'
 import { useTasks, isPending, isRejected, statusLabel, statusBg, statusColor } from '../../hooks/useTasks.js'
 import { useStudentSummary }               from '../../hooks/useAnalytics.js'
 import { useUpcomingHolidays, useToday, useBSCalendar }   from '../../hooks/useHolidays.js'
 import { LoadingBlock, ErrorBlock }        from '../../components/shared/Loader.jsx'
-import { useToast }                        from '../../context/ToastContext.jsx'
-import tasksService                        from '../../services/tasks.service.js'
-import { getTaskTitle, getTaskDueDate, daysUntil, apiError, priorityColor, dueDateBS, nepalNow, nepalHour, todayNepalISO } from '../../utils/helpers.js'
+import SubmitAssignmentModal               from '../../components/shared/SubmitAssignmentModal.jsx'
+import { getTaskTitle, getTaskDueDate, daysUntil, priorityColor, dueDateBS, nepalNow, nepalHour, todayNepalISO } from '../../utils/helpers.js'
 import { urgencyLabel, urgencyColor } from '../../utils/urgencyLabel.js'
 import { TASK_TYPES } from '../../constants/assignmentChoices.js'
 import { BS_MONTH_NAMES, buildMonthDays, adToBS }            from '../../utils/bsCalendar.js'
@@ -24,10 +23,8 @@ const DOW_LABELS = ['S','M','T','W','T','F','S']
 // Assignments page (/app/assignments), linked to below the table.
 const DASHBOARD_ROW_LIMIT = 5
 
-// (formatBSDate removed — this dashboard used to hand-roll its own AD→BS
-// conversion for due dates, duplicating both bsCalendar.js's adToBS() and
-// the backend's own conversion. Due dates now use dueDateBS() from
-// helpers.js, which reads the backend's due_date_bs field directly.)
+// Due dates are rendered via dueDateBS() from helpers.js, which reads the
+// backend's due_date_bs field directly.
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
 function StatCard({ label, value, icon, accent }) {
@@ -227,133 +224,13 @@ function UpcomingWidget({ tasks }) {
     )
 }
 
-// ── Submit / Edit Assignment modal ────────────────────────────────────────────
-function SubmitModal({ task, onClose, onSubmitted }) {
-    const isEdit = task.status === 'submitted'
-    const isResubmit = task.status === 'rejected'
-    const [file,    setFile]    = useState(null)
-    const [text,    setText]    = useState(isEdit ? (task.submission_text || '') : '')
-    const [saving,  setSaving]  = useState(false)
-    const [error,   setError]   = useState('')
-    const toast = useToast()
-
-    const title = getTaskTitle(task)
-    const modalTitle  = isEdit ? 'Edit Submission' : isResubmit ? 'Resubmit Assignment' : 'Submit Assignment'
-    const actionLabel = isEdit ? 'Save Changes' : isResubmit ? 'Resubmit' : 'Submit'
-
-    async function handleSubmit() {
-        if (!file && !text.trim()) {
-            setError('Please upload a file or write a response.')
-            return
-        }
-        setSaving(true)
-        setError('')
-        try {
-            const fd = new FormData()
-            if (file) fd.append('submission_file', file)
-            if (text.trim()) fd.append('submission_text', text.trim())
-            const updated = await tasksService.submitAssignment(task.id, fd)
-            toast.success(isEdit ? 'Submission updated successfully' : 'Assignment submitted successfully')
-            onSubmitted(updated)
-            onClose()
-        } catch (err) {
-            setError(apiError(err))
-        } finally { setSaving(false) }
-    }
-
-    return (
-        <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:16 }}>
-            <div style={{ background:'var(--color-surface)', borderRadius:16, width:'100%', maxWidth:480, boxShadow:'0 16px 48px rgba(0,0,0,0.22)', overflow:'hidden' }}>
-
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid var(--color-border)' }}>
-                    <div>
-                        <h3 style={{ fontFamily:'var(--font-display)', fontWeight:700, fontSize:15, color:'var(--color-text)', margin:0 }}>{modalTitle}</h3>
-                        <p style={{ fontSize:11, color:'var(--color-text-secondary)', margin:'2px 0 0' }}>{title}</p>
-                    </div>
-                    <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', padding:6, color:'var(--color-text-secondary)', display:'flex' }}><X size={16}/></button>
-                </div>
-
-                <div style={{ padding:'18px 20px', display:'flex', flexDirection:'column', gap:14 }}>
-                    {error && (
-                        <p style={{ fontSize:12, color:'var(--color-red)', background:'#fde8e8', padding:'8px 12px', borderRadius:8, margin:0 }}>{error}</p>
-                    )}
-
-                    {task.assignment?.file && (
-                        <a href={task.assignment.file} target="_blank" rel="noreferrer" download
-                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'var(--color-primary)', background:'var(--color-primary-light)', padding:'8px 10px', borderRadius:8, textDecoration:'none' }}>
-                            <Paperclip size={12}/> Download assignment document: {task.assignment.file_name || 'file'}
-                        </a>
-                    )}
-
-                    {isEdit && task.submission_file && !file && (
-                        <a href={task.submission_file} target="_blank" rel="noreferrer"
-                            style={{ display:'inline-flex', alignItems:'center', gap:6, fontSize:12, fontWeight:600, color:'var(--color-primary)', textDecoration:'none' }}>
-                            <Paperclip size={12}/> Current file: {task.file_name || 'view attachment'}
-                        </a>
-                    )}
-
-                    {/* File upload */}
-                    <div>
-                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>
-                            {isEdit ? 'Replace File (optional)' : 'Upload Solution (PDF, DOCX, DOC, Images)'}
-                        </label>
-                        <div style={{ border:'2px dashed var(--color-border)', borderRadius:10, padding:'14px', textAlign:'center', background:'var(--color-surface-subtle)', cursor:'pointer' }}
-                            onClick={() => document.getElementById('sub-file').click()}>
-                            <input id="sub-file" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={e => setFile(e.target.files?.[0]||null)} style={{ display:'none' }}/>
-                            {file ? (
-                                <div style={{ display:'flex', alignItems:'center', gap:8, justifyContent:'center' }}>
-                                    <FileText size={15} style={{ color:'#3b6fd4' }}/>
-                                    <span style={{ fontSize:13, color:'var(--color-text)', fontWeight:600 }}>{file.name}</span>
-                                    <button type="button" onClick={e => { e.stopPropagation(); setFile(null) }} style={{ background:'none', border:'none', cursor:'pointer', color:'#e05252', padding:2 }}><X size={11}/></button>
-                                </div>
-                            ) : (
-                                <>
-                                    <Upload size={18} style={{ color:'var(--color-text-placeholder)', margin:'0 auto 5px', display:'block' }}/>
-                                    <p style={{ fontSize:12, color:'var(--color-text-secondary)', margin:0 }}>Click to upload your solution</p>
-                                    <p style={{ fontSize:10, color:'var(--color-text-placeholder)', margin:'2px 0 0' }}>PDF, DOCX, DOC, JPG, PNG</p>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Text response */}
-                    <div>
-                        <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>
-                            Written Response (optional)
-                        </label>
-                        <textarea
-                            value={text}
-                            onChange={e => setText(e.target.value)}
-                            placeholder="Add any notes or written response for your teacher…"
-                            rows={4}
-                            style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'9px 12px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', resize:'vertical', boxSizing:'border-box' }}
-                        />
-                    </div>
-
-                    <p style={{ fontSize:11, color:'var(--color-text-placeholder)', margin:0 }}>
-                        At least one of file or written response is required.
-                    </p>
-                </div>
-
-                <div className="modal-footer-row" style={{ display:'flex', justifyContent:'flex-end', gap:10, padding:'14px 20px', borderTop:'1px solid var(--color-border)' }}>
-                    <button onClick={onClose} className="btn-secondary">Cancel</button>
-                    <button onClick={handleSubmit} disabled={saving} className="btn-primary" style={{ opacity:saving?0.7:1 }}>
-                        {saving ? 'Saving…' : <><Send size={13}/> {actionLabel}</>}
-                    </button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
 // ── Assignment table — flat list, one row per assignment, no course boxes ─────
-// CHANGED:
-//   • Assignments are now shown as a single flat list (one line per assignment)
-//   • Course/subject shown as an inline badge on each row instead of grouping into columns
-//   • Submit button shown for pending/overdue/rejected; edit while submitted
-//   • Teacher-uploaded documents show as a downloadable badge on the row
-//   • NO create/delete — students view-only over their own tasks
-//   • Status badge: Pending=Amber, Submitted=Blue, Completed=Green, Rejected/Overdue=Red
+// Shows a single flat list (one row per assignment), with course/subject as
+// an inline badge rather than grouping rows by course. Submit button shows
+// for pending/overdue/rejected tasks; edit while submitted. Teacher-uploaded
+// documents appear as a downloadable badge on the row. Students only view
+// and submit their own tasks here — no create/delete.
+// Status badge colors: Pending=Amber, Submitted=Blue, Completed=Green, Rejected/Overdue=Red.
 const TABS = [
     { key:'all',       label:'All'       },
     { key:'pending',   label:'Pending'   },
@@ -530,9 +407,7 @@ function AssignmentTable({ tasks, onSubmit }) {
                             const importanceVal = t.assignment?.priority
                             const iColor = priorityColor(importanceVal)
                             // Use the backend's 5-level priority_label (e.g. "Medium-High")
-                            // instead of re-deriving a coarser 3-bucket label here, which
-                            // used to show a different word than the same value's badge
-                            // elsewhere in the app.
+                            // for consistency with the same value's badge elsewhere in the app.
                             const iLabel = t.assignment?.priority_label || 'Medium'
                             const isDone = t.status === 'completed'
                             const StatusIcon = t.status === 'completed' ? CheckCircle2
@@ -703,13 +578,9 @@ function AssignmentTable({ tasks, onSubmit }) {
 export default function StudentDashboard({ user: propUser }) {
     const { user: ctxUser } = useAuth()
     const user = propUser || ctxUser
-    const { tasks, loading, error, stats, refetch, setTasks } = useTasks()
+    const { tasks, loading, error, stats, refetch, submitAssignment } = useTasks()
     const { data: summary } = useStudentSummary()
     const [submitTask, setSubmitTask] = useState(null)
-
-    function handleSubmitted(updated) {
-        setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t))
-    }
 
     // Use summary from API if available, else fall back to computed stats
     const displayStats = {
@@ -770,10 +641,10 @@ export default function StudentDashboard({ user: propUser }) {
 
             {/* Submit modal */}
             {submitTask && (
-                <SubmitModal
+                <SubmitAssignmentModal
                     task={submitTask}
                     onClose={() => setSubmitTask(null)}
-                    onSubmitted={handleSubmitted}
+                    onSubmitted={submitAssignment}
                 />
             )}
 

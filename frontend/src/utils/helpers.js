@@ -69,9 +69,7 @@ export function getTaskDueDate(task) {
 
 // ── Status helpers (5-state) ────────────────────────────────────────────────
 // Re-exported from hooks/useTasks.js, the single source of truth — do not
-// redefine these here. (This file used to have its own copies that quietly
-// disagreed with useTasks.js on both isPending()'s edge case and the
-// status → color mapping.)
+// redefine these here.
 export { isCompleted, isPending, isSubmitted, isOverdue, isRejected, isActionable, statusLabel, statusColor, statusBg }
 
 // ── 5-state status badge ────────────────────────────────────────────────────

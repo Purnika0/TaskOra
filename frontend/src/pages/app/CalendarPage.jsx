@@ -313,10 +313,10 @@ export default function CalendarPage() {
             return {
                 ...day,
                 // Backend is the ONLY source of holiday data (besides weekends).
-                // Don't fall back to day.holidayTitle — that field no longer
-                // carries any local/hardcoded data, so falling back to it would
-                // just be a no-op at best, or reintroduce a stale-data bug if
-                // anyone adds local holiday data back in later.
+                // Don't fall back to day.holidayTitle — it carries no local or
+                // hardcoded data, so falling back to it would be a no-op at
+                // best, or a stale-data bug if local holiday data is ever
+                // added back in.
                 isHoliday:    Boolean(bk.is_holiday) || Boolean(bk.holiday_title) || day.isSat || day.isSun,
                 holidayTitle: bk.holiday_title || null,
             }
@@ -440,7 +440,7 @@ export default function CalendarPage() {
             </div>
 
             <div className="cal-pg-grid" style={{ marginBottom:24 }}>
-                <div className="white-card" style={{ padding:20 }}>
+                <div className="white-card" style={{ padding:20, minHeight:520 }}>
                     <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
                         <button className="cal-nav" onClick={prev} aria-label="Previous month">
                             <ChevronLeft size={14}/>
@@ -523,7 +523,7 @@ export default function CalendarPage() {
                     </div>
                 </div>
 
-                <div className="white-card" style={{ padding:16, display:'flex', flexDirection:'column', minHeight:300 }}>
+                <div className="white-card" style={{ padding:16, display:'flex', flexDirection:'column', minHeight:520 }}>
                     <SidePanel
                         day={selectedDay}
                         bsMonth={bsMonth}
@@ -558,7 +558,7 @@ export default function CalendarPage() {
                         <p style={{ fontSize:13, color:'#7a7060', lineHeight:1.55, margin:'0 0 22px' }}>
                             This will permanently delete <strong style={{ color:'#1a1f35' }}>"{deleteTarget.title || deleteTarget.assignment?.title || 'this assignment'}"</strong>. This action cannot be undone.
                         </p>
-                        <div className="modal-footer-row" style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+                        <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
                             <button
                                 onClick={cancelDelete}
                                 disabled={!!deletingId}

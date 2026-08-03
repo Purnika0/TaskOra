@@ -7,9 +7,6 @@ import tasksService from '../services/tasks.service.js'
 // ── Status helpers ─────────────────────────────────────────────────────────
 // Single source of truth for task-status checks and display colors —
 // utils/helpers.js re-exports these instead of keeping its own copies.
-// (Previously it had a second copy that disagreed on both isPending()'s
-// edge case and on the status → color mapping, which made "Overdue" render
-// in two different shades of red depending on which page you were on.)
 export function isCompleted(task)  { return task.status === 'completed'  }
 export function isPending(task)    { return task.status === 'pending'    }
 export function isSubmitted(task)  { return task.status === 'submitted'  }

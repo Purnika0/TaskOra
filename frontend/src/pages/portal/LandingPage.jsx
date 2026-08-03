@@ -50,19 +50,17 @@ const LP_CSS = `
 .lp-btn-secondary:hover { border-color: var(--color-text-placeholder); background: var(--color-surface-subtle); }
 
 /* Hero visual — the real Dashboard screenshot, shown as-is (no cropping, no
-browser-chrome overlay) with a subtle 3D tilt so it reads as a dynamic
+   browser-chrome overlay) with a subtle 3D tilt so it reads as a dynamic
    product shot rather than a flat rectangle pasted on the page. */
 .lp-hero-visual {
     position: relative;
     width: 100%; max-width: 820px; margin: 0 auto;
     padding: 40px 70px;
     /* The blur blobs below are positioned partly outside this box on
-    purpose (for a soft glow effect) — without this, they silently
-    widen the page's scrollable area past 100vw on some screen sizes,
-    making the whole page horizontally scrollable even though nothing
-    looks visibly broken. That showed up as a right-side gap where the
-    sticky navbar no longer lined up with the rest of the page once
-    scrolled. */
+       purpose (for a soft glow effect) — without this, they widen the
+       page's scrollable area past 100vw on some screen sizes, making the
+       whole page horizontally scrollable and misaligning the sticky
+       navbar against the rest of the page once scrolled. */
     overflow: hidden;
 }
 .lp-hero-blob-a {
@@ -85,7 +83,7 @@ browser-chrome overlay) with a subtle 3D tilt so it reads as a dynamic
 }
 
 /* Course-based positioning line — section keeps its subtle background, but
-the content now sits in its own white boxed panel (same rounded-box idea
+   the content now sits in its own white boxed panel (same rounded-box idea
    as the intro section's panel below it) so it reads as a distinct card. */
 .lp-about {
     background: #fff;
@@ -284,12 +282,12 @@ export default function LandingPage() {
                 <div className="lp-about-inner">
                     <div className="lp-about-panel">
                         <h2 className="lp-about-title">
-                            TaskOra is a <span className="lp-about-highlight">course-based assignment and task management system</span> designed to simplify academic task management for students and teachers.
+                            TaskOra is a <span className="lp-about-highlight">course-based assignment and task management system</span> designed for higher education institutions.
                         </h2>
                         <p className="lp-about-sub">
                             TaskOra helps students and teachers organize coursework, manage assignments, track
                             deadlines, submit work, provide feedback, and monitor academic progress through a
-                            centralized and user-friendly platform.
+                            centralized platform.
                         </p>
                     </div>
                 </div>
