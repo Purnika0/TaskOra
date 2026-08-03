@@ -121,6 +121,17 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
     return (
         <div style={{ position:'fixed', inset:0, zIndex:9999, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.45)', backdropFilter:'blur(2px)', padding:16 }}
             className="anim-fade-in" onClick={onClose}>
+            <style>{`
+                .af-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+                .af-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+                @media (max-width:480px) {
+                    .af-grid-2 { grid-template-columns:1fr; }
+                    .af-grid-3 { grid-template-columns:1fr 1fr; }
+                }
+                @media (max-width:360px) {
+                    .af-grid-3 { grid-template-columns:1fr; }
+                }
+            `}</style>
             <div style={{ background:'var(--color-surface)', borderRadius:16, width:'100%', maxWidth:560, boxShadow:'0 16px 48px rgba(0,0,0,0.22)', overflow:'hidden' }}
                 className="anim-scale-in" onClick={e => e.stopPropagation()}>
 
@@ -148,7 +159,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                             style={{ width:'100%', border:'1.5px solid var(--color-border)', borderRadius:9, padding:'9px 12px', fontSize:13, fontFamily:'var(--font-body)', color:'var(--color-text)', background:'var(--color-surface-subtle)', resize:'vertical', boxSizing:'border-box' }}/>
                     </div>
 
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+                    <div className="af-grid-2">
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Course *</label>
                             <Select
@@ -165,7 +176,7 @@ function AssignmentFormModal({ assignment, courses, onClose, onSaved }) {
                         </div>
                     </div>
 
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:10 }}>
+                    <div className="af-grid-3">
                         <div>
                             <label style={{ fontSize:11, fontWeight:600, color:'var(--color-text-secondary)', display:'block', marginBottom:5 }}>Type</label>
                             <Select

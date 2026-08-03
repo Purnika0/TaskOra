@@ -181,10 +181,10 @@ function StudentRankingSection() {
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                     {view.map((r, i) => (
                         <div key={startIndex + i} style={{ padding:'10px 12px', border:'1px solid #ece5dc', borderRadius:10, background:'#fff' }}>
-                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
-                                <strong style={{ fontSize:12.5, color:'#1a1f35' }}>#{startIndex + i + 1} {r.student}</strong>
+                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8, gap:8 }}>
+                                <strong style={{ fontSize:12.5, color:'#1a1f35', flex:'1 1 auto', minWidth:0, wordBreak:'break-word' }}>#{startIndex + i + 1} {r.student}</strong>
                                 <span style={{
-                                    fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:99,
+                                    fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:99, flexShrink:0,
                                     background: r.completion_rate >= 80 ? '#e0f7ee' : r.completion_rate >= 50 ? '#fffbeb' : '#fde8e8',
                                     color:      r.completion_rate >= 80 ? '#166534' : r.completion_rate >= 50 ? '#92400e' : '#991b1b',
                                 }}>
@@ -472,9 +472,12 @@ function AssignmentCompletionSection() {
                 <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
                     {filtered.map((p, i) => (
                         <div key={i} style={{ padding:'12px 14px', background:'#faf8f5', borderRadius:10, border:'1px solid #f0ece4' }}>
-                            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:8, gap:8 }}>
-                                <p style={{ fontSize:13, fontWeight:600, color:'#1a1f35', margin:0 }}>{p.assignment}</p>
-                                <span style={{ fontSize:11, color:'#8a7e6e', flexShrink:0 }}>{p.course}</span>
+                            <div style={{ marginBottom:8 }}>
+                                <p style={{ fontSize:13, fontWeight:600, color:'#1a1f35', margin:0, overflowWrap:'break-word' }}>{p.assignment}</p>
+                                <span style={{
+                                    display:'inline-block', fontSize:10, fontWeight:600, color:'#6a5e4e',
+                                    background:'#f0ece5', padding:'2px 8px', borderRadius:99, marginTop:6,
+                                }}>{p.course}</span>
                             </div>
                             <div className="progress-bar-track" style={{ marginBottom:6 }} aria-label={`${p.completion_rate}% complete`}>
                                 <div className="progress-bar-fill" style={{ width:`${p.completion_rate}%`, background:'#1a1f35' }}/>
